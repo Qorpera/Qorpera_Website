@@ -164,12 +164,17 @@ enum RunnerJobStatus {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  username     String?  @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String    @id @default(cuid())
+  email           String    @unique
+  username        String?   @unique
+  passwordHash    String
+  emailVerified   Boolean   @default(false)
+  emailVerifyToken String?
+  emailVerifyExp   DateTime?
+  resetToken      String?
+  resetTokenExp   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   jobs         HiredJob[]
   submissions  Submission[]

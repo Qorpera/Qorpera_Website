@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { hashPassword, setSession } from "@/lib/auth";
 import { ensureBaseAgents } from "@/lib/seed";
+import { sendEmail } from "@/lib/email-sender";
 import { SignupBody } from "@/lib/schemas";
 import { verifySameOrigin } from "@/lib/request-security";
+
+const VERIFY_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
 
 export async function POST(req: Request) {
   const sameOrigin = verifySameOrigin(req);
@@ -21,10 +25,27 @@ export async function POST(req: Request) {
   }
 
   const passwordHash = await hashPassword(password);
-  const user = await prisma.user.create({ data: { email, passwordHash } });
+  const emailVerifyToken = randomBytes(32).toString("base64url");
+  const user = await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      emailVerifyToken,
+      emailVerifyExp: new Date(Date.now() + VERIFY_TTL_MS),
+    },
+  });
 
   await ensureBaseAgents();
   await setSession(user.id);
+
+  // Send verification email (fire-and-forget — don't block signup)
+  const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const verifyUrl = `${origin}/api/auth/verify-email?token=${emailVerifyToken}&email=${encodeURIComponent(email)}`;
+  sendEmail({
+    to: email,
+    subject: "Verify your Zygenic email",
+    body: `Welcome to Zygenic!\n\nClick here to verify your email:\n${verifyUrl}\n\nThis link expires in 24 hours.`,
+  }).catch(() => {});
 
   return NextResponse.json({ ok: true });
 }
