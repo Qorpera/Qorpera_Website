@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { UI_AGENTS } from "@/lib/workforce-ui";
+import { getOllamaUsageThisMonth, CLOUD_PRICING, estimateCloudCost } from "@/lib/ollama-usage-store";
 
 export type AgentMetricRow = {
   kind: string;
@@ -53,6 +54,14 @@ export type MetricsSummary = {
   // Provider costs
   providerUsage: { provider: string; requests: number; usdEstimate: number }[];
 
+  // Local AI (Ollama) usage this month
+  localAiUsage: {
+    requestCount: number;
+    promptTokens: number;
+    completionTokens: number;
+    cloudEquivalents: { label: string; usd: number }[];
+  };
+
   // Daily activity (last 14 days)
   dailyActivity: DailyActivityPoint[];
 };
@@ -75,6 +84,7 @@ export async function getMetricsForUser(userId: string): Promise<MetricsSummary>
     recentRuns,
     projects,
     runnerJobs,
+    ollamaRaw,
   ] = await Promise.all([
     prisma.submission.findMany({
       where: { userId },
@@ -119,6 +129,7 @@ export async function getMetricsForUser(userId: string): Promise<MetricsSummary>
       where: { userId, createdAt: { gte: thirtyDaysAgo } },
       select: { status: true },
     }),
+    getOllamaUsageThisMonth(userId),
   ]);
 
   // KPIs
@@ -197,6 +208,17 @@ export async function getMetricsForUser(userId: string): Promise<MetricsSummary>
     usdEstimate: c.monthlyEstimatedUsd ?? 0,
   }));
 
+  // Local AI usage
+  const localAiUsage = {
+    requestCount: ollamaRaw.requestCount,
+    promptTokens: ollamaRaw.promptTokens,
+    completionTokens: ollamaRaw.completionTokens,
+    cloudEquivalents: CLOUD_PRICING.map((p) => ({
+      label: p.label,
+      usd: estimateCloudCost(ollamaRaw.promptTokens, ollamaRaw.completionTokens, p),
+    })),
+  };
+
   // Per-agent rows
   // Build submission maps per agent kind
   const submissionsByKind = new Map<string, { total: number; accepted: number }>();
@@ -265,6 +287,7 @@ export async function getMetricsForUser(userId: string): Promise<MetricsSummary>
     projectHealthCounts,
     runnerJobStats,
     providerUsage,
+    localAiUsage,
     dailyActivity,
   };
 }

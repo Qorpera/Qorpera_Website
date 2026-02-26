@@ -195,6 +195,7 @@ model User {
   runnerPolicy       RunnerPolicy?
   externalConnectors ExternalConnector[]
   skillCredentials   SkillCredential[]
+  ollamaUsage        OllamaUsage[]
 }
 
 model HiredJob {
@@ -833,4 +834,19 @@ model AgentKindToolSet {
 
   @@unique([agentKind, toolDefinitionId])
   @@index([agentKind, enabled])
+}
+
+model OllamaUsage {
+  id               String   @id @default(cuid())
+  userId           String
+  monthKey         String   // "YYYY-MM"
+  requestCount     Int      @default(0)
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  updatedAt        DateTime @updatedAt
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, monthKey])
+  @@index([userId])
 }

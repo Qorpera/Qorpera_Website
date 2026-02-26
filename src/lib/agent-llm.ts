@@ -7,6 +7,7 @@
 import { getModelRouteForAgentKind, type AgentKindRouteKey } from "@/lib/model-routing-store";
 import { getProviderApiKeyRuntime, checkManagedGuardrails, recordManagedUsage } from "@/lib/connectors-store";
 import { postOllamaJson } from "@/lib/ollama";
+import { recordOllamaUsage } from "@/lib/ollama-usage-store";
 import type { LlmToolSpec } from "@/lib/tool-registry";
 
 export type AgentLlmResult = {
@@ -159,13 +160,15 @@ async function callGoogle(input: {
   return data?.candidates?.[0]?.content?.parts?.find((p) => p.text)?.text ?? null;
 }
 
+type OllamaTokenFields = { eval_count?: number; prompt_eval_count?: number };
+
 async function callOllama(input: {
   model: string;
   systemPrompt: string;
   userMessage: string;
   maxOutputTokens?: number;
-}): Promise<string | null> {
-  const chatResult = await postOllamaJson<{ message?: { content?: string }; response?: string }>(
+}): Promise<{ text: string | null; promptTokens: number; completionTokens: number }> {
+  const chatResult = await postOllamaJson<{ message?: { content?: string }; response?: string } & OllamaTokenFields>(
     "/api/chat",
     {
       model: input.model,
@@ -181,11 +184,15 @@ async function callOllama(input: {
 
   if (chatResult.ok) {
     const text = chatResult.data.message?.content ?? chatResult.data.response;
-    if (text) return text;
+    if (text) return {
+      text,
+      promptTokens: chatResult.data.prompt_eval_count ?? 0,
+      completionTokens: chatResult.data.eval_count ?? 0,
+    };
   }
 
   // Fallback to generate endpoint
-  const genResult = await postOllamaJson<{ response?: string; message?: { content?: string } }>(
+  const genResult = await postOllamaJson<{ response?: string; message?: { content?: string } } & OllamaTokenFields>(
     "/api/generate",
     {
       model: input.model,
@@ -204,7 +211,11 @@ async function callOllama(input: {
     throw new Error(reason || `Ollama request failed for model "${input.model}"`);
   }
 
-  return genResult.data.response ?? genResult.data.message?.content ?? null;
+  return {
+    text: genResult.data.response ?? genResult.data.message?.content ?? null,
+    promptTokens: genResult.data.prompt_eval_count ?? 0,
+    completionTokens: genResult.data.eval_count ?? 0,
+  };
 }
 
 export async function callAgentLlm(input: {
@@ -217,15 +228,18 @@ export async function callAgentLlm(input: {
   const route = await getModelRouteForAgentKind(input.userId, input.agentKind);
 
   if (route.provider === "OLLAMA") {
-    const text = await callOllama({
+    const result = await callOllama({
       model: route.modelName,
       systemPrompt: input.systemPrompt,
       userMessage: input.userMessage,
       maxOutputTokens: input.maxOutputTokens,
     });
-
+    recordOllamaUsage(input.userId, {
+      promptTokens: result.promptTokens,
+      completionTokens: result.completionTokens,
+    }).catch(() => {});
     return {
-      text: text ?? "",
+      text: result.text ?? "",
       provider: "OLLAMA",
       model: route.modelName,
     };
@@ -498,6 +512,8 @@ type OllamaChatToolResponse = {
     }>;
   };
   response?: string;
+  eval_count?: number;
+  prompt_eval_count?: number;
 };
 
 export async function callAgentLlmWithTools(input: {
@@ -638,6 +654,11 @@ export async function callAgentLlmWithTools(input: {
     if (!chatResult.ok) {
       return { kind: "error", error: chatResult.error, provider: "OLLAMA", model: route.modelName };
     }
+
+    recordOllamaUsage(input.userId, {
+      promptTokens: chatResult.data.prompt_eval_count ?? 0,
+      completionTokens: chatResult.data.eval_count ?? 0,
+    }).catch(() => {});
 
     const msg = chatResult.data.message;
     if (msg?.tool_calls && msg.tool_calls.length > 0) {
