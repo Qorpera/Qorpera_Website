@@ -171,9 +171,10 @@ model User {
   emailVerified   Boolean   @default(false)
   emailVerifyToken String?
   emailVerifyExp   DateTime?
-  resetToken      String?
-  resetTokenExp   DateTime?
-  createdAt       DateTime  @default(now())
+  resetToken       String?
+  resetTokenExp    DateTime?
+  sessionRevokedAt DateTime?
+  createdAt        DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   jobs         HiredJob[]

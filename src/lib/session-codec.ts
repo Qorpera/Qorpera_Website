@@ -3,7 +3,8 @@
  * Pure functions with no framework dependencies.
  */
 
-const SESSION_VERSION = "v1";
+const SESSION_VERSION = "v2";
+const SESSION_VERSION_LEGACY = "v1";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
 function base64url(input: Uint8Array): string {
@@ -72,8 +73,10 @@ export function getSessionSecret(): string {
 
 export async function encodeSession(userId: string, secret?: string): Promise<string> {
   const s = secret ?? getSessionSecret();
-  const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS;
-  const payload = `${SESSION_VERSION}.${base64urlFromString(userId)}.${exp}`;
+  const now = Math.floor(Date.now() / 1000);
+  const exp = now + SESSION_TTL_SECONDS;
+  // v2 format: version.userId.exp.issuedAt.sig
+  const payload = `${SESSION_VERSION}.${base64urlFromString(userId)}.${exp}.${now}`;
   const sig = await signPayload(payload, s);
   return `${payload}.${sig}`;
 }
@@ -81,29 +84,59 @@ export async function encodeSession(userId: string, secret?: string): Promise<st
 export async function decodeSession(
   token: string,
   secret?: string,
-): Promise<{ userId: string } | null> {
+): Promise<{ userId: string; issuedAt?: number } | null> {
   const s = secret ?? getSessionSecret();
   const parts = token.split(".");
-  if (parts.length !== 4) return null;
-  const [version, userIdB64, expRaw, sig] = parts;
-  if (version !== SESSION_VERSION) return null;
 
-  const payload = `${version}.${userIdB64}.${expRaw}`;
-  const valid = await verifyPayload(payload, sig, s);
-  if (!valid) return null;
+  // v2: 5 parts (version.userId.exp.iat.sig)
+  if (parts.length === 5) {
+    const [version, userIdB64, expRaw, iatRaw, sig] = parts;
+    if (version !== SESSION_VERSION) return null;
 
-  const exp = Number(expRaw);
-  if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) return null;
+    const payload = `${version}.${userIdB64}.${expRaw}.${iatRaw}`;
+    const valid = await verifyPayload(payload, sig, s);
+    if (!valid) return null;
 
-  try {
-    const bytes = fromBase64url(userIdB64);
-    const decoder = new TextDecoder();
-    const userId = decoder.decode(bytes);
-    if (!userId) return null;
-    return { userId };
-  } catch {
-    return null;
+    const exp = Number(expRaw);
+    if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) return null;
+
+    const issuedAt = Number(iatRaw);
+
+    try {
+      const bytes = fromBase64url(userIdB64);
+      const decoder = new TextDecoder();
+      const userId = decoder.decode(bytes);
+      if (!userId) return null;
+      return { userId, issuedAt: Number.isFinite(issuedAt) ? issuedAt : undefined };
+    } catch {
+      return null;
+    }
   }
+
+  // v1 legacy: 4 parts (version.userId.exp.sig) — no issuedAt
+  if (parts.length === 4) {
+    const [version, userIdB64, expRaw, sig] = parts;
+    if (version !== SESSION_VERSION_LEGACY) return null;
+
+    const payload = `${version}.${userIdB64}.${expRaw}`;
+    const valid = await verifyPayload(payload, sig, s);
+    if (!valid) return null;
+
+    const exp = Number(expRaw);
+    if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) return null;
+
+    try {
+      const bytes = fromBase64url(userIdB64);
+      const decoder = new TextDecoder();
+      const userId = decoder.decode(bytes);
+      if (!userId) return null;
+      return { userId };
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }
 
 export const SESSION_COOKIE = "wf_session";

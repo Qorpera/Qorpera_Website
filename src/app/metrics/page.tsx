@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getMetricsForUser, type DailyActivityPoint } from "@/lib/metrics-store";
@@ -75,21 +76,49 @@ function toneClass(tone: string) {
   }
 }
 
-export default async function MetricsPage() {
+const RANGE_OPTIONS = [
+  { label: "7 days", value: "7" },
+  { label: "30 days", value: "30" },
+  { label: "90 days", value: "90" },
+] as const;
+
+export default async function MetricsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ range?: string | string[] | undefined }>;
+}) {
   const session = await getSession();
   if (!session) return notFound();
+  const resolved = (await searchParams) ?? {};
+  const rangeRaw = Array.isArray(resolved.range) ? resolved.range[0] : resolved.range;
+  const rangeDays = rangeRaw === "7" ? 7 : rangeRaw === "30" ? 30 : 90;
 
-  const metrics = await getMetricsForUser(session.userId);
+  const metrics = await getMetricsForUser(session.userId, rangeDays);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <header className="wf-panel rounded-3xl p-6">
-        <h1 className="text-3xl font-semibold tracking-tight">Metrics</h1>
-        <p className="mt-2 text-base wf-muted">
-          Live performance signals across your AI workforce — submissions, approvals, task
-          completion, and API spend.
-        </p>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">Metrics</h1>
+            <p className="mt-2 text-base wf-muted">
+              Live performance signals across your AI workforce — submissions, approvals, task
+              completion, and API spend.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {RANGE_OPTIONS.map((opt) => (
+              <Link
+                key={opt.value}
+                href={`/metrics?range=${opt.value}`}
+                className={`wf-btn px-4 py-2 text-sm ${String(rangeDays) === opt.value ? "border-teal-400/40 bg-teal-500/15 text-teal-200" : ""}`}
+              >
+                {opt.label}
+              </Link>
+            ))}
+          </div>
+        </div>
       </header>
 
       {/* Row 1: KPI cards */}
@@ -137,7 +166,7 @@ export default async function MetricsPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight">Activity</h2>
-            <p className="mt-0.5 text-sm wf-muted">Tasks and submissions · last 14 days</p>
+            <p className="mt-0.5 text-sm wf-muted">Tasks and submissions · last {Math.min(rangeDays, 90)} days</p>
           </div>
           <div className="flex items-center gap-3 text-xs wf-muted">
             <span className="flex items-center gap-1.5">
@@ -156,7 +185,7 @@ export default async function MetricsPage() {
       {/* Row 3: Per-agent table */}
       <section className="wf-panel rounded-3xl p-6">
         <h2 className="text-lg font-semibold tracking-tight">Per-agent performance</h2>
-        <p className="mt-1 text-sm wf-muted">Last 90 days · submissions + delegated tasks</p>
+        <p className="mt-1 text-sm wf-muted">Last {rangeDays} days · submissions + delegated tasks</p>
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">

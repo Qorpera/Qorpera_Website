@@ -6,6 +6,7 @@ import {
   SESSION_COOKIE,
   SESSION_TTL_SECONDS,
 } from "@/lib/session-codec";
+import { prisma } from "@/lib/db";
 
 export type Session = { userId: string };
 
@@ -41,11 +42,25 @@ export async function getSession(): Promise<Session | null> {
   if (!raw) return null;
 
   const decoded = await decodeSession(raw);
-  if (decoded) return decoded;
+  if (!decoded) {
+    // Allow legacy unsigned cookie values only in local development to avoid locking out existing dev sessions.
+    if (process.env.NODE_ENV !== "production" && !raw.includes(".")) return { userId: raw };
+    return null;
+  }
 
-  // Allow legacy unsigned cookie values only in local development to avoid locking out existing dev sessions.
-  if (process.env.NODE_ENV !== "production" && !raw.includes(".")) return { userId: raw };
-  return null;
+  // Check if sessions were revoked (e.g. password reset, logout-everywhere)
+  if (decoded.issuedAt) {
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { sessionRevokedAt: true },
+    });
+    if (user?.sessionRevokedAt) {
+      const revokedEpoch = Math.floor(user.sessionRevokedAt.getTime() / 1000);
+      if (decoded.issuedAt < revokedEpoch) return null;
+    }
+  }
+
+  return { userId: decoded.userId };
 }
 
 export async function requireUserId(): Promise<string> {

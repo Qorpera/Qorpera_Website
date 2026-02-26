@@ -103,7 +103,7 @@ async function callAnthropic(input: {
     headers: {
       "Content-Type": "application/json",
       "x-api-key": input.apiKey,
-      "anthropic-version": "2023-06-01",
+      "anthropic-version": "2024-10-22",
     },
     body: JSON.stringify({
       model: input.model,
@@ -546,7 +546,7 @@ export async function callAgentLlmWithTools(input: {
       headers: {
         "Content-Type": "application/json",
         "x-api-key": runtimeA.apiKey,
-        "anthropic-version": "2023-06-01",
+        "anthropic-version": "2024-10-22",
       },
       body: JSON.stringify({
         model: route.modelName,

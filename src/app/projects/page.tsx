@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { ensureWorkspaceSeeded, getProjectsForUser, getTemplates } from "@/lib/workspace-store";
 
 export default async function ProjectsPage({
@@ -13,9 +14,10 @@ export default async function ProjectsPage({
   const tabRaw = Array.isArray(resolved.tab) ? resolved.tab[0] : resolved.tab;
   const tab = tabRaw === "templates" || tabRaw === "flow" ? tabRaw : "projects";
   await ensureWorkspaceSeeded(session.userId);
-  const [projects, templates] = await Promise.all([
+  const [projects, templates, waitingReviewCount] = await Promise.all([
     getProjectsForUser(session.userId),
     getTemplates(),
+    prisma.submission.count({ where: { userId: session.userId, status: "SUBMITTED" } }),
   ]);
 
   return (
@@ -43,8 +45,8 @@ export default async function ProjectsPage({
         </div>
         <div className="wf-panel rounded-3xl p-5">
           <div className="text-sm wf-muted">Waiting Review</div>
-          <div className="mt-2 text-3xl font-semibold">2</div>
-          <div className="mt-2 h-2 rounded-full bg-zinc-200"><div className="h-2 w-1/2 rounded-full bg-orange-600" /></div>
+          <div className="mt-2 text-3xl font-semibold">{waitingReviewCount}</div>
+          <div className="mt-2 h-2 rounded-full bg-zinc-200"><div className={`h-2 rounded-full bg-orange-600`} style={{ width: `${Math.min(100, Math.max(5, waitingReviewCount * 20))}%` }} /></div>
         </div>
         <div className="wf-panel rounded-3xl p-5">
           <div className="text-sm wf-muted">Templates</div>

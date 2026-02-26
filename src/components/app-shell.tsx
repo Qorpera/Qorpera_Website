@@ -28,6 +28,7 @@ const NAV_GROUPS = [
     items: [
       { href: "/business-logs", label: "Business Logs" },
       { href: "/company-soul", label: "Company Soul" },
+      { href: "/office", label: "Office" },
     ],
   },
   {

@@ -334,7 +334,7 @@ async function testAnthropic(apiKey: string): Promise<TestResult> {
   const res = await fetch("https://api.anthropic.com/v1/models", {
     headers: {
       "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
+      "anthropic-version": "2024-10-22",
     },
   });
   if (!res.ok) return { ok: false, message: `Anthropic test failed (${res.status})`, statusCode: res.status };

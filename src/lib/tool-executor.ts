@@ -281,6 +281,20 @@ async function handleCallWebhook(args: Record<string, unknown>, ctx: ToolExecuti
 
 // --- Figma helpers ---
 
+// Short-lived cache for decrypted skill env vars (avoids redundant DB decryption within a single task run)
+const _skillEnvCache = new Map<string, { value: string | null; expiresAt: number }>();
+const SKILL_ENV_CACHE_TTL_MS = 60_000; // 1 minute
+
+async function getCachedSkillEnvVar(userId: string, varName: string): Promise<string | null> {
+  const key = `${userId}:${varName}`;
+  const cached = _skillEnvCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  const { getDecryptedSkillEnvVar } = await import("@/lib/skill-credentials-store");
+  const value = await getDecryptedSkillEnvVar(userId, varName);
+  _skillEnvCache.set(key, { value, expiresAt: Date.now() + SKILL_ENV_CACHE_TTL_MS });
+  return value;
+}
+
 type FigmaColor = { r: number; g: number; b: number; a: number };
 
 function figmaColorToRgba(c: FigmaColor): string {
@@ -339,8 +353,7 @@ function extractFigmaDesignSummary(data: Record<string, unknown>, isNodeRequest:
 }
 
 async function handleFigmaGetDesign(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
-  const { getDecryptedSkillEnvVar } = await import("@/lib/skill-credentials-store");
-  const token = await getDecryptedSkillEnvVar(ctx.userId, "FIGMA_ACCESS_TOKEN");
+  const token = await getCachedSkillEnvVar(ctx.userId, "FIGMA_ACCESS_TOKEN");
   if (!token) return "Error: FIGMA_ACCESS_TOKEN not set. Add it in Settings → Skills → Figma Design.";
 
   const fileKey = String(args.file_key ?? "");
@@ -367,8 +380,7 @@ async function handleFigmaGetDesign(args: Record<string, unknown>, ctx: ToolExec
 }
 
 async function handleFigmaGetImage(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
-  const { getDecryptedSkillEnvVar } = await import("@/lib/skill-credentials-store");
-  const token = await getDecryptedSkillEnvVar(ctx.userId, "FIGMA_ACCESS_TOKEN");
+  const token = await getCachedSkillEnvVar(ctx.userId, "FIGMA_ACCESS_TOKEN");
   if (!token) return "Error: FIGMA_ACCESS_TOKEN not set. Add it in Settings → Skills → Figma Design.";
 
   const fileKey = String(args.file_key ?? "");

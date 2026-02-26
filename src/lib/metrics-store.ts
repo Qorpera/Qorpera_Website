@@ -66,12 +66,13 @@ export type MetricsSummary = {
   dailyActivity: DailyActivityPoint[];
 };
 
-export async function getMetricsForUser(userId: string): Promise<MetricsSummary> {
+export async function getMetricsForUser(userId: string, rangeDays = 90): Promise<MetricsSummary> {
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+  const rangeAgo = new Date(now.getTime() - rangeDays * 24 * 60 * 60 * 1000);
+  const fourteenDaysAgo = new Date(now.getTime() - Math.min(rangeDays, 14) * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = new Date(now.getTime() - Math.min(rangeDays, 30) * 24 * 60 * 60 * 1000);
+  const ninetyDaysAgo = rangeAgo;
 
   const [
     allSubmissions,
@@ -169,9 +170,10 @@ export async function getMetricsForUser(userId: string): Promise<MetricsSummary>
     successRate: runnerTotal > 0 ? runnerSucceeded / runnerTotal : 0,
   };
 
-  // Daily activity — last 14 days
+  // Daily activity — last N days (capped at rangeDays, max 90 for chart readability)
+  const chartDays = Math.min(rangeDays, 90);
   const dateLabels: string[] = [];
-  for (let i = 13; i >= 0; i--) {
+  for (let i = chartDays - 1; i >= 0; i--) {
     const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
     dateLabels.push(d.toISOString().slice(0, 10));
   }
