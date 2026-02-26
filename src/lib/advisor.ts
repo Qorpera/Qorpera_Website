@@ -16,6 +16,7 @@ import { listBusinessFiles, summarizeBusinessFilesForAdvisor } from "@/lib/busin
 import { postOllamaJson } from "@/lib/ollama";
 import { getPreferredUsername } from "@/lib/usernames";
 import { listRunnersForUser } from "@/lib/runner-control-plane";
+import { recordOllamaUsage } from "@/lib/ollama-usage-store";
 
 export type AdvisorMode = "home" | "new_project";
 
@@ -484,7 +485,9 @@ async function callOllamaAdvisor({
     18000,
   );
 
-  const chatResult = await postOllamaJson<{ message?: { content?: string }; response?: string }>(
+  type OllamaTokenFields = { eval_count?: number; prompt_eval_count?: number };
+
+  const chatResult = await postOllamaJson<{ message?: { content?: string }; response?: string } & OllamaTokenFields>(
     "/api/chat",
     {
       model: route.modelName,
@@ -501,10 +504,16 @@ async function callOllamaAdvisor({
   if (chatResult.ok) {
     const text = chatResult.data.message?.content ?? chatResult.data.response;
     const parsed = text ? safeParseStructured(text) : null;
-    if (parsed) return parsed;
+    if (parsed) {
+      recordOllamaUsage(userId, {
+        promptTokens: chatResult.data.prompt_eval_count ?? 0,
+        completionTokens: chatResult.data.eval_count ?? 0,
+      }).catch(() => {});
+      return parsed;
+    }
   }
 
-  const generateResult = await postOllamaJson<{ response?: string; message?: { content?: string } }>(
+  const generateResult = await postOllamaJson<{ response?: string; message?: { content?: string } } & OllamaTokenFields>(
     "/api/generate",
     {
       model: route.modelName,
@@ -522,6 +531,10 @@ async function callOllamaAdvisor({
   }
   const generatedText = generateResult.data.response ?? generateResult.data.message?.content;
   if (!generatedText) return null;
+  recordOllamaUsage(userId, {
+    promptTokens: generateResult.data.prompt_eval_count ?? 0,
+    completionTokens: generateResult.data.eval_count ?? 0,
+  }).catch(() => {});
   return safeParseStructured(generatedText);
 }
 

@@ -334,6 +334,75 @@ export default async function MetricsPage() {
           </div>
         </div>
       </section>
+
+      {/* Local AI usage */}
+      <section className="wf-panel rounded-3xl p-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Local AI usage</h2>
+            <p className="mt-0.5 text-sm wf-muted">Ollama · this month · estimated cloud savings</p>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-full border border-teal-400/25 bg-teal-500/10 px-3 py-1 text-xs font-medium text-teal-300">
+            <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+            </svg>
+            $0.00 actual cost
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <div className="wf-soft rounded-2xl p-4">
+            <div className="text-xs wf-muted">Requests</div>
+            <div className="mt-1 text-2xl font-semibold tabular-nums">
+              {metrics.localAiUsage.requestCount.toLocaleString()}
+            </div>
+          </div>
+          <div className="wf-soft rounded-2xl p-4">
+            <div className="text-xs wf-muted">Input tokens</div>
+            <div className="mt-1 text-2xl font-semibold tabular-nums">
+              {metrics.localAiUsage.promptTokens.toLocaleString()}
+            </div>
+          </div>
+          <div className="wf-soft rounded-2xl p-4">
+            <div className="text-xs wf-muted">Output tokens</div>
+            <div className="mt-1 text-2xl font-semibold tabular-nums">
+              {metrics.localAiUsage.completionTokens.toLocaleString()}
+            </div>
+          </div>
+        </div>
+
+        {(metrics.localAiUsage.promptTokens > 0 || metrics.localAiUsage.completionTokens > 0) && (
+          <div className="mt-5">
+            <div className="mb-2 text-xs font-medium uppercase tracking-[0.1em] wf-muted">
+              Equivalent cloud cost if run via
+            </div>
+            <div className="space-y-2">
+              {metrics.localAiUsage.cloudEquivalents.map((eq) => {
+                const maxUsd = Math.max(...metrics.localAiUsage.cloudEquivalents.map((e) => e.usd), 0.001);
+                const barWidth = Math.round((eq.usd / maxUsd) * 100);
+                return (
+                  <div key={eq.label} className="flex items-center gap-3">
+                    <div className="w-36 shrink-0 text-sm text-white/70">{eq.label}</div>
+                    <div className="flex-1 h-1.5 rounded-full bg-white/8">
+                      <div
+                        className="h-1.5 rounded-full bg-violet-500/60"
+                        style={{ width: `${barWidth}%` }}
+                      />
+                    </div>
+                    <div className="w-16 shrink-0 text-right text-sm tabular-nums font-medium text-violet-300">
+                      {usd(eq.usd)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {metrics.localAiUsage.requestCount === 0 && (
+          <p className="mt-4 text-sm wf-muted">No local AI usage recorded this month. Set a model route to Ollama to start tracking.</p>
+        )}
+      </section>
     </div>
   );
 }
