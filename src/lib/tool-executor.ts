@@ -279,6 +279,123 @@ async function handleCallWebhook(args: Record<string, unknown>, ctx: ToolExecuti
   }
 }
 
+// --- Figma helpers ---
+
+type FigmaColor = { r: number; g: number; b: number; a: number };
+
+function figmaColorToRgba(c: FigmaColor): string {
+  const r = Math.round(c.r * 255);
+  const g = Math.round(c.g * 255);
+  const b = Math.round(c.b * 255);
+  return `rgba(${r},${g},${b},${c.a.toFixed(2)})`;
+}
+
+function extractFigmaDesignSummary(data: Record<string, unknown>, isNodeRequest: boolean): Record<string, unknown> {
+  if (isNodeRequest) {
+    const nodes = data.nodes as Record<string, { document: Record<string, unknown> }> | undefined;
+    if (!nodes) return { error: "No nodes in response" };
+    const firstKey = Object.keys(nodes)[0];
+    if (!firstKey) return { error: "Empty nodes object" };
+    const doc = nodes[firstKey]?.document ?? {};
+
+    const fills = (doc.fills as Array<{ type: string; color?: FigmaColor }> | undefined) ?? [];
+    const colors = fills
+      .filter((f) => f.type === "SOLID" && f.color)
+      .map((f) => figmaColorToRgba(f.color!));
+
+    const style = doc.style as Record<string, unknown> | undefined;
+    const typography = style
+      ? { fontFamily: style.fontFamily, fontSize: style.fontSize, fontWeight: style.fontWeight }
+      : undefined;
+
+    const bbox = doc.absoluteBoundingBox as { x: number; y: number; width: number; height: number } | undefined;
+    const children = (doc.children as Array<{ name: string }> | undefined) ?? [];
+
+    return {
+      name: doc.name,
+      type: doc.type,
+      boundingBox: bbox,
+      colors,
+      ...(typography ? { typography } : {}),
+      children: children.map((c) => c.name),
+    };
+  }
+
+  // File-level summary
+  const styles = data.styles as Record<string, { name: string; styleType: string }> | undefined;
+  const styleList = styles
+    ? Object.values(styles).map((s) => ({ name: s.name, styleType: s.styleType }))
+    : [];
+
+  const doc = data.document as { children?: Array<{ name: string }> } | undefined;
+  const pages = doc?.children?.map((c) => c.name) ?? [];
+
+  return {
+    name: data.name,
+    lastModified: data.lastModified,
+    styles: styleList,
+    pages,
+  };
+}
+
+async function handleFigmaGetDesign(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const { getDecryptedSkillEnvVar } = await import("@/lib/skill-credentials-store");
+  const token = await getDecryptedSkillEnvVar(ctx.userId, "FIGMA_ACCESS_TOKEN");
+  if (!token) return "Error: FIGMA_ACCESS_TOKEN not set. Add it in Settings → Skills → Figma Design.";
+
+  const fileKey = String(args.file_key ?? "");
+  if (!fileKey) return "Error: file_key is required";
+
+  const nodeId = args.node_id ? String(args.node_id) : null;
+  const url = nodeId
+    ? `https://api.figma.com/v1/files/${fileKey}/nodes?ids=${encodeURIComponent(nodeId)}&depth=2`
+    : `https://api.figma.com/v1/files/${fileKey}?depth=2`;
+
+  try {
+    const res = await fetch(url, {
+      headers: { "X-Figma-Token": token },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return `Error: Figma API ${res.status} ${res.statusText}`;
+    const data = (await res.json()) as Record<string, unknown>;
+    const summary = extractFigmaDesignSummary(data, !!nodeId);
+    return JSON.stringify(summary).slice(0, 6000);
+  } catch (e: unknown) {
+    if (e instanceof Error && e.name === "TimeoutError") return "Error: Figma API request timed out (8s)";
+    return `Error: ${e instanceof Error ? e.message : "Figma API request failed"}`;
+  }
+}
+
+async function handleFigmaGetImage(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const { getDecryptedSkillEnvVar } = await import("@/lib/skill-credentials-store");
+  const token = await getDecryptedSkillEnvVar(ctx.userId, "FIGMA_ACCESS_TOKEN");
+  if (!token) return "Error: FIGMA_ACCESS_TOKEN not set. Add it in Settings → Skills → Figma Design.";
+
+  const fileKey = String(args.file_key ?? "");
+  const nodeId = String(args.node_id ?? "");
+  if (!fileKey) return "Error: file_key is required";
+  if (!nodeId) return "Error: node_id is required";
+
+  const format = String(args.format ?? "png");
+  const scale = Number(args.scale ?? 1);
+  const url = `https://api.figma.com/v1/images/${fileKey}?ids=${encodeURIComponent(nodeId)}&format=${format}&scale=${scale}`;
+
+  try {
+    const res = await fetch(url, {
+      headers: { "X-Figma-Token": token },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return `Error: Figma API ${res.status} ${res.statusText}`;
+    const data = (await res.json()) as { images?: Record<string, string> };
+    const imageUrl = data.images?.[nodeId];
+    if (!imageUrl) return "Error: No image returned for that node ID";
+    return imageUrl;
+  } catch (e: unknown) {
+    if (e instanceof Error && e.name === "TimeoutError") return "Error: Figma API request timed out (8s)";
+    return `Error: ${e instanceof Error ? e.message : "Figma API request failed"}`;
+  }
+}
+
 // --- Runner-dispatched handlers ---
 
 /**
@@ -379,6 +496,8 @@ const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: T
   create_business_log: handleCreateBusinessLog,
   send_email: (args) => handleSendEmail(args),
   call_webhook: handleCallWebhook,
+  figma_get_design: handleFigmaGetDesign,
+  figma_get_image: handleFigmaGetImage,
 };
 
 const RUNNER_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {
