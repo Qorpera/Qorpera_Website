@@ -822,6 +822,18 @@ export async function executeDelegatedTask(userId: string, taskId: string, onEve
     throw new Error("Task is not runnable");
   }
 
+  // Gate on skill readiness — fail fast if required API keys are missing
+  const { checkSkillReadiness } = await import("@/lib/skills-store");
+  const readiness = await checkSkillReadiness(userId);
+  const notReady = readiness.filter((r) => !r.ready && r.missing.some((m) => m.startsWith("env:")));
+  if (notReady.length > 0) {
+    const missing = notReady.flatMap((r) => r.missing.filter((m) => m.startsWith("env:")).map((m) => m.slice(4)));
+    throw new Error(
+      `Cannot run task: enabled skill(s) are missing API keys: ${missing.join(", ")}. ` +
+      `Add them in Settings → Skills.`
+    );
+  }
+
   await prisma.delegatedTask.update({
     where: { id: row.id },
     data: { status: DelegatedTaskStatus.RUNNING },
