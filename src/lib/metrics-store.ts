@@ -14,6 +14,19 @@ export type AgentMetricRow = {
   avgToolLatencyMs: number | null;
 };
 
+export type DailyActivityPoint = {
+  date: string; // "YYYY-MM-DD"
+  tasks: number;
+  submissions: number;
+};
+
+export type RunnerJobStats = {
+  total: number;
+  succeeded: number;
+  failed: number;
+  successRate: number;
+};
+
 export type MetricsSummary = {
   // Overview KPIs
   submissionsThisWeek: number;
@@ -28,18 +41,26 @@ export type MetricsSummary = {
   totalSubmissions: number;
   needsRevisionCount: number;
   avgRevisionRate: number;
+  failedTaskCount: number;
 
   // Execution health
   runSuccessRate: number;
   projectHealthCounts: { green: number; yellow: number; red: number };
 
+  // Runner health (last 30 days)
+  runnerJobStats: RunnerJobStats;
+
   // Provider costs
   providerUsage: { provider: string; requests: number; usdEstimate: number }[];
+
+  // Daily activity (last 14 days)
+  dailyActivity: DailyActivityPoint[];
 };
 
 export async function getMetricsForUser(userId: string): Promise<MetricsSummary> {
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
@@ -49,9 +70,11 @@ export async function getMetricsForUser(userId: string): Promise<MetricsSummary>
     inboxItems,
     providerCredentials,
     delegatedTasks,
+    recentDelegatedTasks,
     toolCalls,
     recentRuns,
     projects,
+    runnerJobs,
   ] = await Promise.all([
     prisma.submission.findMany({
       where: { userId },
@@ -73,6 +96,10 @@ export async function getMetricsForUser(userId: string): Promise<MetricsSummary>
       where: { userId, createdAt: { gte: ninetyDaysAgo } },
       select: { toAgentTarget: true, status: true },
     }),
+    prisma.delegatedTask.findMany({
+      where: { userId, createdAt: { gte: fourteenDaysAgo } },
+      select: { createdAt: true },
+    }),
     prisma.delegatedTaskToolCall.findMany({
       where: {
         delegatedTask: { userId },
@@ -87,6 +114,10 @@ export async function getMetricsForUser(userId: string): Promise<MetricsSummary>
     prisma.project.findMany({
       where: { userId },
       select: { workforceHealth: true },
+    }),
+    prisma.runnerJob.findMany({
+      where: { userId, createdAt: { gte: thirtyDaysAgo } },
+      select: { status: true },
     }),
   ]);
 
@@ -109,11 +140,47 @@ export async function getMetricsForUser(userId: string): Promise<MetricsSummary>
   // Workflow quality
   const needsRevisionCount = allSubmissions.filter((s) => s.status === "NEEDS_REVISION").length;
   const avgRevisionRate = totalSubmissions > 0 ? needsRevisionCount / totalSubmissions : 0;
+  const failedTaskCount = delegatedTasks.filter((t) => t.status === "FAILED").length;
 
   // Execution health
   const finishedRuns = recentRuns.filter((r) => r.status === "FINISHED").length;
   const totalRuns = recentRuns.length;
   const runSuccessRate = totalRuns > 0 ? finishedRuns / totalRuns : 0;
+
+  // Runner job health (last 30 days)
+  const runnerSucceeded = runnerJobs.filter((j) => j.status === "SUCCEEDED").length;
+  const runnerFailed = runnerJobs.filter((j) => j.status === "FAILED").length;
+  const runnerTotal = runnerJobs.length;
+  const runnerJobStats: RunnerJobStats = {
+    total: runnerTotal,
+    succeeded: runnerSucceeded,
+    failed: runnerFailed,
+    successRate: runnerTotal > 0 ? runnerSucceeded / runnerTotal : 0,
+  };
+
+  // Daily activity — last 14 days
+  const dateLabels: string[] = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    dateLabels.push(d.toISOString().slice(0, 10));
+  }
+  const tasksByDay = new Map<string, number>();
+  for (const t of recentDelegatedTasks) {
+    const day = t.createdAt.toISOString().slice(0, 10);
+    tasksByDay.set(day, (tasksByDay.get(day) ?? 0) + 1);
+  }
+  const submissionsByDay = new Map<string, number>();
+  for (const s of allSubmissions) {
+    const day = s.createdAt.toISOString().slice(0, 10);
+    if (day >= dateLabels[0]) {
+      submissionsByDay.set(day, (submissionsByDay.get(day) ?? 0) + 1);
+    }
+  }
+  const dailyActivity: DailyActivityPoint[] = dateLabels.map((date) => ({
+    date,
+    tasks: tasksByDay.get(date) ?? 0,
+    submissions: submissionsByDay.get(date) ?? 0,
+  }));
 
   // Project health
   const projectHealthCounts = { green: 0, yellow: 0, red: 0 };
@@ -193,8 +260,11 @@ export async function getMetricsForUser(userId: string): Promise<MetricsSummary>
     totalSubmissions,
     needsRevisionCount,
     avgRevisionRate,
+    failedTaskCount,
     runSuccessRate,
     projectHealthCounts,
+    runnerJobStats,
     providerUsage,
+    dailyActivity,
   };
 }

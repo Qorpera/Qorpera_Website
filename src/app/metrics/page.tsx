@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { getMetricsForUser } from "@/lib/metrics-store";
+import { getMetricsForUser, type DailyActivityPoint } from "@/lib/metrics-store";
 
 function pct(rate: number) {
   return `${Math.round(rate * 100)}%`;
@@ -8,6 +8,48 @@ function pct(rate: number) {
 
 function usd(amount: number) {
   return `$${amount.toFixed(2)}`;
+}
+
+function ActivityChart({ data }: { data: DailyActivityPoint[] }) {
+  const maxVal = Math.max(1, ...data.map((d) => d.tasks + d.submissions));
+  return (
+    <div className="flex items-end gap-1 h-16">
+      {data.map((d) => {
+        const taskH = Math.round((d.tasks / maxVal) * 100);
+        const subH = Math.round((d.submissions / maxVal) * 100);
+        const label = d.date.slice(5); // "MM-DD"
+        return (
+          <div key={d.date} className="group flex flex-1 flex-col items-center gap-0.5 relative">
+            <div className="flex flex-col justify-end gap-px w-full" style={{ height: "52px" }}>
+              {d.submissions > 0 && (
+                <div
+                  className="w-full rounded-sm bg-teal-500/50"
+                  style={{ height: `${subH}%` }}
+                />
+              )}
+              {d.tasks > 0 && (
+                <div
+                  className="w-full rounded-sm bg-white/20"
+                  style={{ height: `${taskH}%` }}
+                />
+              )}
+              {d.tasks === 0 && d.submissions === 0 && (
+                <div className="w-full rounded-sm bg-white/5" style={{ height: "2px" }} />
+              )}
+            </div>
+            <span className="text-[9px] wf-muted tabular-nums">{label}</span>
+            {/* tooltip */}
+            <div className="pointer-events-none absolute bottom-8 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-10">
+              <div className="rounded-lg border border-[var(--border)] bg-[rgba(8,12,16,0.95)] px-2 py-1 text-[10px] whitespace-nowrap shadow-lg">
+                <div className="text-white/70">{d.date}</div>
+                <div className="text-white/90">{d.tasks} tasks · {d.submissions} submissions</div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function toneClass(tone: string) {
@@ -90,7 +132,28 @@ export default async function MetricsPage() {
         </div>
       </section>
 
-      {/* Row 2: Per-agent table */}
+      {/* Row 2: Daily activity chart */}
+      <section className="wf-panel rounded-3xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Activity</h2>
+            <p className="mt-0.5 text-sm wf-muted">Tasks and submissions · last 14 days</p>
+          </div>
+          <div className="flex items-center gap-3 text-xs wf-muted">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-2 w-2 rounded-sm bg-white/20" />
+              Tasks
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-2 w-2 rounded-sm bg-teal-500/50" />
+              Submissions
+            </span>
+          </div>
+        </div>
+        <ActivityChart data={metrics.dailyActivity} />
+      </section>
+
+      {/* Row 3: Per-agent table */}
       <section className="wf-panel rounded-3xl p-6">
         <h2 className="text-lg font-semibold tracking-tight">Per-agent performance</h2>
         <p className="mt-1 text-sm wf-muted">Last 90 days · submissions + delegated tasks</p>
@@ -175,6 +238,13 @@ export default async function MetricsPage() {
               </div>
               <div className="mt-0.5 text-[11px] wf-muted">Last 30 days</div>
             </div>
+            <div className="wf-soft rounded-2xl p-4">
+              <div className="text-xs wf-muted">Failed tasks</div>
+              <div className={`mt-1 text-2xl font-semibold tabular-nums ${metrics.failedTaskCount > 0 ? "text-rose-400" : ""}`}>
+                {metrics.failedTaskCount}
+              </div>
+              <div className="mt-0.5 text-[11px] wf-muted">Last 90 days</div>
+            </div>
           </div>
         </div>
 
@@ -202,6 +272,43 @@ export default async function MetricsPage() {
                 <div className="mt-0.5 text-xs text-rose-400/80">Red</div>
               </div>
             </div>
+          </div>
+
+          <div className="wf-panel rounded-3xl p-6">
+            <h2 className="text-lg font-semibold tracking-tight">Runner health</h2>
+            <p className="mt-0.5 text-sm wf-muted">Last 30 days</p>
+            {metrics.runnerJobStats.total === 0 ? (
+              <p className="mt-3 text-sm wf-muted">No runner jobs yet.</p>
+            ) : (
+              <div className="mt-3 space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="wf-muted">Total jobs</span>
+                  <span className="tabular-nums font-medium">{metrics.runnerJobStats.total}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="wf-muted">Succeeded</span>
+                  <span className="tabular-nums text-emerald-400">{metrics.runnerJobStats.succeeded}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="wf-muted">Failed</span>
+                  <span className={`tabular-nums ${metrics.runnerJobStats.failed > 0 ? "text-rose-400" : "wf-muted"}`}>
+                    {metrics.runnerJobStats.failed}
+                  </span>
+                </div>
+                <div className="pt-1">
+                  <div className="flex items-center justify-between text-xs wf-muted mb-1">
+                    <span>Success rate</span>
+                    <span>{pct(metrics.runnerJobStats.successRate)}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/8">
+                    <div
+                      className="h-1.5 rounded-full bg-emerald-500"
+                      style={{ width: `${Math.round(metrics.runnerJobStats.successRate * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="wf-panel rounded-3xl p-6">
