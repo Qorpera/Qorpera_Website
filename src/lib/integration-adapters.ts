@@ -757,8 +757,8 @@ async function runBrowserReadAdapter(instructions: string): Promise<AdapterStepR
       phase: "execute",
       status: okCount > 0 ? "ok" : "error",
       latencyMs: msSince(start),
-      inputSummary: `Read ${urls.length} URL(s) for browser research`,
-      outputSummary: okCount > 0 ? `Created browser research artifact from ${okCount}/${urls.length} URL(s).` : "Failed to read provided URLs.",
+      inputSummary: `Read ${urls.length} URL(s) via HTTP fallback (no browser service)`,
+      outputSummary: okCount > 0 ? `Plain HTTP fetch used (not a real browser). Read ${okCount}/${urls.length} URL(s).` : "Failed to read provided URLs.",
     },
     findings,
     actions: okCount
