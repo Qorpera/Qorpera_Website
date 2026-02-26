@@ -13,6 +13,7 @@ import {
 import {
   setSkillCredential,
   deleteSkillCredential,
+  migrateSkillEnvFileToDb,
 } from "@/lib/skill-credentials-store";
 
 export const runtime = "nodejs";
@@ -39,6 +40,8 @@ export async function GET(request: Request) {
   }
 
   if (view === "env") {
+    // One-time migration from legacy ~/.openclaw/skill-env.json on first load
+    await migrateSkillEnvFileToDb(userId).catch(() => {});
     const envVars = await getSkillEnvVarStatus(userId);
     return NextResponse.json({ envVars });
   }

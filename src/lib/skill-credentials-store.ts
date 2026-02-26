@@ -1,3 +1,6 @@
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import * as os from "node:os";
 import { prisma } from "@/lib/db";
 import { encryptSecret, decryptSecret } from "@/lib/crypto-secrets";
 
@@ -133,6 +136,81 @@ export async function getDecryptedSkillEnvVar(
   }
 
   return process.env[varName] ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// One-time migration from ~/.openclaw/skill-env.json → encrypted DB
+// ---------------------------------------------------------------------------
+
+function legacySkillEnvPath(): string {
+  return path.join(os.homedir(), ".openclaw", "skill-env.json");
+}
+
+function migratedSkillEnvPath(): string {
+  return path.join(os.homedir(), ".openclaw", "skill-env.migrated.json");
+}
+
+/**
+ * Migrate plaintext skill env vars from the old ~/.openclaw/skill-env.json
+ * file into the encrypted DB for the given user.
+ *
+ * - Only runs if the legacy file exists (not yet migrated)
+ * - Skips any vars the user has already set in the DB
+ * - Renames the file to skill-env.migrated.json when done (prevents re-run)
+ * - Safe to call on every request — exits immediately if nothing to do
+ */
+export async function migrateSkillEnvFileToDb(userId: string): Promise<{ migrated: number }> {
+  const legacyPath = legacySkillEnvPath();
+
+  // Fast exit: nothing to migrate if legacy file is gone
+  try {
+    await fs.access(legacyPath);
+  } catch {
+    return { migrated: 0 };
+  }
+
+  let legacy: Record<string, string> = {};
+  try {
+    const raw = await fs.readFile(legacyPath, "utf-8");
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+      legacy = parsed as Record<string, string>;
+    }
+  } catch {
+    // Unreadable/corrupt file — rename and bail
+    await fs.rename(legacyPath, migratedSkillEnvPath()).catch(() => {});
+    return { migrated: 0 };
+  }
+
+  const entries = Object.entries(legacy).filter(([, v]) => typeof v === "string" && v.length > 0);
+  if (entries.length === 0) {
+    await fs.rename(legacyPath, migratedSkillEnvPath()).catch(() => {});
+    return { migrated: 0 };
+  }
+
+  // Find which vars this user already has in the DB (don't overwrite)
+  const varNames = entries.map(([k]) => k);
+  const existing = await prisma.skillCredential.findMany({
+    where: { userId, varName: { in: varNames } },
+    select: { varName: true },
+  });
+  const alreadySet = new Set(existing.map((r) => r.varName));
+
+  let migrated = 0;
+  for (const [varName, value] of entries) {
+    if (alreadySet.has(varName)) continue;
+    try {
+      await setSkillCredential(userId, varName, value);
+      migrated++;
+    } catch {
+      // Non-fatal — continue with remaining keys
+    }
+  }
+
+  // Mark as done by renaming the file
+  await fs.rename(legacyPath, migratedSkillEnvPath()).catch(() => {});
+
+  return { migrated };
 }
 
 /**
