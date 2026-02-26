@@ -116,6 +116,66 @@ const PRODUCTS: ProductDef[] = [
       { envVar: "STRIPE_SUB_PRICE_PROJECT_MANAGER_MONTHLY", unitAmount: 2900, interval: "month", recurring: true },
     ],
   },
+  {
+    name: "Sales Rep Agent",
+    description: "Zygenic Sales Rep — prospecting + outreach + pipeline",
+    prices: [
+      { envVar: "STRIPE_PRICE_SALES_REP", unitAmount: 5900, recurring: false },
+      { envVar: "STRIPE_SUB_PRICE_SALES_REP_DAILY", unitAmount: 100, interval: "day", recurring: true },
+      { envVar: "STRIPE_SUB_PRICE_SALES_REP_WEEKLY", unitAmount: 500, interval: "week", recurring: true },
+      { envVar: "STRIPE_SUB_PRICE_SALES_REP_MONTHLY", unitAmount: 2900, interval: "month", recurring: true },
+    ],
+  },
+  {
+    name: "Customer Success Agent",
+    description: "Zygenic Customer Success — health monitoring + renewals + check-ins",
+    prices: [
+      { envVar: "STRIPE_PRICE_CUSTOMER_SUCCESS", unitAmount: 5900, recurring: false },
+      { envVar: "STRIPE_SUB_PRICE_CUSTOMER_SUCCESS_DAILY", unitAmount: 100, interval: "day", recurring: true },
+      { envVar: "STRIPE_SUB_PRICE_CUSTOMER_SUCCESS_WEEKLY", unitAmount: 500, interval: "week", recurring: true },
+      { envVar: "STRIPE_SUB_PRICE_CUSTOMER_SUCCESS_MONTHLY", unitAmount: 2900, interval: "month", recurring: true },
+    ],
+  },
+  {
+    name: "Marketing Coordinator Agent",
+    description: "Zygenic Marketing Coordinator — content + campaigns + performance",
+    prices: [
+      { envVar: "STRIPE_PRICE_MARKETING_COORDINATOR", unitAmount: 5900, recurring: false },
+      { envVar: "STRIPE_SUB_PRICE_MARKETING_COORDINATOR_DAILY", unitAmount: 100, interval: "day", recurring: true },
+      { envVar: "STRIPE_SUB_PRICE_MARKETING_COORDINATOR_WEEKLY", unitAmount: 500, interval: "week", recurring: true },
+      { envVar: "STRIPE_SUB_PRICE_MARKETING_COORDINATOR_MONTHLY", unitAmount: 2900, interval: "month", recurring: true },
+    ],
+  },
+  {
+    name: "Finance Analyst Agent",
+    description: "Zygenic Finance Analyst — reports + reconciliation + invoicing",
+    prices: [
+      { envVar: "STRIPE_PRICE_FINANCE_ANALYST", unitAmount: 6900, recurring: false },
+      { envVar: "STRIPE_SUB_PRICE_FINANCE_ANALYST_DAILY", unitAmount: 200, interval: "day", recurring: true },
+      { envVar: "STRIPE_SUB_PRICE_FINANCE_ANALYST_WEEKLY", unitAmount: 900, interval: "week", recurring: true },
+      { envVar: "STRIPE_SUB_PRICE_FINANCE_ANALYST_MONTHLY", unitAmount: 3900, interval: "month", recurring: true },
+    ],
+  },
+  {
+    name: "Operations Manager Agent",
+    description: "Zygenic Operations Manager — SOPs + vendor comms + process ops",
+    prices: [
+      { envVar: "STRIPE_PRICE_OPERATIONS_MANAGER", unitAmount: 5900, recurring: false },
+      { envVar: "STRIPE_SUB_PRICE_OPERATIONS_MANAGER_DAILY", unitAmount: 100, interval: "day", recurring: true },
+      { envVar: "STRIPE_SUB_PRICE_OPERATIONS_MANAGER_WEEKLY", unitAmount: 500, interval: "week", recurring: true },
+      { envVar: "STRIPE_SUB_PRICE_OPERATIONS_MANAGER_MONTHLY", unitAmount: 3200, interval: "month", recurring: true },
+    ],
+  },
+  {
+    name: "Executive Assistant Agent",
+    description: "Zygenic Executive Assistant — inbox + briefings + action tracking",
+    prices: [
+      { envVar: "STRIPE_PRICE_EXECUTIVE_ASSISTANT", unitAmount: 4900, recurring: false },
+      { envVar: "STRIPE_SUB_PRICE_EXECUTIVE_ASSISTANT_DAILY", unitAmount: 100, interval: "day", recurring: true },
+      { envVar: "STRIPE_SUB_PRICE_EXECUTIVE_ASSISTANT_WEEKLY", unitAmount: 500, interval: "week", recurring: true },
+      { envVar: "STRIPE_SUB_PRICE_EXECUTIVE_ASSISTANT_MONTHLY", unitAmount: 2500, interval: "month", recurring: true },
+    ],
+  },
 ];
 
 // ---------------------------------------------------------------------------
