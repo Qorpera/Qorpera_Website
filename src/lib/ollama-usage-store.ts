@@ -40,10 +40,10 @@ export async function getOllamaUsageThisMonth(userId: string) {
 
 // Pricing per 1M tokens (input / output) for newest flagship models as of early 2026
 export const CLOUD_PRICING = [
-  { label: "Gemini 2.0 Flash", inputPer1M: 0.10, outputPer1M: 0.40 },
-  { label: "GPT-4o",           inputPer1M: 2.50, outputPer1M: 10.00 },
-  { label: "Claude Sonnet 4.6", inputPer1M: 3.00, outputPer1M: 15.00 },
-  { label: "Claude Opus 4.6",  inputPer1M: 15.00, outputPer1M: 75.00 },
+  { label: "Gemini 3",          inputPer1M: 0.50,  outputPer1M: 2.00  },
+  { label: "GPT 5.2",           inputPer1M: 5.00,  outputPer1M: 20.00 },
+  { label: "Claude Sonnet 4.6", inputPer1M: 3.00,  outputPer1M: 15.00 },
+  { label: "Claude Opus 4.6",   inputPer1M: 15.00, outputPer1M: 75.00 },
 ] as const;
 
 export function estimateCloudCost(

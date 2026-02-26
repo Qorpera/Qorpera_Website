@@ -355,16 +355,15 @@ export default async function MetricsPage() {
             <>
               {/* Hero savings number */}
               {metrics.localAiUsage.cloudEquivalents.length > 0 && (() => {
-                const maxSaving = Math.max(...metrics.localAiUsage.cloudEquivalents.map((e) => e.usd));
-                const maxLabel = metrics.localAiUsage.cloudEquivalents.find((e) => e.usd === maxSaving)?.label ?? "";
+                const avgSaving = metrics.localAiUsage.cloudEquivalents.reduce((sum, e) => sum + e.usd, 0) / metrics.localAiUsage.cloudEquivalents.length;
                 return (
                   <div className="mt-6 flex flex-col items-start gap-1">
-                    <div className="text-sm font-medium text-white/50">You would have spent up to</div>
+                    <div className="text-sm font-medium text-white/50">Avg. est. cloud cost for these tokens</div>
                     <div className="text-7xl font-black tabular-nums tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-teal-300 via-emerald-300 to-cyan-400 drop-shadow-[0_0_40px_rgba(52,211,153,0.4)]">
-                      {usd(maxSaving)}
+                      {usd(avgSaving)}
                     </div>
                     <div className="text-base font-medium text-white/45">
-                      running these tokens through <span className="text-white/70">{maxLabel}</span> — you paid <span className="font-bold text-teal-300">$0.00</span>
+                      avg. across Gemini 3, GPT 5.2, Sonnet &amp; Opus 4.6 — you paid <span className="font-bold text-teal-300">$0.00</span>
                     </div>
                   </div>
                 );
