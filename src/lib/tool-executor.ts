@@ -196,8 +196,8 @@ async function handleDelegateTask(args: Record<string, unknown>, ctx: ToolExecut
   if (!toAgent || !title || !instructions) {
     return "Error: to_agent, title, and instructions are all required";
   }
-  if (!["ASSISTANT", "PROJECT_MANAGER", "CHIEF_ADVISOR"].includes(toAgent)) {
-    return `Error: Invalid agent target "${toAgent}". Use ASSISTANT or PROJECT_MANAGER.`;
+  if (!["ASSISTANT", "CHIEF_ADVISOR", "SALES_REP", "CUSTOMER_SUCCESS", "MARKETING_COORDINATOR", "FINANCE_ANALYST", "OPERATIONS_MANAGER", "EXECUTIVE_ASSISTANT"].includes(toAgent)) {
+    return `Error: Invalid agent target "${toAgent}". Use ASSISTANT or another valid agent kind.`;
   }
 
   try {
@@ -205,7 +205,7 @@ async function handleDelegateTask(args: Record<string, unknown>, ctx: ToolExecut
     const { createDelegatedTask } = await import("@/lib/orchestration-store");
     const task = await createDelegatedTask(ctx.userId, {
       fromAgent: ctx.agentKind,
-      toAgentTarget: toAgent as "ASSISTANT" | "PROJECT_MANAGER" | "CHIEF_ADVISOR",
+      toAgentTarget: toAgent as "ASSISTANT" | "CHIEF_ADVISOR",
       title,
       instructions,
       triggerSource: "DELEGATED",

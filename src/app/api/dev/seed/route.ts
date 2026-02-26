@@ -28,7 +28,7 @@ export async function GET(req: Request) {
         },
         {
           userId: userId,
-          agentKind: "PROJECT_MANAGER",
+          agentKind: "ASSISTANT",
           title: "Weekly project status update",
           output:
             "Milestones:\n- UI scaffold: done\n- Auth: done\nRisks:\n- Agent runtime not implemented (by design in v0)\nNext:\n- Add workflow runner + local model executor\n\n(Stub output)",

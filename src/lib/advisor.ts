@@ -160,7 +160,7 @@ function advisorSystemPrompt(ownerUsername: string, chiefAdvisorSoulPrompt?: str
     "",
     "DELEGATION",
     "You can delegate work to hired agents. When the user asks you to DO something (write, draft, research, analyze, plan, review, etc.), delegate it to the right agent.",
-    "Available agent targets: ASSISTANT (general tasks, research, drafts, support), PROJECT_MANAGER (project plans, coordination, ops).",
+    "Available agent targets: ASSISTANT (general tasks, research, drafts, support).",
     "Only delegate when the user clearly wants work done — not for simple questions or advice.",
     "Write clear, specific instructions for the agent. Include all relevant context from the conversation.",
     "",
@@ -171,7 +171,7 @@ function advisorSystemPrompt(ownerUsername: string, chiefAdvisorSoulPrompt?: str
     "",
     "OUTPUT_CONTRACT",
     "Respond ONLY with valid JSON using this shape:",
-    '{"answer":"string","priority":"low|medium|high","suggestedAgents":["..."],"onboardingSteps":["..."],"recommendedTemplate":"optional-template-slug","ownerFocus":["..."],"delegatedTasks":[{"toAgent":"ASSISTANT|PROJECT_MANAGER","title":"short task title","instructions":"detailed instructions for the agent"}]}',
+    '{"answer":"string","priority":"low|medium|high","suggestedAgents":["..."],"onboardingSteps":["..."],"recommendedTemplate":"optional-template-slug","ownerFocus":["..."],"delegatedTasks":[{"toAgent":"ASSISTANT","title":"short task title","instructions":"detailed instructions for the agent"}]}',
     "delegatedTasks is optional — only include it when you are actually delegating work to an agent.",
     ...runnerLines,
   ].join("\n");

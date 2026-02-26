@@ -154,8 +154,8 @@ export default async function AgentsPage() {
                 <div className="mt-2.5">
                   <div className="mb-1 text-[10px] uppercase tracking-[0.14em] wf-muted">AI model</div>
                   <ModelRouteSelector
-                    target={a.kind === "ASSISTANT" ? "ASSISTANT" : "PROJECT_MANAGER" as "ASSISTANT" | "PROJECT_MANAGER"}
-                    initial={a.kind === "ASSISTANT" ? routes.ASSISTANT : routes.PROJECT_MANAGER}
+                    target="ASSISTANT"
+                    initial={routes.ASSISTANT}
                     catalog={modelCatalog}
                     compact
                   />

@@ -1,7 +1,7 @@
 import { ModelProvider } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
-export type ModelRouteTarget = "ADVISOR" | "ASSISTANT" | "PROJECT_MANAGER";
+export type ModelRouteTarget = "ADVISOR" | "ASSISTANT";
 export type ModelRouteProvider = "OPENAI" | "OLLAMA" | "ANTHROPIC" | "GOOGLE";
 
 export type ModelRoute = {
@@ -11,7 +11,7 @@ export type ModelRoute = {
   updatedAt: string | null;
 };
 
-const TARGETS: ModelRouteTarget[] = ["ADVISOR", "ASSISTANT", "PROJECT_MANAGER"];
+const TARGETS: ModelRouteTarget[] = ["ADVISOR", "ASSISTANT"];
 
 const DEFAULTS: Record<ModelRouteTarget, ModelRoute> = {
   ADVISOR: {
@@ -22,12 +22,6 @@ const DEFAULTS: Record<ModelRouteTarget, ModelRoute> = {
   },
   ASSISTANT: {
     target: "ASSISTANT",
-    provider: "OPENAI",
-    modelName: "gpt-4.1-mini",
-    updatedAt: null,
-  },
-  PROJECT_MANAGER: {
-    target: "PROJECT_MANAGER",
     provider: "OPENAI",
     modelName: "gpt-4.1-mini",
     updatedAt: null,
@@ -54,7 +48,6 @@ export async function getModelRoutes(userId: string): Promise<Record<ModelRouteT
   return {
     ADVISOR: (byTarget.get("ADVISOR") as ModelRoute | undefined) ?? DEFAULTS.ADVISOR,
     ASSISTANT: (byTarget.get("ASSISTANT") as ModelRoute | undefined) ?? DEFAULTS.ASSISTANT,
-    PROJECT_MANAGER: (byTarget.get("PROJECT_MANAGER") as ModelRoute | undefined) ?? DEFAULTS.PROJECT_MANAGER,
   };
 }
 
@@ -87,7 +80,6 @@ export async function setModelRoute(
 export type AgentKindRouteKey =
   | "CHIEF_ADVISOR"
   | "ASSISTANT"
-  | "PROJECT_MANAGER"
   | "SALES_REP"
   | "CUSTOMER_SUCCESS"
   | "MARKETING_COORDINATOR"
@@ -98,12 +90,11 @@ export type AgentKindRouteKey =
 const AGENT_KIND_TO_TARGET: Record<AgentKindRouteKey, ModelRouteTarget> = {
   CHIEF_ADVISOR: "ADVISOR",
   ASSISTANT: "ASSISTANT",
-  PROJECT_MANAGER: "PROJECT_MANAGER",
   SALES_REP: "ASSISTANT",
   CUSTOMER_SUCCESS: "ASSISTANT",
-  MARKETING_COORDINATOR: "PROJECT_MANAGER",
-  FINANCE_ANALYST: "PROJECT_MANAGER",
-  OPERATIONS_MANAGER: "PROJECT_MANAGER",
+  MARKETING_COORDINATOR: "ASSISTANT",
+  FINANCE_ANALYST: "ASSISTANT",
+  OPERATIONS_MANAGER: "ASSISTANT",
   EXECUTIVE_ASSISTANT: "ASSISTANT",
 };
 

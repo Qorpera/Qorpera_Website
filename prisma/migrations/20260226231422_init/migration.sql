@@ -2,7 +2,7 @@
 CREATE TYPE "RunSchedule" AS ENUM ('DAILY', 'WEEKLY', 'MONTHLY');
 
 -- CreateEnum
-CREATE TYPE "AgentKind" AS ENUM ('ASSISTANT', 'PROJECT_MANAGER', 'SALES_REP', 'CUSTOMER_SUCCESS', 'MARKETING_COORDINATOR', 'FINANCE_ANALYST', 'OPERATIONS_MANAGER', 'EXECUTIVE_ASSISTANT');
+CREATE TYPE "AgentKind" AS ENUM ('ASSISTANT', 'SALES_REP', 'CUSTOMER_SUCCESS', 'MARKETING_COORDINATOR', 'FINANCE_ANALYST', 'OPERATIONS_MANAGER', 'EXECUTIVE_ASSISTANT');
 
 -- CreateEnum
 CREATE TYPE "AgentStatus" AS ENUM ('IDLE', 'WORKING', 'OFFLINE');
@@ -674,6 +674,32 @@ CREATE TABLE "OllamaUsage" (
     CONSTRAINT "OllamaUsage_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "AgentMemory" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "agentKind" TEXT NOT NULL,
+    "indexContent" TEXT NOT NULL DEFAULT '',
+    "entryCount" INTEGER NOT NULL DEFAULT 0,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "AgentMemory_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AgentMemoryEntry" (
+    "id" TEXT NOT NULL,
+    "agentMemoryId" TEXT NOT NULL,
+    "topic" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "importance" INTEGER NOT NULL DEFAULT 5,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "AgentMemoryEntry_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -860,6 +886,15 @@ CREATE INDEX "OllamaUsage_userId_idx" ON "OllamaUsage"("userId");
 -- CreateIndex
 CREATE UNIQUE INDEX "OllamaUsage_userId_monthKey_key" ON "OllamaUsage"("userId", "monthKey");
 
+-- CreateIndex
+CREATE INDEX "AgentMemory_userId_idx" ON "AgentMemory"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AgentMemory_userId_agentKind_key" ON "AgentMemory"("userId", "agentKind");
+
+-- CreateIndex
+CREATE INDEX "AgentMemoryEntry_agentMemoryId_importance_idx" ON "AgentMemoryEntry"("agentMemoryId", "importance");
+
 -- AddForeignKey
 ALTER TABLE "HiredJob" ADD CONSTRAINT "HiredJob_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -964,3 +999,9 @@ ALTER TABLE "AgentKindToolSet" ADD CONSTRAINT "AgentKindToolSet_toolDefinitionId
 
 -- AddForeignKey
 ALTER TABLE "OllamaUsage" ADD CONSTRAINT "OllamaUsage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AgentMemory" ADD CONSTRAINT "AgentMemory_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AgentMemoryEntry" ADD CONSTRAINT "AgentMemoryEntry_agentMemoryId_fkey" FOREIGN KEY ("agentMemoryId") REFERENCES "AgentMemory"("id") ON DELETE CASCADE ON UPDATE CASCADE;

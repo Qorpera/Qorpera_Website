@@ -188,7 +188,7 @@ describe("Full Pipeline Integration", () => {
 
     const result = await callAgentLlm({
       userId: "user-1",
-      agentKind: "PROJECT_MANAGER",
+      agentKind: "ASSISTANT",
       systemPrompt: "System prompt",
       userMessage: "Task message",
     });

@@ -1,6 +1,5 @@
 export type AgentKindKey =
   | "ASSISTANT"
-  | "PROJECT_MANAGER"
   | "SALES_REP"
   | "CUSTOMER_SUCCESS"
   | "MARKETING_COORDINATOR"
@@ -97,35 +96,6 @@ export const UI_AGENTS: UiAgent[] = [
       evals: [
         { name: "Refund policy routing", env: "staging", score: "92%", lastRun: "Today 08:10" },
         { name: "Tone + de-escalation", env: "production", score: "89%", lastRun: "Yesterday" },
-      ],
-    },
-  },
-  {
-    kind: "PROJECT_MANAGER",
-    name: "Ilan",
-    username: "ilan",
-    role: "Analyst",
-    tone: "amber",
-    figureVariant: "manager",
-    status: "Busy",
-    autonomy: "Execute with approval",
-    capabilities: ["Build KPI summaries", "Investigate anomalies", "Prepare stakeholder updates"],
-    permissions: ["Can read BI dashboards", "Can export CSV drafts", "Cannot send external reports automatically"],
-    knowledgeSources: ["Looker dashboards", "Finance spreadsheet", "Quarterly goals doc"],
-    wins: ["Shipped weekly KPI report before 8am for 3 consecutive weeks", "Flagged conversion drop 6 hours earlier"],
-    failures: ["Used stale campaign attribution model in one draft"],
-    dev: {
-      promptVersion: "analyst@v9",
-      tools: ["SQL Runner", "Spreadsheet Writer", "Slide Draft"],
-      connectors: ["BigQuery", "Google Sheets", "Slack"],
-      logs: [
-        { time: "10:03", event: "Run KPI query", latencyMs: 2440, status: "ok" },
-        { time: "10:04", event: "Generate anomaly notes", latencyMs: 980, status: "ok" },
-        { time: "10:07", event: "Export xlsx preview", latencyMs: 1690, status: "ok" },
-      ],
-      evals: [
-        { name: "Metric definition adherence", env: "staging", score: "95%", lastRun: "Today 07:42" },
-        { name: "Narrative consistency", env: "production", score: "87%", lastRun: "Yesterday" },
       ],
     },
   },

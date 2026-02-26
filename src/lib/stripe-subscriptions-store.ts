@@ -73,7 +73,7 @@ export async function upsertStripeSubscriptionFromWebhook(sub: StripeSubscriptio
 
   // When subscription is fully canceled, disable the matching HiredJob
   if (row.status === "canceled" && row.agentKind) {
-    const kind = row.agentKind as "ASSISTANT" | "PROJECT_MANAGER";
+    const kind = row.agentKind as "ASSISTANT";
     await prisma.hiredJob.updateMany({
       where: { userId, agentKind: kind, enabled: true },
       data: { enabled: false },

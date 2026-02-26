@@ -12,7 +12,7 @@ export const SignupBody = z.object({
 });
 
 // Agents
-const AgentTarget = z.enum(["CHIEF_ADVISOR", "ASSISTANT", "PROJECT_MANAGER"]);
+const AgentTarget = z.enum(["CHIEF_ADVISOR", "ASSISTANT"]);
 
 export const UpsertAutomationConfigBody = z.object({
   agentTarget: AgentTarget,
@@ -57,7 +57,7 @@ export const ApproveExecuteBody = z.object({
 });
 
 export const HireBody = z.object({
-  agentKind: z.enum(["ASSISTANT", "PROJECT_MANAGER"]),
+  agentKind: z.enum(["ASSISTANT"]),
   schedule: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).optional().default("MONTHLY"),
   mode: z.enum(["HIRE", "LOCAL_DEMO"]).optional().default("HIRE"),
 });
@@ -88,7 +88,7 @@ export const CloudConnectorBody = z.object({
 
 // Models
 export const SetModelRouteBody = z.object({
-  target: z.enum(["ADVISOR", "ASSISTANT", "PROJECT_MANAGER"]),
+  target: z.enum(["ADVISOR", "ASSISTANT"]),
   provider: z.enum(["OPENAI", "OLLAMA", "ANTHROPIC", "GOOGLE"]).optional().default("OPENAI"),
   modelName: z.string().max(120).optional(),
 });

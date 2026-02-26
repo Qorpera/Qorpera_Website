@@ -97,8 +97,8 @@ type ProductDef = {
 
 const PRODUCTS: ProductDef[] = [
   {
-    name: "Assistant Agent",
-    description: "Zygenic Assistant — support + operations execution",
+    name: "Support Team",
+    description: "Zygenic Support Team — triage + drafts + customer communications",
     prices: [
       { envVar: "STRIPE_PRICE_ASSISTANT", unitAmount: 4900, recurring: false },
       { envVar: "STRIPE_SUB_PRICE_ASSISTANT_DAILY", unitAmount: 100, interval: "day", recurring: true },
@@ -107,18 +107,8 @@ const PRODUCTS: ProductDef[] = [
     ],
   },
   {
-    name: "Project Manager Agent",
-    description: "Zygenic Project Manager — planning + tracking + reporting",
-    prices: [
-      { envVar: "STRIPE_PRICE_PROJECT_MANAGER", unitAmount: 7900, recurring: false },
-      { envVar: "STRIPE_SUB_PRICE_PROJECT_MANAGER_DAILY", unitAmount: 200, interval: "day", recurring: true },
-      { envVar: "STRIPE_SUB_PRICE_PROJECT_MANAGER_WEEKLY", unitAmount: 900, interval: "week", recurring: true },
-      { envVar: "STRIPE_SUB_PRICE_PROJECT_MANAGER_MONTHLY", unitAmount: 2900, interval: "month", recurring: true },
-    ],
-  },
-  {
-    name: "Sales Rep Agent",
-    description: "Zygenic Sales Rep — prospecting + outreach + pipeline",
+    name: "Sales Team",
+    description: "Zygenic Sales Team — prospecting + outreach + pipeline",
     prices: [
       { envVar: "STRIPE_PRICE_SALES_REP", unitAmount: 5900, recurring: false },
       { envVar: "STRIPE_SUB_PRICE_SALES_REP_DAILY", unitAmount: 100, interval: "day", recurring: true },
@@ -127,8 +117,8 @@ const PRODUCTS: ProductDef[] = [
     ],
   },
   {
-    name: "Customer Success Agent",
-    description: "Zygenic Customer Success — health monitoring + renewals + check-ins",
+    name: "Customer Success Team",
+    description: "Zygenic Customer Success Team — health monitoring + renewals + check-ins",
     prices: [
       { envVar: "STRIPE_PRICE_CUSTOMER_SUCCESS", unitAmount: 5900, recurring: false },
       { envVar: "STRIPE_SUB_PRICE_CUSTOMER_SUCCESS_DAILY", unitAmount: 100, interval: "day", recurring: true },
@@ -137,8 +127,8 @@ const PRODUCTS: ProductDef[] = [
     ],
   },
   {
-    name: "Marketing Coordinator Agent",
-    description: "Zygenic Marketing Coordinator — content + campaigns + performance",
+    name: "Marketing Team",
+    description: "Zygenic Marketing Team — content + campaigns + performance",
     prices: [
       { envVar: "STRIPE_PRICE_MARKETING_COORDINATOR", unitAmount: 5900, recurring: false },
       { envVar: "STRIPE_SUB_PRICE_MARKETING_COORDINATOR_DAILY", unitAmount: 100, interval: "day", recurring: true },
@@ -147,8 +137,8 @@ const PRODUCTS: ProductDef[] = [
     ],
   },
   {
-    name: "Finance Analyst Agent",
-    description: "Zygenic Finance Analyst — reports + reconciliation + invoicing",
+    name: "Finance Team",
+    description: "Zygenic Finance Team — reports + reconciliation + invoicing",
     prices: [
       { envVar: "STRIPE_PRICE_FINANCE_ANALYST", unitAmount: 6900, recurring: false },
       { envVar: "STRIPE_SUB_PRICE_FINANCE_ANALYST_DAILY", unitAmount: 200, interval: "day", recurring: true },
@@ -157,8 +147,8 @@ const PRODUCTS: ProductDef[] = [
     ],
   },
   {
-    name: "Operations Manager Agent",
-    description: "Zygenic Operations Manager — SOPs + vendor comms + process ops",
+    name: "Operations Team",
+    description: "Zygenic Operations Team — SOPs + vendor comms + process ops",
     prices: [
       { envVar: "STRIPE_PRICE_OPERATIONS_MANAGER", unitAmount: 5900, recurring: false },
       { envVar: "STRIPE_SUB_PRICE_OPERATIONS_MANAGER_DAILY", unitAmount: 100, interval: "day", recurring: true },
@@ -167,8 +157,8 @@ const PRODUCTS: ProductDef[] = [
     ],
   },
   {
-    name: "Executive Assistant Agent",
-    description: "Zygenic Executive Assistant — inbox + briefings + action tracking",
+    name: "Executive Support Team",
+    description: "Zygenic Executive Support Team — inbox + briefings + action tracking",
     prices: [
       { envVar: "STRIPE_PRICE_EXECUTIVE_ASSISTANT", unitAmount: 4900, recurring: false },
       { envVar: "STRIPE_SUB_PRICE_EXECUTIVE_ASSISTANT_DAILY", unitAmount: 100, interval: "day", recurring: true },

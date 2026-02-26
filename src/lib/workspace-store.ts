@@ -408,12 +408,11 @@ export async function getRunsForUser(userId: string): Promise<DbRun[]> {
 
 export async function createRunForProject(userId: string, projectId?: string, name?: string) {
   const project = projectId ? await prisma.project.findFirst({ where: { id: projectId, userId } }) : null;
-  const [companySoul, prefs, connectors, assistantSoul, managerSoul] = await Promise.all([
+  const [companySoul, prefs, connectors, assistantSoul] = await Promise.all([
     getCompanySoul(userId),
     getAppPreferences(userId),
     getCloudConnectors(userId),
     getAgentSoulPackForUser(userId, "ASSISTANT"),
-    getAgentSoulPackForUser(userId, "PROJECT_MANAGER"),
   ]);
 
   const soulSnapshot: RunSoulSnapshot = {
@@ -425,7 +424,7 @@ export async function createRunForProject(userId: string, projectId?: string, na
       name: project?.name ?? null,
     },
     companySoul: companySoulForAdvisor(companySoul),
-    agentSoulPacks: [assistantSoul, managerSoul]
+    agentSoulPacks: [assistantSoul]
       .filter((p): p is NonNullable<typeof p> => Boolean(p))
       .map((p) => ({
         kind: p.kind,

@@ -14,7 +14,6 @@ import { getAgentMemoryIndex, ingestTaskCompletion } from "@/lib/agent-memory-st
 export type AgentTarget =
   | "CHIEF_ADVISOR"
   | "ASSISTANT"
-  | "PROJECT_MANAGER"
   | "SALES_REP"
   | "CUSTOMER_SUCCESS"
   | "MARKETING_COORDINATOR"
@@ -105,24 +104,6 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     allowAgentDelegation: true,
     integrations: ["email", "crm", "browser", "files"],
     notes: "Handles support/admin work and wakes on delegated queue items.",
-    updatedAt: null,
-  },
-  PROJECT_MANAGER: {
-    agentTarget: "PROJECT_MANAGER",
-    triggerMode: "SCHEDULED",
-    wakeOnDelegation: true,
-    scheduleEnabled: true,
-    dailyTimes: ["08:30", "16:30"],
-    timezone: "UTC",
-    runContinuously: false,
-    maxLoopIterations: 10,
-    maxAgentCallsPerRun: 10,
-    maxToolRetries: 2,
-    maxRuntimeSeconds: 300,
-    requireApprovalForExternalActions: true,
-    allowAgentDelegation: true,
-    integrations: ["sheets", "docs", "browser", "files"],
-    notes: "Runs reporting/check-ins on schedule and can receive delegated planning tasks.",
     updatedAt: null,
   },
   SALES_REP: {
@@ -365,8 +346,6 @@ export async function getAllAgentAutomationConfigs(userId: string) {
   return {
     CHIEF_ADVISOR: (byTarget.get("CHIEF_ADVISOR") as AgentAutomationConfigView | undefined) ?? DEFAULT_CONFIGS.CHIEF_ADVISOR,
     ASSISTANT: (byTarget.get("ASSISTANT") as AgentAutomationConfigView | undefined) ?? DEFAULT_CONFIGS.ASSISTANT,
-    PROJECT_MANAGER:
-      (byTarget.get("PROJECT_MANAGER") as AgentAutomationConfigView | undefined) ?? DEFAULT_CONFIGS.PROJECT_MANAGER,
   };
 }
 
@@ -1171,11 +1150,9 @@ export async function executeDelegatedTask(userId: string, taskId: string, onEve
     if (needsReview) {
       const agentLabel =
         row.toAgentTarget === "ASSISTANT" ? "Mara" :
-        row.toAgentTarget === "PROJECT_MANAGER" ? "Ilan" :
         row.toAgentTarget.replaceAll("_", " ");
       const dept =
-        row.toAgentTarget === "ASSISTANT" ? "Support" :
-        row.toAgentTarget === "PROJECT_MANAGER" ? "Operations" : "General";
+        row.toAgentTarget === "ASSISTANT" ? "Support" : "General";
       const itemType = approvalRequired ? "approval" : "draft";
       const itemSummary = (digest.split("\n")[0] || row.title).slice(0, 240);
       await tx.inboxItem.create({

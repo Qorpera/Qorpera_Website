@@ -104,7 +104,7 @@ describe("createDelegatedTask", () => {
 
     await expect(
       createDelegatedTask("user-1", {
-        toAgentTarget: "PROJECT_MANAGER",
+        toAgentTarget: "ASSISTANT",
         title: "Test",
         instructions: "Do something",
       }),
