@@ -5,8 +5,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum RunSchedule {
@@ -196,6 +197,7 @@ model User {
   externalConnectors ExternalConnector[]
   skillCredentials   SkillCredential[]
   ollamaUsage        OllamaUsage[]
+  agentMemories      AgentMemory[]
 }
 
 model HiredJob {
@@ -849,4 +851,34 @@ model OllamaUsage {
 
   @@unique([userId, monthKey])
   @@index([userId])
+}
+
+model AgentMemory {
+  id           String   @id @default(cuid())
+  userId       String
+  agentKind    String
+  indexContent String   @default("")
+  entryCount   Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries AgentMemoryEntry[]
+
+  @@unique([userId, agentKind])
+  @@index([userId])
+}
+
+model AgentMemoryEntry {
+  id            String   @id @default(cuid())
+  agentMemoryId String
+  topic         String
+  title         String
+  content       String
+  importance    Int      @default(5)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  agentMemory AgentMemory @relation(fields: [agentMemoryId], references: [id], onDelete: Cascade)
+
+  @@index([agentMemoryId, importance])
 }
