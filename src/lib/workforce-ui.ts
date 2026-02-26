@@ -1,3 +1,5 @@
+import { prisma } from "@/lib/db";
+
 export type AgentKindKey =
   | "ASSISTANT"
   | "SALES_REP"
@@ -410,40 +412,111 @@ export const TEMPLATE_GALLERY: ProjectTemplate[] = [
   },
 ];
 
-export const DEPARTMENTS = [
-  {
-    id: "support",
-    name: "Support",
-    pos: { x: 4, y: 8, w: 44, h: 34 },
-    inboxCount: 3,
-    activeWork: "Delay shipment outreach batch (12 customers)",
-    agents: ["Mara"],
-  },
-  {
-    id: "sales",
-    name: "Sales",
-    pos: { x: 52, y: 8, w: 44, h: 34 },
-    inboxCount: 2,
-    activeWork: "Campaign recap draft + prospect enrichment retry",
-    agents: ["Ilan"],
-  },
-  {
-    id: "finance",
-    name: "Finance",
-    pos: { x: 4, y: 48, w: 44, h: 28 },
-    inboxCount: 1,
-    activeWork: "Contract redlines package for legal review",
-    agents: ["Ilan"],
-  },
-  {
-    id: "dev",
-    name: "Dev",
-    pos: { x: 52, y: 48, w: 44, h: 28 },
-    inboxCount: 1,
-    activeWork: "Connector reliability patch rollout",
-    agents: ["Mara", "Ilan"],
-  },
-];
+/* ── Live agent status (DB-backed) ─────────────────────────── */
+
+export type AgentLiveStatus = {
+  kind: AgentKindKey;
+  name: string;
+  role: string;
+  tone: AgentTone;
+  figureVariant: AgentFigureVariant;
+  status: "working" | "review" | "idle";
+  activeTask: { title: string; startedAt: string } | null;
+  queuedTasks: number;
+  inboxOpen: number;
+  recentSubmissions: number;
+  acceptanceRate: number;
+  memoryEntries: number;
+};
+
+export async function getAgentStatusSummary(
+  userId: string,
+): Promise<AgentLiveStatus[]> {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const [tasks, inboxItems, submissions, memories] = await Promise.all([
+    prisma.delegatedTask.findMany({
+      where: { userId, status: { in: ["QUEUED", "RUNNING", "REVIEW"] } },
+      select: {
+        toAgentTarget: true,
+        status: true,
+        title: true,
+        createdAt: true,
+      },
+    }),
+    prisma.inboxItem.findMany({
+      where: { userId, state: "OPEN" },
+      select: { owner: true },
+    }),
+    prisma.submission.findMany({
+      where: { userId },
+      select: { agentKind: true, status: true, createdAt: true },
+    }),
+    prisma.agentMemory.findMany({
+      where: { userId },
+      select: { agentKind: true, entryCount: true },
+    }),
+  ]);
+
+  // Map inbox-item owner strings back to agent kinds.
+  // Owner is stored as the agent name ("Mara") for ASSISTANT,
+  // or the kind with spaces ("SALES REP") for others.
+  const ownerToKind = new Map<string, AgentKindKey>();
+  for (const agent of UI_AGENTS) {
+    ownerToKind.set(agent.name, agent.kind);
+    ownerToKind.set(agent.kind.replaceAll("_", " "), agent.kind);
+  }
+
+  return UI_AGENTS.map((agent) => {
+    const agentTasks = tasks.filter((t) => t.toAgentTarget === agent.kind);
+    const runningTask = agentTasks.find((t) => t.status === "RUNNING");
+    const reviewTasks = agentTasks.filter((t) => t.status === "REVIEW");
+    const queuedCount = agentTasks.filter((t) => t.status === "QUEUED").length;
+
+    const inboxOpen = inboxItems.filter(
+      (i) => ownerToKind.get(i.owner) === agent.kind,
+    ).length;
+
+    const agentSubs = submissions.filter((s) => s.agentKind === agent.kind);
+    const recentSubs = agentSubs.filter((s) => s.createdAt >= sevenDaysAgo);
+    const acceptedCount = agentSubs.filter(
+      (s) => s.status === "ACCEPTED",
+    ).length;
+
+    const memory = memories.find((m) => m.agentKind === agent.kind);
+
+    let status: AgentLiveStatus["status"] = "idle";
+    if (runningTask) {
+      status = "working";
+    } else if (reviewTasks.length > 0 || inboxOpen > 0) {
+      status = "review";
+    }
+
+    return {
+      kind: agent.kind,
+      name: agent.name,
+      role: agent.role,
+      tone: agent.tone,
+      figureVariant: agent.figureVariant,
+      status,
+      activeTask: runningTask
+        ? {
+            title: runningTask.title,
+            startedAt: runningTask.createdAt.toISOString(),
+          }
+        : null,
+      queuedTasks: queuedCount,
+      inboxOpen,
+      recentSubmissions: recentSubs.length,
+      acceptanceRate:
+        agentSubs.length > 0
+          ? Math.round((acceptedCount / agentSubs.length) * 100)
+          : 0,
+      memoryEntries: memory?.entryCount ?? 0,
+    };
+  });
+}
 
 export const REQUEST_PATTERN = {
   request: "Reduce support backlog while keeping customer messaging approved.",
