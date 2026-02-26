@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { approveRunnerJob, cancelRunnerJob, listRunnersForUser } from "@/lib/runner-control-plane";
 import { prisma } from "@/lib/db";
+import { verifySameOrigin } from "@/lib/request-security";
 
 export async function GET() {
   const session = await getSession();
@@ -38,6 +39,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const sameOrigin = verifySameOrigin(req);
+  if (!sameOrigin.ok) return sameOrigin.response;
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

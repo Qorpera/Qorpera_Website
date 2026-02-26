@@ -20,7 +20,7 @@ export async function appendMemoryEntry(
     where: { userId_agentKind: { userId, agentKind } },
     create: { userId, agentKind, indexContent: "", entryCount: 0 },
     update: {},
-    select: { id: true, entryCount: true },
+    select: { id: true },
   });
 
   await prisma.agentMemoryEntry.create({
@@ -33,15 +33,16 @@ export async function appendMemoryEntry(
     },
   });
 
-  const newCount = mem.entryCount + 1;
+  // Atomic increment — only the caller whose increment crosses the threshold compacts.
+  // This prevents two concurrent appends from both triggering compaction.
+  const updated = await prisma.agentMemory.update({
+    where: { id: mem.id },
+    data: { entryCount: { increment: 1 } },
+    select: { entryCount: true },
+  });
 
-  if (newCount >= MAX_ENTRIES) {
+  if (updated.entryCount >= MAX_ENTRIES) {
     await compactMemoryIndex(mem.id);
-  } else {
-    await prisma.agentMemory.update({
-      where: { id: mem.id },
-      data: { entryCount: newCount },
-    });
   }
 }
 

@@ -23,6 +23,57 @@ export type AgenticLoopResult = {
   approvalRequired: Array<{ toolName: string; details: string; argsJson: string }>;
 };
 
+/**
+ * Estimate token count from messages. Rough heuristic: 1 token ≈ 4 chars.
+ * Only counts user-visible content, not structural overhead.
+ */
+function estimateMessageTokens(messages: ConversationMessage[]): number {
+  let chars = 0;
+  for (const m of messages) {
+    if ("content" in m && typeof m.content === "string") {
+      chars += m.content.length;
+    } else if (m.role === "assistant_tool_calls") {
+      chars += m.tool_calls.reduce((sum, c) => sum + c.arguments.length + c.name.length, 0);
+    } else if (m.role === "tool_result") {
+      chars += m.output.length;
+    }
+  }
+  return Math.ceil(chars / 4);
+}
+
+/**
+ * Trim messages to stay under a token budget. Keeps system + user messages
+ * and the most recent turns. Drops oldest tool_result messages first (bulkiest),
+ * then oldest assistant messages.
+ */
+const MAX_HISTORY_TOKENS = 24000;
+
+function trimMessageHistory(messages: ConversationMessage[]): ConversationMessage[] {
+  if (estimateMessageTokens(messages) <= MAX_HISTORY_TOKENS) return messages;
+
+  // Always keep system (index 0) and user (index 1)
+  const pinned = messages.slice(0, 2);
+  const rest = messages.slice(2);
+
+  // Drop oldest tool_result outputs first by truncating their content
+  for (let i = 0; i < rest.length; i++) {
+    const msg = rest[i];
+    if (msg.role === "tool_result" && msg.output.length > 200) {
+      rest[i] = { ...msg, output: msg.output.slice(0, 200) + "\n[trimmed]" };
+    }
+    if (estimateMessageTokens([...pinned, ...rest]) <= MAX_HISTORY_TOKENS) {
+      return [...pinned, ...rest];
+    }
+  }
+
+  // Still over budget — drop oldest turn pairs entirely, keep most recent
+  while (rest.length > 4 && estimateMessageTokens([...pinned, ...rest]) > MAX_HISTORY_TOKENS) {
+    rest.shift();
+  }
+
+  return [...pinned, ...rest];
+}
+
 export async function runAgenticLoop(input: {
   userId: string;
   delegatedTaskId: string;
@@ -228,6 +279,13 @@ export async function runAgenticLoop(input: {
       inputSummary: `Turn ${turn}: executed ${calls.length} tool(s)`,
       outputSummary: `Parallel execution completed in ${Date.now() - execStart}ms`,
     });
+
+    // Trim history to prevent context window overflow on long-running agents
+    const trimmed = trimMessageHistory(messages);
+    if (trimmed.length < messages.length) {
+      messages.length = 0;
+      messages.push(...trimmed);
+    }
   }
 
   // Exhausted max turns
