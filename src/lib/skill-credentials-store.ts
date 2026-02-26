@@ -34,6 +34,16 @@ export async function setSkillCredential(
     create: { userId, varName, encryptedKey, keyLast4 },
     update: { encryptedKey, keyLast4 },
   });
+
+  await prisma.auditLog.create({
+    data: {
+      userId,
+      scope: "SKILL_CREDENTIAL",
+      entityId: `${userId}:${varName}`,
+      action: "SET",
+      summary: `Skill credential saved (${varName}${keyLast4 ? `, key ••••${keyLast4}` : ""})`,
+    },
+  }).catch(() => {});
 }
 
 /** Delete a skill credential for a user. */
@@ -44,6 +54,16 @@ export async function deleteSkillCredential(
   await prisma.skillCredential.deleteMany({
     where: { userId, varName },
   });
+
+  await prisma.auditLog.create({
+    data: {
+      userId,
+      scope: "SKILL_CREDENTIAL",
+      entityId: `${userId}:${varName}`,
+      action: "DELETE",
+      summary: `Skill credential removed (${varName})`,
+    },
+  }).catch(() => {});
 }
 
 // ---------------------------------------------------------------------------
@@ -209,6 +229,18 @@ export async function migrateSkillEnvFileToDb(userId: string): Promise<{ migrate
 
   // Mark as done by renaming the file
   await fs.rename(legacyPath, migratedSkillEnvPath()).catch(() => {});
+
+  if (migrated > 0) {
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        scope: "SKILL_CREDENTIAL",
+        entityId: userId,
+        action: "MIGRATE",
+        summary: `Migrated ${migrated} skill credential(s) from legacy skill-env.json`,
+      },
+    }).catch(() => {});
+  }
 
   return { migrated };
 }
