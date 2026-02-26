@@ -9,6 +9,8 @@ import { listAdvisorSessions } from "@/lib/advisor-sessions-store";
 import { BasketSidebarButton } from "@/components/basket-sidebar-button";
 import { getModelRoutes, getAvailableModelCatalog } from "@/lib/model-routing-store";
 import { ModelRouteSelector } from "@/components/model-route-selector";
+import { RunnerApprovalsSidebar } from "@/components/runner-approvals-panel";
+import { prisma } from "@/lib/db";
 
 const NAV_GROUPS = [
   {
@@ -30,7 +32,6 @@ const NAV_GROUPS = [
   {
     label: "System",
     items: [
-      { href: "/runners", label: "Runners" },
       { href: "/settings/connectors", label: "Connectors" },
       { href: "/settings", label: "Settings" },
     ],
@@ -97,10 +98,16 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   if (session) {
-    const [prefs, advisorHistory, routes] = await Promise.all([
+    const [prefs, advisorHistory, routes, initialPendingJobs] = await Promise.all([
       getAppPreferences(session.userId),
       listAdvisorSessions(session.userId, 30),
       getModelRoutes(session.userId),
+      prisma.runnerJob.findMany({
+        where: { userId: session.userId, status: "NEEDS_APPROVAL" },
+        orderBy: { createdAt: "asc" },
+        take: 10,
+        select: { id: true, title: true, jobType: true, riskLevel: true, createdAt: true },
+      }).catch(() => []),
     ]);
     const modelCatalog = getAvailableModelCatalog();
 
@@ -140,6 +147,16 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             <div className="border-y border-[rgba(255,255,255,0.04)] px-2 py-2">
               <AppNavVerticalGrouped groups={navGroups} />
             </div>
+
+            <RunnerApprovalsSidebar
+              initialJobs={initialPendingJobs.map((j) => ({
+                id: j.id,
+                title: j.title,
+                jobType: j.jobType,
+                riskLevel: j.riskLevel,
+                createdAt: j.createdAt.toISOString(),
+              }))}
+            />
 
             <div className="min-h-0 flex-1 overflow-hidden">
               <div className="px-3 py-2">
