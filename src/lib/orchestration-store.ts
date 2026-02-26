@@ -9,6 +9,7 @@ import { getToolsForAgentKind } from "@/lib/tool-registry";
 import { runAgenticLoop, type AgenticStreamEvent } from "@/lib/agentic-loop";
 import { getEnabledSkillContents } from "@/lib/skills-store";
 import { getAppPreferences } from "@/lib/settings-store";
+import { getAgentMemoryIndex, ingestTaskCompletion } from "@/lib/agent-memory-store";
 
 export type AgentTarget =
   | "CHIEF_ADVISOR"
@@ -887,17 +888,21 @@ export async function executeDelegatedTask(userId: string, taskId: string, onEve
   const agenticTools = await getToolsForAgentKind(row.toAgentTarget, config.integrations);
 
   if (agenticTools.length > 0) {
-    const [soul, recentLogs, taskDigests] = await Promise.all([
+    const [soul, recentLogs, taskDigests, agentMemoryIndex] = await Promise.all([
       getCompanySoul(userId),
       listBusinessLogs(userId, 30),
       getTaskDigestsForAgent(userId, row.toAgentTarget),
+      getAgentMemoryIndex(userId, row.toAgentTarget),
     ]);
     const logSummaries = recentLogs
       .filter((l) => !String(l.relatedRef ?? "").startsWith("CHAT_LOG:"))
       .slice(0, 20)
       .map((l) => `[${l.category.toLowerCase()}] ${l.title} (${l.source.toLowerCase()}, ${l.createdAt.toISOString().slice(0, 10)}): ${l.body.split(/\r?\n/).filter(Boolean).slice(0, 2).join(" | ")}`);
-    let agenticSystemPrompt = buildAgentSystemPrompt(row.toAgentTarget as AgentTarget, soul, logSummaries, taskDigests)
-      + "\n\nYou have access to tools. Use them to gather information and take actions. "
+    let agenticSystemPrompt = buildAgentSystemPrompt(row.toAgentTarget as AgentTarget, soul, logSummaries, taskDigests);
+    if (agentMemoryIndex) {
+      agenticSystemPrompt += `\n\n${agentMemoryIndex}`;
+    }
+    agenticSystemPrompt += "\n\nYou have access to tools. Use them to gather information and take actions. "
       + "When ready to give your final answer, respond with plain text (no tool calls).";
 
     // Inject enabled skill content into the system prompt with paths and env context
@@ -974,16 +979,20 @@ export async function executeDelegatedTask(userId: string, taskId: string, onEve
     let llmReasoning = "";
     const llmStart = Date.now();
     try {
-      const [soul, fallbackLogs, fallbackDigests] = await Promise.all([
+      const [soul, fallbackLogs, fallbackDigests, fallbackMemoryIndex] = await Promise.all([
         getCompanySoul(userId),
         listBusinessLogs(userId, 30),
         getTaskDigestsForAgent(userId, row.toAgentTarget),
+        getAgentMemoryIndex(userId, row.toAgentTarget),
       ]);
       const fallbackLogSummaries = fallbackLogs
         .filter((l) => !String(l.relatedRef ?? "").startsWith("CHAT_LOG:"))
         .slice(0, 20)
         .map((l) => `[${l.category.toLowerCase()}] ${l.title} (${l.source.toLowerCase()}, ${l.createdAt.toISOString().slice(0, 10)}): ${l.body.split(/\r?\n/).filter(Boolean).slice(0, 2).join(" | ")}`);
-      const systemPrompt = buildAgentSystemPrompt(row.toAgentTarget as AgentTarget, soul, fallbackLogSummaries, fallbackDigests);
+      let systemPrompt = buildAgentSystemPrompt(row.toAgentTarget as AgentTarget, soul, fallbackLogSummaries, fallbackDigests);
+      if (fallbackMemoryIndex) {
+        systemPrompt += `\n\n${fallbackMemoryIndex}`;
+      }
       const taskPrompt = buildAgentTaskPrompt(row, {
         iteration,
         maxIterations,
@@ -1232,6 +1241,10 @@ export async function executeDelegatedTask(userId: string, taskId: string, onEve
     title: row.title,
     status: finalStatus,
   });
+
+  if (digest) {
+    ingestTaskCompletion(userId, row.toAgentTarget, digest).catch(() => {});
+  }
 
   onEvent?.({ type: "task_done", status: finalStatus });
 

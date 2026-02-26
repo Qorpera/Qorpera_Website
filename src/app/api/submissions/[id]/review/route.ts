@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireUserId } from "@/lib/auth";
 import { SubmissionReviewBody } from "@/lib/schemas";
 import { verifySameOrigin } from "@/lib/request-security";
+import { ingestSubmissionFeedback } from "@/lib/agent-memory-store";
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const sameOrigin = verifySameOrigin(req);
@@ -34,6 +35,13 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       notes: parsed.data.notes ?? null,
     },
   });
+
+  ingestSubmissionFeedback(userId, sub.agentKind, {
+    status: parsed.data.status,
+    rating: parsed.data.rating,
+    correction: parsed.data.correction,
+    notes: parsed.data.notes,
+  }).catch(() => {});
 
   return NextResponse.redirect(new URL(`/results/${id}`, req.url));
 }
