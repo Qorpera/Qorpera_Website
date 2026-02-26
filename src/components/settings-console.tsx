@@ -5,6 +5,7 @@ import type { AppPreferences } from "@/lib/settings-store";
 import type { CloudConnectorView } from "@/lib/connectors-store";
 import { CloudConnectorWizard } from "@/components/cloud-connector-wizard";
 import { SkillsPanel } from "@/components/skills-panel";
+import { AuditLogPanel } from "@/components/audit-log-panel";
 
 async function savePreferences(next: Partial<AppPreferences>) {
   const res = await fetch("/api/settings", {
@@ -20,7 +21,7 @@ export function SettingsConsole({ initial, connector }: { initial: AppPreference
   const [prefs, setPrefs] = useState(initial);
   const [saving, setSaving] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [section, setSection] = useState<"connectors" | "safety" | "operations" | "skills">("connectors");
+  const [section, setSection] = useState<"connectors" | "safety" | "operations" | "skills" | "audit">("connectors");
   const [operationsTab, setOperationsTab] = useState<"providers" | "usage" | "checks">("providers");
 
   async function patch(next: Partial<AppPreferences>, key: string) {
@@ -45,6 +46,7 @@ export function SettingsConsole({ initial, connector }: { initial: AppPreference
     ["safety", "Safety defaults"],
     ["operations", "Operations"],
     ["skills", "Skills"],
+    ["audit", "Activity log"],
   ] as const;
 
   return (
@@ -309,6 +311,8 @@ export function SettingsConsole({ initial, connector }: { initial: AppPreference
         ) : null}
 
         {section === "skills" ? <SkillsPanel /> : null}
+
+        {section === "audit" ? <AuditLogPanel /> : null}
       </div>
     </div>
   );
