@@ -233,11 +233,6 @@ export function SkillsPanel() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-medium">{skill.displayName}</span>
-                          {skill.source === "anthropic" && (
-                            <span className="inline-flex items-center rounded-full border border-orange-500/30 bg-orange-500/10 px-2 py-0.5 text-[10px] text-orange-400">
-                              Anthropic
-                            </span>
-                          )}
                           {skill.installed && keysReady && requiredVars.length > 0 && (
                             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-400">
                               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
