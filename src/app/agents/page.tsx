@@ -7,28 +7,21 @@ import { ModelRouteSelector } from "@/components/model-route-selector";
 import { getSession } from "@/lib/auth";
 import { AgentCharacterFigure } from "@/components/agent-character-figure";
 
-type ToneKey = "blue" | "teal" | "amber";
+import type { AgentToneColor } from "@/components/agent-character-figure";
 
-const cardTheme = {
-  blue: {
-    gradient: "from-[#111d32] to-[#0d1724]",
-    glow: "bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(99,131,209,0.28),transparent_68%)]",
-    label: "text-blue-300/60",
-    hoverBorder: "hover:border-blue-500/22",
-  },
-  teal: {
-    gradient: "from-[#0d2422] to-[#091918]",
-    glow: "bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(20,184,166,0.26),transparent_68%)]",
-    label: "text-teal-300/60",
-    hoverBorder: "hover:border-teal-500/22",
-  },
-  amber: {
-    gradient: "from-[#20170c] to-[#130e07]",
-    glow: "bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(245,158,11,0.22),transparent_68%)]",
-    label: "text-amber-300/60",
-    hoverBorder: "hover:border-amber-500/22",
-  },
-} satisfies Record<ToneKey, { gradient: string; glow: string; label: string; hoverBorder: string }>;
+type ToneKey = AgentToneColor;
+
+const cardTheme: Record<ToneKey, { gradient: string; glow: string; label: string; hoverBorder: string }> = {
+  blue:   { gradient: "from-[#111d32] to-[#0d1724]", glow: "bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(99,131,209,0.28),transparent_68%)]",   label: "text-blue-300/60",   hoverBorder: "hover:border-blue-500/22"   },
+  teal:   { gradient: "from-[#0d2422] to-[#091918]", glow: "bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(20,184,166,0.26),transparent_68%)]",    label: "text-teal-300/60",   hoverBorder: "hover:border-teal-500/22"   },
+  amber:  { gradient: "from-[#20170c] to-[#130e07]", glow: "bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(245,158,11,0.22),transparent_68%)]",    label: "text-amber-300/60",  hoverBorder: "hover:border-amber-500/22"  },
+  rose:   { gradient: "from-[#2a0d14] to-[#1a080d]", glow: "bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(244,63,94,0.24),transparent_68%)]",     label: "text-rose-300/60",   hoverBorder: "hover:border-rose-500/22"   },
+  green:  { gradient: "from-[#0a1f12] to-[#07130c]", glow: "bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(34,197,94,0.22),transparent_68%)]",     label: "text-green-300/60",  hoverBorder: "hover:border-green-500/22"  },
+  purple: { gradient: "from-[#1a0a2a] to-[#100618]", glow: "bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(168,85,247,0.24),transparent_68%)]",    label: "text-purple-300/60", hoverBorder: "hover:border-purple-500/22" },
+  cyan:   { gradient: "from-[#091e26] to-[#061319]", glow: "bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(6,182,212,0.24),transparent_68%)]",     label: "text-cyan-300/60",   hoverBorder: "hover:border-cyan-500/22"   },
+  slate:  { gradient: "from-[#111827] to-[#0d1117]", glow: "bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(100,116,139,0.26),transparent_68%)]",   label: "text-slate-300/60",  hoverBorder: "hover:border-slate-500/22"  },
+  violet: { gradient: "from-[#170a2a] to-[#0e061a]", glow: "bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(139,92,246,0.24),transparent_68%)]",    label: "text-violet-300/60", hoverBorder: "hover:border-violet-500/22" },
+};
 
 export default async function AgentsPage() {
   const session = await getSession();
@@ -114,16 +107,11 @@ export default async function AgentsPage() {
           {/* ── Hired Agent Cards ── */}
           {visibleAgents.map((a) => {
             const ui = UI_AGENTS.find((item) => item.kind === a.kind);
-            const tone: ToneKey = a.kind === "ASSISTANT" ? "teal" : "amber";
+            const tone: ToneKey = (ui?.tone ?? "teal") as ToneKey;
             const theme = cardTheme[tone];
             const status = ui?.status ?? a.status;
             const isNeedsApproval = status === "Needs approval";
-
-            const statusBadge = isNeedsApproval
-              ? "border-orange-300/35 bg-orange-950/70 text-orange-300"
-              : tone === "teal"
-                ? "border-teal-300/35 bg-teal-950/70 text-teal-200"
-                : "border-amber-300/35 bg-amber-950/70 text-amber-200";
+            const statusBadge = isNeedsApproval ? "border-orange-300/35 bg-orange-950/70 text-orange-300" : theme.label.replace("text-", "border-").replace("/60", "/35") + " bg-opacity-70 " + theme.label.replace("/60", "/80");
 
             return (
               <div key={a.id} className="w-[265px] shrink-0">
@@ -143,7 +131,7 @@ export default async function AgentsPage() {
                     </span>
                     <div className="absolute inset-0 flex items-end justify-center pb-2">
                       <AgentCharacterFigure
-                        variant={a.kind === "ASSISTANT" ? "assistant" : "manager"}
+                        variant={ui?.figureVariant ?? "assistant"}
                         tone={tone}
                         size="lg"
                       />
@@ -166,7 +154,7 @@ export default async function AgentsPage() {
                 <div className="mt-2.5">
                   <div className="mb-1 text-[10px] uppercase tracking-[0.14em] wf-muted">AI model</div>
                   <ModelRouteSelector
-                    target={a.kind === "ASSISTANT" ? "ASSISTANT" : "PROJECT_MANAGER"}
+                    target={a.kind === "ASSISTANT" ? "ASSISTANT" : "PROJECT_MANAGER" as "ASSISTANT" | "PROJECT_MANAGER"}
                     initial={a.kind === "ASSISTANT" ? routes.ASSISTANT : routes.PROJECT_MANAGER}
                     catalog={modelCatalog}
                     compact

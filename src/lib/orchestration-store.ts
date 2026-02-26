@@ -10,7 +10,17 @@ import { runAgenticLoop, type AgenticStreamEvent } from "@/lib/agentic-loop";
 import { getEnabledSkillContents } from "@/lib/skills-store";
 import { getAppPreferences } from "@/lib/settings-store";
 
-export type AgentTarget = "CHIEF_ADVISOR" | "ASSISTANT" | "PROJECT_MANAGER";
+export type AgentTarget =
+  | "CHIEF_ADVISOR"
+  | "ASSISTANT"
+  | "PROJECT_MANAGER"
+  | "SALES_REP"
+  | "CUSTOMER_SUCCESS"
+  | "MARKETING_COORDINATOR"
+  | "FINANCE_ANALYST"
+  | "OPERATIONS_MANAGER"
+  | "EXECUTIVE_ASSISTANT";
+
 export type WorkerAgentTarget = Exclude<AgentTarget, "CHIEF_ADVISOR">;
 
 export type AgentAutomationConfigView = {
@@ -114,6 +124,114 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     notes: "Runs reporting/check-ins on schedule and can receive delegated planning tasks.",
     updatedAt: null,
   },
+  SALES_REP: {
+    agentTarget: "SALES_REP",
+    triggerMode: "HYBRID",
+    wakeOnDelegation: true,
+    scheduleEnabled: true,
+    dailyTimes: ["09:00", "15:00"],
+    timezone: "UTC",
+    runContinuously: false,
+    maxLoopIterations: 8,
+    maxAgentCallsPerRun: 10,
+    maxToolRetries: 2,
+    maxRuntimeSeconds: 300,
+    requireApprovalForExternalActions: true,
+    allowAgentDelegation: true,
+    integrations: ["email", "crm", "browser", "business_logs"],
+    notes: "Handles outbound prospecting, research, and pipeline updates. Requires approval before sending outreach.",
+    updatedAt: null,
+  },
+  CUSTOMER_SUCCESS: {
+    agentTarget: "CUSTOMER_SUCCESS",
+    triggerMode: "HYBRID",
+    wakeOnDelegation: true,
+    scheduleEnabled: true,
+    dailyTimes: ["09:30", "14:00"],
+    timezone: "UTC",
+    runContinuously: false,
+    maxLoopIterations: 8,
+    maxAgentCallsPerRun: 10,
+    maxToolRetries: 2,
+    maxRuntimeSeconds: 300,
+    requireApprovalForExternalActions: true,
+    allowAgentDelegation: true,
+    integrations: ["email", "crm", "files", "business_logs"],
+    notes: "Monitors customer health, preps check-ins and renewal briefs, escalates at-risk accounts.",
+    updatedAt: null,
+  },
+  MARKETING_COORDINATOR: {
+    agentTarget: "MARKETING_COORDINATOR",
+    triggerMode: "SCHEDULED",
+    wakeOnDelegation: true,
+    scheduleEnabled: true,
+    dailyTimes: ["09:00", "17:00"],
+    timezone: "UTC",
+    runContinuously: false,
+    maxLoopIterations: 10,
+    maxAgentCallsPerRun: 10,
+    maxToolRetries: 2,
+    maxRuntimeSeconds: 300,
+    requireApprovalForExternalActions: true,
+    allowAgentDelegation: true,
+    integrations: ["email", "browser", "files", "business_logs"],
+    notes: "Produces content drafts, campaign summaries, and email sequences. Nothing goes live without approval.",
+    updatedAt: null,
+  },
+  FINANCE_ANALYST: {
+    agentTarget: "FINANCE_ANALYST",
+    triggerMode: "SCHEDULED",
+    wakeOnDelegation: true,
+    scheduleEnabled: true,
+    dailyTimes: ["08:00", "17:00"],
+    timezone: "UTC",
+    runContinuously: false,
+    maxLoopIterations: 10,
+    maxAgentCallsPerRun: 10,
+    maxToolRetries: 2,
+    maxRuntimeSeconds: 300,
+    requireApprovalForExternalActions: true,
+    allowAgentDelegation: false,
+    integrations: ["files", "business_logs", "sheets"],
+    notes: "Runs financial reports, categorizes expenses, and prepares invoice drafts on schedule.",
+    updatedAt: null,
+  },
+  OPERATIONS_MANAGER: {
+    agentTarget: "OPERATIONS_MANAGER",
+    triggerMode: "HYBRID",
+    wakeOnDelegation: true,
+    scheduleEnabled: true,
+    dailyTimes: ["08:30", "16:00"],
+    timezone: "UTC",
+    runContinuously: false,
+    maxLoopIterations: 10,
+    maxAgentCallsPerRun: 10,
+    maxToolRetries: 2,
+    maxRuntimeSeconds: 300,
+    requireApprovalForExternalActions: true,
+    allowAgentDelegation: true,
+    integrations: ["files", "business_logs", "email", "browser"],
+    notes: "Maintains process docs, coordinates vendor comms, and surfaces operational blockers.",
+    updatedAt: null,
+  },
+  EXECUTIVE_ASSISTANT: {
+    agentTarget: "EXECUTIVE_ASSISTANT",
+    triggerMode: "HYBRID",
+    wakeOnDelegation: true,
+    scheduleEnabled: true,
+    dailyTimes: ["08:00", "12:00", "17:00"],
+    timezone: "UTC",
+    runContinuously: false,
+    maxLoopIterations: 8,
+    maxAgentCallsPerRun: 10,
+    maxToolRetries: 2,
+    maxRuntimeSeconds: 300,
+    requireApprovalForExternalActions: true,
+    allowAgentDelegation: false,
+    integrations: ["email", "files", "business_logs", "review_queue"],
+    notes: "Triages inbox, preps meeting notes, tracks action items, and drafts communications.",
+    updatedAt: null,
+  },
 };
 
 async function isAgentTargetAvailableToUser(userId: string, target: AgentTarget) {
@@ -127,12 +245,11 @@ async function isAgentTargetAvailableToUser(userId: string, target: AgentTarget)
 
 export async function getAvailableWorkerAgentTargetsForUser(userId: string): Promise<WorkerAgentTarget[]> {
   const rows = await prisma.hiredJob.findMany({
-    where: { userId, enabled: true, agentKind: { in: ["ASSISTANT", "PROJECT_MANAGER"] } },
+    where: { userId, enabled: true },
     select: { agentKind: true },
     distinct: ["agentKind"],
   });
-  const kinds = new Set(rows.map((r) => r.agentKind as WorkerAgentTarget));
-  return (["ASSISTANT", "PROJECT_MANAGER"] as const).filter((k) => kinds.has(k));
+  return rows.map((r) => r.agentKind as WorkerAgentTarget);
 }
 
 function parseCsv(value: string | null | undefined) {
@@ -642,9 +759,8 @@ function buildAgentTaskPrompt(task: { title: string; instructions: string }, loo
 }
 
 function targetToAgentKind(target: AgentTarget): AgentKind | null {
-  if (target === "ASSISTANT") return AgentKind.ASSISTANT;
-  if (target === "PROJECT_MANAGER") return AgentKind.PROJECT_MANAGER;
-  return null;
+  if (target === "CHIEF_ADVISOR") return null;
+  return target as AgentKind;
 }
 
 async function getTaskDigestsForAgent(userId: string, agentTarget: string): Promise<{ ownDigests: string[]; teamDigests: string[] }> {

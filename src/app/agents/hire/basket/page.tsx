@@ -7,9 +7,7 @@ import { useBasket } from "@/components/basket-context";
 import { AGENT_HIRE_CATALOG } from "@/lib/agent-catalog";
 
 function kindLabel(kind: string) {
-  if (kind === "ASSISTANT") return "Assistant Agent";
-  if (kind === "PROJECT_MANAGER") return "Project Manager Agent";
-  return kind;
+  return kind.split("_").map((w) => w[0] + w.slice(1).toLowerCase()).join(" ") + " Agent";
 }
 
 function scheduleLabel(s: string) {

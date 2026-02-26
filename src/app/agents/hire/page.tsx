@@ -147,7 +147,7 @@ export default async function AgentsHirePage({ searchParams }: { searchParams: S
               const ui = UI_AGENTS.find((a) => a.kind === job.agentKind);
               const dbAgent = dbAgents.find((a) => a.kind === job.agentKind);
               const catalogItem = AGENT_HIRE_CATALOG.find((c) => c.kind === job.agentKind);
-              const isTeal = job.agentKind === "ASSISTANT";
+              const jobTone = ui?.tone ?? "teal";
               const scheduleLabel = scheduleOptions.find((o) => o.value === job.schedule)?.label ?? job.schedule;
               const sub = stripeSubs.find(
                 (s) => s.agentKind === job.agentKind && s.currentPeriodEnd != null && new Date(s.currentPeriodEnd) > new Date(),
@@ -163,12 +163,8 @@ export default async function AgentsHirePage({ searchParams }: { searchParams: S
                   {/* Main row */}
                   <div className="flex flex-wrap items-center gap-4 sm:flex-nowrap">
                     {/* Role icon */}
-                    <div
-                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-bold ${
-                        isTeal ? "bg-teal-900/60 text-teal-200" : "bg-amber-900/60 text-amber-200"
-                      }`}
-                    >
-                      {job.agentKind === "ASSISTANT" ? "AS" : "PM"}
+                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-bold bg-${jobTone}-900/60 text-${jobTone}-200`}>
+                      {job.agentKind.slice(0, 2)}
                     </div>
 
                     {/* Info */}
@@ -177,7 +173,7 @@ export default async function AgentsHirePage({ searchParams }: { searchParams: S
                         <span className="text-base font-semibold">{agentName}</span>
                         <span
                           className={`rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${
-                            isTeal ? "border-teal-700/50 text-teal-300" : "border-amber-700/50 text-amber-300"
+                            jobTone === "teal" ? "border-teal-700/50 text-teal-300" : "border-amber-700/50 text-amber-300"
                           }`}
                         >
                           {scheduleLabel}
@@ -276,13 +272,19 @@ export default async function AgentsHirePage({ searchParams }: { searchParams: S
               const ui = UI_AGENTS.find((e) => e.kind === item.kind);
               const dbAgent = dbAgents.find((e) => e.kind === item.kind);
               const stripeEnabled = isStripeCheckoutEnabledForKind(item.kind);
-              const isTeal = item.kind === "ASSISTANT";
-
-              const portraitGradient = isTeal ? "from-[#0d2422] to-[#091918]" : "from-[#20170c] to-[#130e07]";
-              const portraitGlow = isTeal
-                ? "bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(20,184,166,0.26),transparent_68%)]"
-                : "bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,rgba(245,158,11,0.22),transparent_68%)]";
-              const kindColor = isTeal ? "text-teal-300/70" : "text-amber-300/70";
+              const tone = ui?.tone ?? "teal";
+              const GLOW_COLORS: Record<string, string> = {
+                teal: "rgba(20,184,166,0.26)", amber: "rgba(245,158,11,0.22)", rose: "rgba(244,63,94,0.24)",
+                green: "rgba(34,197,94,0.22)", purple: "rgba(168,85,247,0.24)", cyan: "rgba(6,182,212,0.24)",
+                slate: "rgba(100,116,139,0.26)", violet: "rgba(139,92,246,0.24)", blue: "rgba(99,131,209,0.28)",
+              };
+              const BG_FROM: Record<string, string> = {
+                teal: "#0d2422", amber: "#20170c", rose: "#2a0d14", green: "#0a1f12",
+                purple: "#1a0a2a", cyan: "#091e26", slate: "#111827", violet: "#170a2a", blue: "#111d32",
+              };
+              const portraitGradient = `from-[${BG_FROM[tone] ?? "#0d2422"}] to-[#091918]`;
+              const portraitGlow = `bg-[radial-gradient(ellipse_70%_60%_at_50%_45%,${GLOW_COLORS[tone] ?? GLOW_COLORS.teal},transparent_68%)]`;
+              const kindColor = `text-${tone}-300/70`;
 
               return (
                 <div key={item.kind} className="overflow-hidden rounded-[22px] border border-white/8 bg-[var(--card)] shadow-md">
@@ -294,8 +296,8 @@ export default async function AgentsHirePage({ searchParams }: { searchParams: S
                     </div>
                     <div className="absolute inset-0 flex items-end justify-center pb-2">
                       <AgentCharacterFigure
-                        variant={item.kind === "ASSISTANT" ? "assistant" : "manager"}
-                        tone={isTeal ? "teal" : "amber"}
+                        variant={ui?.figureVariant ?? "assistant"}
+                        tone={tone as import("@/components/agent-character-figure").AgentToneColor}
                         size="lg"
                         pose="wave"
                       />

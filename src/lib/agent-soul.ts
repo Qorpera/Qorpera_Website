@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { UI_AGENTS, type UiAgent } from "@/lib/workforce-ui";
+import { UI_AGENTS, type UiAgent, type AgentKindKey } from "@/lib/workforce-ui";
 import { companySoulForAdvisor, getCompanySoul } from "@/lib/company-soul-store";
 import { listBusinessFiles } from "@/lib/business-files-store";
 import { listBusinessLogs } from "@/lib/business-logs-store";
@@ -7,7 +7,7 @@ import { listAdvisorSessions } from "@/lib/advisor-sessions-store";
 import { getPreferredUsername } from "@/lib/usernames";
 
 export type AgentSoulPack = {
-  kind: UiAgent["kind"];
+  kind: AgentKindKey;
   agentName: string;
   agentUsername: string;
   ownerUsername: string;
@@ -66,7 +66,7 @@ function buildCompanyAnchors(ui: UiAgent, company: Awaited<ReturnType<typeof get
   if (soul.keyMetrics.length) anchors.push(`Success metrics: ${soul.keyMetrics.slice(0, 4).join(" | ")}`);
   if (soul.approvalRules.length) anchors.push(`Approval rules: ${soul.approvalRules.slice(0, 3).join(" | ")}`);
   if (soul.toolsAndSystems.length) anchors.push(`Systems: ${soul.toolsAndSystems.slice(0, 4).join(" | ")}`);
-  if (soul.brandVoice && /support|content|sales|analyst/i.test(ui.role)) anchors.push(`Voice/style: ${soul.brandVoice}`);
+  if (soul.brandVoice && /support|content|sales|analyst|success|marketing|executive|coordinator/i.test(ui.role)) anchors.push(`Voice/style: ${soul.brandVoice}`);
   return anchors;
 }
 
@@ -92,7 +92,7 @@ function buildPromptText(pack: Omit<AgentSoulPack, "promptText">) {
   ].join("\n");
 }
 
-export async function getAgentSoulPackForUser(userId: string | null | undefined, kind: UiAgent["kind"]): Promise<AgentSoulPack | null> {
+export async function getAgentSoulPackForUser(userId: string | null | undefined, kind: AgentKindKey): Promise<AgentSoulPack | null> {
   const ui = UI_AGENTS.find((a) => a.kind === kind);
   if (!ui) return null;
 

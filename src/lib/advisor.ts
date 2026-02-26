@@ -15,6 +15,7 @@ import { listBusinessLogs, summarizeBusinessLogsForAdvisor } from "@/lib/busines
 import { listBusinessFiles, summarizeBusinessFilesForAdvisor } from "@/lib/business-files-store";
 import { postOllamaJson } from "@/lib/ollama";
 import { getPreferredUsername } from "@/lib/usernames";
+import { listRunnersForUser } from "@/lib/runner-control-plane";
 
 export type AdvisorMode = "home" | "new_project";
 
@@ -114,7 +115,27 @@ function safeParseStructured(text: string): AdvisorStructuredReply | null {
   }
 }
 
-function advisorSystemPrompt(ownerUsername: string, chiefAdvisorSoulPrompt?: string | null) {
+async function buildRunnerContext(userId: string) {
+  const [runners, pendingJobs] = await Promise.all([
+    listRunnersForUser(userId),
+    prisma.runnerJob.findMany({
+      where: { userId, status: "NEEDS_APPROVAL" },
+      orderBy: { createdAt: "asc" },
+      take: 3,
+      select: { id: true, title: true, jobType: true, riskLevel: true },
+    }),
+  ]);
+  return {
+    onlineRunnerCount: runners.filter((r) => r.status === "ONLINE").length,
+    pendingApprovalCount: await prisma.runnerJob.count({ where: { userId, status: "NEEDS_APPROVAL" } }),
+    pendingJobs: pendingJobs.map((j) => ({ id: j.id, title: j.title, jobType: j.jobType, riskLevel: j.riskLevel })),
+  };
+}
+
+function advisorSystemPrompt(ownerUsername: string, chiefAdvisorSoulPrompt?: string | null, runnerContext?: { onlineRunnerCount: number; pendingApprovalCount: number } | null) {
+  const runnerLines = runnerContext && runnerContext.onlineRunnerCount > 0
+    ? ["", "RUNNER_CAPABILITIES", "When a runner is online you can ask to execute local commands or read/write files — these go through the runner approval queue."]
+    : [];
   return [
     "ROLE_IDENTITY",
     "You are Zygenic Business Advisor: the operator-level AI advisor for this business owner.",
@@ -151,12 +172,13 @@ function advisorSystemPrompt(ownerUsername: string, chiefAdvisorSoulPrompt?: str
     "Respond ONLY with valid JSON using this shape:",
     '{"answer":"string","priority":"low|medium|high","suggestedAgents":["..."],"onboardingSteps":["..."],"recommendedTemplate":"optional-template-slug","ownerFocus":["..."],"delegatedTasks":[{"toAgent":"ASSISTANT|PROJECT_MANAGER","title":"short task title","instructions":"detailed instructions for the agent"}]}',
     "delegatedTasks is optional — only include it when you are actually delegating work to an agent.",
+    ...runnerLines,
   ].join("\n");
 }
 
 export async function buildAdvisorContext(userId: string) {
   await ensureWorkspaceSeeded(userId);
-  const [projects, templates, runs, inboxItems, prefs, agents, submissions, companySoul, agentSoulBlueprints, chiefAdvisorSoul, businessLogs, businessFiles, owner] = await Promise.all([
+  const [projects, templates, runs, inboxItems, prefs, agents, submissions, companySoul, agentSoulBlueprints, chiefAdvisorSoul, businessLogs, businessFiles, owner, runnerContext] = await Promise.all([
     getProjectsForUser(userId),
     getTemplates(),
     getRunsForUser(userId),
@@ -170,6 +192,7 @@ export async function buildAdvisorContext(userId: string) {
     listBusinessLogs(userId, 20),
     listBusinessFiles(userId, 30),
     prisma.user.findUnique({ where: { id: userId }, select: { email: true, username: true } }),
+    buildRunnerContext(userId).catch(() => null),
   ]);
   const ownerUsername = getPreferredUsername({ email: owner?.email, username: owner?.username });
 
@@ -217,6 +240,13 @@ export async function buildAdvisorContext(userId: string) {
         }
       : null,
     agentSoulBlueprints,
+    runnerState: runnerContext
+      ? {
+          onlineRunnerCount: runnerContext.onlineRunnerCount,
+          pendingApprovalCount: runnerContext.pendingApprovalCount,
+          pendingJobs: runnerContext.pendingJobs,
+        }
+      : null,
   };
 }
 
@@ -318,7 +348,13 @@ async function callOpenAIAdvisor({
     typeof (context as { owner?: { username?: string } }).owner?.username === "string"
       ? (context as { owner: { username: string } }).owner.username
       : "owner";
-  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt);
+  const runnerCtx =
+    typeof context === "object" &&
+    context &&
+    "runnerState" in context
+      ? (context as { runnerState?: { onlineRunnerCount: number; pendingApprovalCount: number } | null }).runnerState
+      : null;
+  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx);
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -431,7 +467,13 @@ async function callOllamaAdvisor({
     typeof (context as { owner?: { username?: string } }).owner?.username === "string"
       ? (context as { owner: { username: string } }).owner.username
       : "owner";
-  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt);
+  const runnerCtxOllama =
+    typeof context === "object" &&
+    context &&
+    "runnerState" in context
+      ? (context as { runnerState?: { onlineRunnerCount: number; pendingApprovalCount: number } | null }).runnerState
+      : null;
+  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtxOllama);
 
   const userPayload = clampText(
     JSON.stringify(

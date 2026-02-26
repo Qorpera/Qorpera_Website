@@ -123,7 +123,7 @@ const TOOL_SEEDS: ToolSeedRow[] = [
     parametersJson: JSON.stringify({
       type: "object",
       properties: {
-        to_agent: { type: "string", description: "Target agent: ASSISTANT or PROJECT_MANAGER" },
+        to_agent: { type: "string", description: "Target agent kind: ASSISTANT, PROJECT_MANAGER, SALES_REP, CUSTOMER_SUCCESS, MARKETING_COORDINATOR, FINANCE_ANALYST, OPERATIONS_MANAGER, or EXECUTIVE_ASSISTANT" },
         title: { type: "string", description: "Task title (max 240 chars)" },
         instructions: { type: "string", description: "Detailed instructions for the agent (max 12000 chars)" },
       },

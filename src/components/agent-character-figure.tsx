@@ -1,16 +1,24 @@
+export type AgentToneColor = "blue" | "teal" | "amber" | "rose" | "green" | "purple" | "cyan" | "slate" | "violet";
+
 type AgentCharacterFigureProps = {
   variant: "advisor" | "assistant" | "manager";
-  tone?: "blue" | "teal" | "amber";
+  tone?: AgentToneColor;
   size?: "sm" | "lg";
   pose?: "wave" | "rest";
 };
 
 type C = { shell: string; panel: string; accent: string; soft: string };
 
-const PALETTE: Record<"blue" | "teal" | "amber", C> = {
-  blue:  { shell: "#1A2B44", panel: "#1E3A6E", accent: "#7EC3FF", soft: "rgba(126,195,255,0.3)"  },
-  teal:  { shell: "#123534", panel: "#165E52", accent: "#3DDFD2", soft: "rgba(61,223,210,0.3)"   },
-  amber: { shell: "#2A1C0A", panel: "#48300E", accent: "#FFC14A", soft: "rgba(255,193,74,0.3)"   },
+const PALETTE: Record<AgentToneColor, C> = {
+  blue:   { shell: "#1A2B44", panel: "#1E3A6E", accent: "#7EC3FF", soft: "rgba(126,195,255,0.3)"  },
+  teal:   { shell: "#123534", panel: "#165E52", accent: "#3DDFD2", soft: "rgba(61,223,210,0.3)"   },
+  amber:  { shell: "#2A1C0A", panel: "#48300E", accent: "#FFC14A", soft: "rgba(255,193,74,0.3)"   },
+  rose:   { shell: "#2A0A14", panel: "#4E1424", accent: "#FF6B8A", soft: "rgba(255,107,138,0.3)"  },
+  green:  { shell: "#0A1F14", panel: "#0F3321", accent: "#4ADE80", soft: "rgba(74,222,128,0.3)"   },
+  purple: { shell: "#1A0A2E", panel: "#2E1052", accent: "#C084FC", soft: "rgba(192,132,252,0.3)"  },
+  cyan:   { shell: "#0A1E26", panel: "#0E3040", accent: "#22D3EE", soft: "rgba(34,211,238,0.3)"   },
+  slate:  { shell: "#111827", panel: "#1F2937", accent: "#94A3B8", soft: "rgba(148,163,184,0.3)"  },
+  violet: { shell: "#170A2E", panel: "#2D1552", accent: "#818CF8", soft: "rgba(129,140,248,0.3)"  },
 };
 
 export function AgentCharacterFigure({

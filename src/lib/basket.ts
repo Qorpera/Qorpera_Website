@@ -1,5 +1,7 @@
+import type { HireAgentKind } from "@/lib/agent-catalog";
+
 export type BasketItem = {
-  agentKind: "ASSISTANT" | "PROJECT_MANAGER";
+  agentKind: HireAgentKind;
   schedule: "DAILY" | "WEEKLY" | "MONTHLY";
 };
 

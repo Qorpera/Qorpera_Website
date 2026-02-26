@@ -38,14 +38,18 @@ export default async function AgentProfilePage({
   const { view } = await searchParams;
   const isAdminView = view === "admin";
 
-  if (kind !== "ASSISTANT" && kind !== "PROJECT_MANAGER") notFound();
+  const { UI_AGENTS } = await import("@/lib/workforce-ui");
+  if (!UI_AGENTS.some((a) => a.kind === kind)) notFound();
+  const agentKindKey = kind as import("@/lib/workforce-ui").AgentKindKey;
+  const agentKindEnum = kind as import("@prisma/client").AgentKind;
+  const agentTarget = kind as import("@/lib/orchestration-store").AgentTarget;
 
   if (!session) notFound();
 
   const hired = await prisma.hiredJob.findFirst({
     where: {
       userId: session.userId,
-      agentKind: kind,
+      agentKind: agentKindEnum,
       enabled: true,
     },
     select: { id: true },
@@ -83,10 +87,10 @@ export default async function AgentProfilePage({
   }
 
   const [agent, submissions, soulPack, automationConfig] = await Promise.all([
-    prisma.agent.findUnique({ where: { kind } }),
-    prisma.submission.findMany({ where: { agentKind: kind }, orderBy: { createdAt: "desc" }, take: 5 }),
-    getAgentSoulPackForUser(session?.userId, kind),
-    session?.userId ? getAgentAutomationConfig(session.userId, kind) : Promise.resolve(null),
+    prisma.agent.findUnique({ where: { kind: agentKindEnum } }),
+    prisma.submission.findMany({ where: { agentKind: agentKindEnum }, orderBy: { createdAt: "desc" }, take: 5 }),
+    getAgentSoulPackForUser(session?.userId, agentKindKey),
+    session?.userId ? getAgentAutomationConfig(session.userId, agentTarget) : Promise.resolve(null),
   ]);
 
   if (!agent) notFound();
@@ -287,7 +291,7 @@ export default async function AgentProfilePage({
           </section>
 
           <div className="space-y-4">
-          {automationConfig ? <AgentAutomationConfigPanel target={kind} initial={automationConfig} integrationOptions={Object.keys(getIntegrationToToolMapping())} /> : null}
+          {automationConfig ? <AgentAutomationConfigPanel target={agentTarget} initial={automationConfig} integrationOptions={Object.keys(getIntegrationToToolMapping())} /> : null}
           <section className="wf-panel rounded-3xl p-5">
             <h2 className="text-lg font-semibold tracking-tight">Logs (tool calls, errors, latency)</h2>
             <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--border)]">
