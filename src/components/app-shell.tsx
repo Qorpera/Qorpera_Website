@@ -17,6 +17,7 @@ const NAV_GROUPS = [
       { href: "/", label: "New Advisor Chat" },
       { href: "/inbox", label: "Review" },
       { href: "/projects", label: "Projects" },
+      { href: "/metrics", label: "Metrics" },
       { href: "/agents", label: "Agents" },
     ],
   },
