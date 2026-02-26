@@ -336,72 +336,86 @@ export default async function MetricsPage() {
       </section>
 
       {/* Local AI usage */}
-      <section className="wf-panel rounded-3xl p-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight">Local AI usage</h2>
-            <p className="mt-0.5 text-sm wf-muted">Ollama · this month · estimated cloud savings</p>
-          </div>
-          <div className="flex items-center gap-1.5 rounded-full border border-teal-400/25 bg-teal-500/10 px-3 py-1 text-xs font-medium text-teal-300">
-            <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+      <section className="relative overflow-hidden rounded-3xl border border-teal-500/20 bg-[rgba(8,12,16,0.9)] shadow-[0_0_80px_rgba(20,184,166,0.08)]">
+        {/* Glow backdrop */}
+        <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[600px] -translate-x-1/2 rounded-full bg-teal-500/10 blur-3xl" />
+
+        <div className="relative p-6 sm:p-8">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-teal-400/70">
+            <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M10.75 10.818v2.614A3.13 3.13 0 0011.888 13c.482-.315.612-.648.612-.875 0-.227-.13-.558-.612-.875a3.13 3.13 0 00-1.138-.432zM8.33 8.62c.053.055.115.11.184.164.208.16.46.284.736.363V6.603a2.45 2.45 0 00-.35.13c-.14.065-.27.143-.386.233-.377.292-.514.627-.514.9 0 .181.056.386.33.594z" />
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.845v-.975a.75.75 0 00-1.5 0v.975A4.25 4.25 0 007 10.5c0 1.18.59 2.137 1.508 2.75H8.5a.75.75 0 000 1.5h.75v.975a.75.75 0 001.5 0v-.975h.042A4.25 4.25 0 0013 12.125c0-1.18-.59-2.137-1.508-2.75H11.5a.75.75 0 000-1.5h-.75zm-2.5 0v2.337A2.75 2.75 0 008.25 10.5c0-.563.21-1.027.558-1.345h-.558zM11.25 12.163V9.825A2.75 2.75 0 0111.75 10.5c0 .563-.21 1.027-.558 1.345l.058.318z" clipRule="evenodd" />
             </svg>
-            $0.00 actual cost
+            Local AI · Ollama · This month
           </div>
-        </div>
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-3">
-          <div className="wf-soft rounded-2xl p-4">
-            <div className="text-xs wf-muted">Requests</div>
-            <div className="mt-1 text-2xl font-semibold tabular-nums">
-              {metrics.localAiUsage.requestCount.toLocaleString()}
-            </div>
-          </div>
-          <div className="wf-soft rounded-2xl p-4">
-            <div className="text-xs wf-muted">Input tokens</div>
-            <div className="mt-1 text-2xl font-semibold tabular-nums">
-              {metrics.localAiUsage.promptTokens.toLocaleString()}
-            </div>
-          </div>
-          <div className="wf-soft rounded-2xl p-4">
-            <div className="text-xs wf-muted">Output tokens</div>
-            <div className="mt-1 text-2xl font-semibold tabular-nums">
-              {metrics.localAiUsage.completionTokens.toLocaleString()}
-            </div>
-          </div>
-        </div>
-
-        {(metrics.localAiUsage.promptTokens > 0 || metrics.localAiUsage.completionTokens > 0) && (
-          <div className="mt-5">
-            <div className="mb-2 text-xs font-medium uppercase tracking-[0.1em] wf-muted">
-              Equivalent cloud cost if run via
-            </div>
-            <div className="space-y-2">
-              {metrics.localAiUsage.cloudEquivalents.map((eq) => {
-                const maxUsd = Math.max(...metrics.localAiUsage.cloudEquivalents.map((e) => e.usd), 0.001);
-                const barWidth = Math.round((eq.usd / maxUsd) * 100);
+          {metrics.localAiUsage.requestCount === 0 ? (
+            <p className="mt-4 text-sm wf-muted">No local AI usage recorded this month. Set a model route to Ollama to start tracking.</p>
+          ) : (
+            <>
+              {/* Hero savings number */}
+              {metrics.localAiUsage.cloudEquivalents.length > 0 && (() => {
+                const maxSaving = Math.max(...metrics.localAiUsage.cloudEquivalents.map((e) => e.usd));
+                const maxLabel = metrics.localAiUsage.cloudEquivalents.find((e) => e.usd === maxSaving)?.label ?? "";
                 return (
-                  <div key={eq.label} className="flex items-center gap-3">
-                    <div className="w-36 shrink-0 text-sm text-white/70">{eq.label}</div>
-                    <div className="flex-1 h-1.5 rounded-full bg-white/8">
-                      <div
-                        className="h-1.5 rounded-full bg-violet-500/60"
-                        style={{ width: `${barWidth}%` }}
-                      />
+                  <div className="mt-6 flex flex-col items-start gap-1">
+                    <div className="text-sm font-medium text-white/50">You would have spent up to</div>
+                    <div className="text-7xl font-black tabular-nums tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-teal-300 via-emerald-300 to-cyan-400 drop-shadow-[0_0_40px_rgba(52,211,153,0.4)]">
+                      {usd(maxSaving)}
                     </div>
-                    <div className="w-16 shrink-0 text-right text-sm tabular-nums font-medium text-violet-300">
-                      {usd(eq.usd)}
+                    <div className="text-base font-medium text-white/45">
+                      running these tokens through <span className="text-white/70">{maxLabel}</span> — you paid <span className="font-bold text-teal-300">$0.00</span>
                     </div>
                   </div>
                 );
-              })}
-            </div>
-          </div>
-        )}
+              })()}
 
-        {metrics.localAiUsage.requestCount === 0 && (
-          <p className="mt-4 text-sm wf-muted">No local AI usage recorded this month. Set a model route to Ollama to start tracking.</p>
-        )}
+              {/* Token stats */}
+              <div className="mt-7 flex flex-wrap gap-5 border-t border-white/[0.06] pt-6 text-sm">
+                <div>
+                  <div className="text-white/40 text-xs uppercase tracking-widest">Requests</div>
+                  <div className="mt-0.5 text-xl font-semibold tabular-nums">{metrics.localAiUsage.requestCount.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-white/40 text-xs uppercase tracking-widest">Input tokens</div>
+                  <div className="mt-0.5 text-xl font-semibold tabular-nums">{metrics.localAiUsage.promptTokens.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-white/40 text-xs uppercase tracking-widest">Output tokens</div>
+                  <div className="mt-0.5 text-xl font-semibold tabular-nums">{metrics.localAiUsage.completionTokens.toLocaleString()}</div>
+                </div>
+              </div>
+
+              {/* Cloud comparison rows */}
+              <div className="mt-6">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-white/30">Cloud equivalent cost breakdown</div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {metrics.localAiUsage.cloudEquivalents.map((eq) => {
+                    const maxUsd = Math.max(...metrics.localAiUsage.cloudEquivalents.map((e) => e.usd), 0.001);
+                    const barWidth = Math.round((eq.usd / maxUsd) * 100);
+                    const isMax = eq.usd === maxUsd;
+                    return (
+                      <div key={eq.label} className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${isMax ? "border-teal-500/30 bg-teal-500/[0.07]" : "border-white/[0.05] bg-white/[0.02]"}`}>
+                        <div className="min-w-0 flex-1">
+                          <div className={`text-xs font-medium ${isMax ? "text-teal-300" : "text-white/55"}`}>{eq.label}</div>
+                          <div className="mt-1.5 h-1 rounded-full bg-white/8">
+                            <div
+                              className={`h-1 rounded-full ${isMax ? "bg-teal-400/70" : "bg-white/20"}`}
+                              style={{ width: `${barWidth}%` }}
+                            />
+                          </div>
+                        </div>
+                        <div className={`shrink-0 text-right text-lg font-bold tabular-nums ${isMax ? "text-teal-300" : "text-white/50"}`}>
+                          {usd(eq.usd)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </section>
     </div>
   );
