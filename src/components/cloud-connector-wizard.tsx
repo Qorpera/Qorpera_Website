@@ -122,7 +122,7 @@ export function CloudConnectorWizard({ initial }: { initial: CloudConnectorView[
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [runtimeStatus, setRuntimeStatus] = useState<RuntimeStatus["providers"] | null>(null);
-  const [localModelName, setLocalModelName] = useState("glm-4.7");
+  const [localModelName, setLocalModelName] = useState("glm-5");
   const [localPullBusy, setLocalPullBusy] = useState(false);
   const [localPullOutput, setLocalPullOutput] = useState<string | null>(null);
   const current = connectors[provider];
@@ -311,10 +311,10 @@ export function CloudConnectorWizard({ initial }: { initial: CloudConnectorView[
             <div className="mt-3 rounded-xl border border-[var(--border)] bg-white/80 p-3">
               <div className="text-sm font-medium">Pull a local model in Zygenic</div>
               <div className="mt-1 text-xs wf-muted">
-                Use any Ollama tag, including <code>glm-4.7</code>.
+                Use any Ollama tag, including <code>glm-5</code>.
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
-                {["glm-4.7", "llama3.1:8b", "qwen2.5:14b"].map((suggestion) => (
+                {["glm-5", "glm-4.7", "llama3.1:8b", "qwen2.5:14b"].map((suggestion) => (
                   <button
                     key={suggestion}
                     type="button"
