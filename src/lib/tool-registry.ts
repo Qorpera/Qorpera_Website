@@ -21,11 +21,8 @@ async function ensureToolsSeeded(): Promise<boolean> {
   if (_seedAttempted) return true;
   _seedAttempted = true;
   try {
-    const count = await prisma.toolDefinition.count();
-    if (count === 0) {
-      const { seedToolDefinitions } = await import("@/lib/tool-definitions-seed");
-      await seedToolDefinitions();
-    }
+    const { seedToolDefinitions } = await import("@/lib/tool-definitions-seed");
+    await seedToolDefinitions();
     return true;
   } catch {
     // Table may not exist yet (migration not applied) — gracefully degrade

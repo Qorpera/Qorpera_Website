@@ -6,8 +6,19 @@ import { verifySameOrigin } from "@/lib/request-security";
 
 export const runtime = "nodejs";
 
+const ALL_AGENT_TARGETS = new Set<string>([
+  "CHIEF_ADVISOR",
+  "ASSISTANT",
+  "SALES_REP",
+  "CUSTOMER_SUCCESS",
+  "MARKETING_COORDINATOR",
+  "FINANCE_ANALYST",
+  "OPERATIONS_MANAGER",
+  "EXECUTIVE_ASSISTANT",
+]);
+
 function validTarget(value: unknown): value is AgentTarget {
-  return value === "CHIEF_ADVISOR" || value === "ASSISTANT" || value === "PROJECT_MANAGER";
+  return typeof value === "string" && ALL_AGENT_TARGETS.has(value);
 }
 
 export async function GET(request: Request) {

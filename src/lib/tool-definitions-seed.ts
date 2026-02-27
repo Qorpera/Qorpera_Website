@@ -224,6 +224,26 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "web_fetch", "run_command", "write_file", "send_email", "call_webhook",
     "create_business_log", "delegate_task",
   ],
+  SALES_REP: [
+    "search_business_logs", "create_business_log", "list_files", "read_file",
+    "web_fetch", "send_email", "call_webhook", "delegate_task", "list_inbox_items",
+  ],
+  CUSTOMER_SUCCESS: [
+    "search_business_logs", "create_business_log", "list_files", "read_file",
+    "send_email", "list_inbox_items", "delegate_task", "call_webhook",
+  ],
+  FINANCE_ANALYST: [
+    "search_business_logs", "create_business_log", "list_files", "read_file",
+    "list_inbox_items", "get_project_details",
+  ],
+  OPERATIONS_MANAGER: [
+    "search_business_logs", "create_business_log", "list_files", "read_file",
+    "web_fetch", "send_email", "call_webhook", "delegate_task", "list_inbox_items",
+  ],
+  EXECUTIVE_ASSISTANT: [
+    "search_business_logs", "create_business_log", "list_files", "read_file",
+    "list_inbox_items", "send_email", "get_project_details",
+  ],
 };
 
 export async function seedToolDefinitions() {

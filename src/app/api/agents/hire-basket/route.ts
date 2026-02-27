@@ -17,7 +17,15 @@ const BasketHireBody = z.object({
   items: z
     .array(
       z.object({
-        agentKind: z.enum(["ASSISTANT", "PROJECT_MANAGER"]),
+        agentKind: z.enum([
+          "ASSISTANT",
+          "SALES_REP",
+          "CUSTOMER_SUCCESS",
+          "MARKETING_COORDINATOR",
+          "FINANCE_ANALYST",
+          "OPERATIONS_MANAGER",
+          "EXECUTIVE_ASSISTANT",
+        ]),
         schedule: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).default("MONTHLY"),
       }),
     )

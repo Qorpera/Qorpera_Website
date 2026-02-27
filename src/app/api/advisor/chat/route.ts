@@ -7,7 +7,15 @@ import { createDelegatedTask, executeDelegatedTask, type AgentTarget } from "@/l
 
 export const runtime = "nodejs";
 
-const VALID_TARGETS = new Set<string>(["ASSISTANT", "PROJECT_MANAGER"]);
+const VALID_TARGETS = new Set<string>([
+  "ASSISTANT",
+  "SALES_REP",
+  "CUSTOMER_SUCCESS",
+  "MARKETING_COORDINATOR",
+  "FINANCE_ANALYST",
+  "OPERATIONS_MANAGER",
+  "EXECUTIVE_ASSISTANT",
+]);
 
 type Body = {
   mode?: AdvisorMode;
