@@ -80,7 +80,7 @@ function ActivityHeatmap({ data }: { data: DailyActivityPoint[] }) {
     <div className="space-y-3">
       <div className="flex gap-3">
         {/* DOW labels */}
-        <div className="flex flex-col shrink-0" style={{ gap: `${GAP}px`, paddingTop: "22px" }}>
+        <div className="flex flex-col shrink-0" style={{ gap: `${GAP}px`, paddingTop: "23px" }}>
           {DOW_LABELS.map((label, i) => (
             <div key={i} style={{ width: "24px", height: `${CELL}px` }}
               className="flex items-center justify-end text-[10px] text-white/25 leading-none pr-1">
@@ -317,7 +317,7 @@ export function MetricsDashboard({ metrics, rangeDays }: { metrics: MetricsSumma
           <section className="wf-panel rounded-3xl p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-lg font-semibold tracking-tight">Activity</h2>
+                <h2 className="text-lg font-semibold tracking-tight">Task Activity</h2>
                 <p className="mt-0.5 text-sm wf-muted">Tasks and submissions · {rangeDays === 0 ? "all time" : `last ${rangeDays} days`}</p>
               </div>
               {rangeDays === 7 && (
