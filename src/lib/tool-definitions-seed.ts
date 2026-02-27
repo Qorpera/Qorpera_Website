@@ -123,7 +123,7 @@ const TOOL_SEEDS: ToolSeedRow[] = [
     parametersJson: JSON.stringify({
       type: "object",
       properties: {
-        to_agent: { type: "string", description: "Target agent kind: ASSISTANT, SALES_REP, CUSTOMER_SUCCESS, MARKETING_COORDINATOR, FINANCE_ANALYST, OPERATIONS_MANAGER, or EXECUTIVE_ASSISTANT" },
+        to_agent: { type: "string", description: "Target agent kind: ASSISTANT, SALES_REP, CUSTOMER_SUCCESS, MARKETING_COORDINATOR, FINANCE_ANALYST, OPERATIONS_MANAGER, EXECUTIVE_ASSISTANT, or RESEARCH_ANALYST" },
         title: { type: "string", description: "Task title (max 240 chars)" },
         instructions: { type: "string", description: "Detailed instructions for the agent (max 12000 chars)" },
       },
@@ -205,6 +205,50 @@ const TOOL_SEEDS: ToolSeedRow[] = [
       required: ["file_key", "node_id"],
     }),
   },
+  {
+    name: "web_search",
+    category: "read",
+    executionMode: "in_process",
+    description: "Search the web using Tavily API. Returns titles, URLs, and content snippets for the top results. Requires TAVILY_API_KEY skill credential.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        query: { type: "string", description: "The search query" },
+        search_depth: { type: "string", description: "Search depth: 'basic' or 'advanced' (default: basic)" },
+        max_results: { type: "number", description: "Maximum results to return (default: 5)" },
+      },
+      required: ["query"],
+    }),
+  },
+  {
+    name: "extract_content",
+    category: "read",
+    executionMode: "in_process",
+    description: "Extract and read the full content of a web page URL. Returns clean text suitable for analysis. Falls back to basic fetch if Tavily extract is unavailable.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        url: { type: "string", description: "The URL to extract content from" },
+        max_length: { type: "number", description: "Maximum content length to return (default: 8000)" },
+      },
+      required: ["url"],
+    }),
+  },
+  {
+    name: "quality_review",
+    category: "read",
+    executionMode: "in_process",
+    description: "Submit a research draft for quality review by a stronger cloud model. Returns critique, confidence score, and suggested improvements. Use this before finalizing any research output.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        draft: { type: "string", description: "The research content to review" },
+        review_focus: { type: "string", description: "What to evaluate: 'factual_accuracy', 'completeness', 'reasoning', or 'all' (default: all)" },
+        context: { type: "string", description: "Background context for the reviewer" },
+      },
+      required: ["draft"],
+    }),
+  },
 ];
 
 const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
@@ -212,7 +256,7 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "read_file", "list_files", "search_business_logs", "get_project_details",
     "list_inbox_items", "web_fetch", "run_command", "write_file",
     "delegate_task", "send_email", "call_webhook", "create_business_log",
-    "figma_get_design", "figma_get_image",
+    "figma_get_design", "figma_get_image", "web_search", "extract_content",
   ],
   MARKETING_COORDINATOR: [
     "search_business_logs", "list_files", "read_file", "web_fetch",
@@ -243,6 +287,11 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
   EXECUTIVE_ASSISTANT: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
     "list_inbox_items", "send_email", "get_project_details",
+  ],
+  RESEARCH_ANALYST: [
+    "web_search", "extract_content", "quality_review",
+    "search_business_logs", "create_business_log",
+    "list_files", "read_file", "delegate_task", "list_inbox_items",
   ],
 };
 

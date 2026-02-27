@@ -12,4 +12,15 @@ export async function ensureBaseAgents() {
     },
   });
 
+  await prisma.agent.upsert({
+    where: { kind: "RESEARCH_ANALYST" },
+    update: { name: "Nova", username: "nova", headline: "Searches, validates, and reports." },
+    create: {
+      kind: "RESEARCH_ANALYST",
+      name: "Nova",
+      username: "nova",
+      headline: "Searches, validates, and reports.",
+    },
+  });
+
 }

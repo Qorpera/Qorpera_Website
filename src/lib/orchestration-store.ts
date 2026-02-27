@@ -20,7 +20,8 @@ export type AgentTarget =
   | "MARKETING_COORDINATOR"
   | "FINANCE_ANALYST"
   | "OPERATIONS_MANAGER"
-  | "EXECUTIVE_ASSISTANT";
+  | "EXECUTIVE_ASSISTANT"
+  | "RESEARCH_ANALYST";
 
 export type WorkerAgentTarget = Exclude<AgentTarget, "CHIEF_ADVISOR">;
 
@@ -213,6 +214,24 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     allowAgentDelegation: false,
     integrations: ["email", "files", "business_logs", "review_queue"],
     notes: "Triages inbox, preps meeting notes, tracks action items, and drafts communications.",
+    updatedAt: null,
+  },
+  RESEARCH_ANALYST: {
+    agentTarget: "RESEARCH_ANALYST",
+    triggerMode: "DELEGATED",
+    wakeOnDelegation: true,
+    scheduleEnabled: false,
+    dailyTimes: [],
+    timezone: "UTC",
+    runContinuously: false,
+    maxLoopIterations: 12,
+    maxAgentCallsPerRun: 15,
+    maxToolRetries: 2,
+    maxRuntimeSeconds: 600,
+    requireApprovalForExternalActions: true,
+    allowAgentDelegation: false,
+    integrations: ["browser", "business_logs", "files"],
+    notes: "Searches the web, validates findings, and produces structured research reports. Uses cloud model for quality review.",
     updatedAt: null,
   },
 };

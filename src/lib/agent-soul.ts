@@ -115,6 +115,22 @@ export async function getAgentSoulPackForUser(userId: string | null | undefined,
   const agentUsername = dbAgent?.username ?? ui.username;
   const ownerUsername = getPreferredUsername({ email: owner?.email, username: owner?.username });
 
+  const coreTruths = kind === "RESEARCH_ANALYST"
+    ? [
+        ...CORE_TRUTHS,
+        "Cite sources for every factual claim.",
+        "Use quality_review tool before finalizing any research output.",
+        "Prefer multiple independent sources over a single reference.",
+      ]
+    : CORE_TRUTHS;
+
+  const boundaries = kind === "RESEARCH_ANALYST"
+    ? [
+        ...BOUNDARIES,
+        "Never present unverified claims as facts.",
+      ]
+    : BOUNDARIES;
+
   const packBase = {
     kind,
     agentName: dbAgent?.name ?? ui.name,
@@ -122,8 +138,8 @@ export async function getAgentSoulPackForUser(userId: string | null | undefined,
     ownerUsername,
     role: ui.role,
     companyName: company.companyName || null,
-    coreTruths: CORE_TRUTHS,
-    boundaries: BOUNDARIES,
+    coreTruths,
+    boundaries,
     roleIdentity: buildRoleIdentity({ ...ui, name: dbAgent?.name ?? ui.name, username: agentUsername }),
     companyAnchors: buildCompanyAnchors(ui, company),
     operatingMemory,

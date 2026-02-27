@@ -196,7 +196,7 @@ async function handleDelegateTask(args: Record<string, unknown>, ctx: ToolExecut
   if (!toAgent || !title || !instructions) {
     return "Error: to_agent, title, and instructions are all required";
   }
-  if (!["ASSISTANT", "CHIEF_ADVISOR", "SALES_REP", "CUSTOMER_SUCCESS", "MARKETING_COORDINATOR", "FINANCE_ANALYST", "OPERATIONS_MANAGER", "EXECUTIVE_ASSISTANT"].includes(toAgent)) {
+  if (!["ASSISTANT", "CHIEF_ADVISOR", "SALES_REP", "CUSTOMER_SUCCESS", "MARKETING_COORDINATOR", "FINANCE_ANALYST", "OPERATIONS_MANAGER", "EXECUTIVE_ASSISTANT", "RESEARCH_ANALYST"].includes(toAgent)) {
     return `Error: Invalid agent target "${toAgent}". Use ASSISTANT or another valid agent kind.`;
   }
 
@@ -276,6 +276,125 @@ async function handleCallWebhook(args: Record<string, unknown>, ctx: ToolExecuti
   } catch (e: unknown) {
     if (e instanceof Error && e.name === "AbortError") return "Error: Webhook timed out after 10s";
     return `Error: Webhook failed - ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+// --- Research tools (web_search, extract_content, quality_review) ---
+
+async function handleWebSearch(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const query = String(args.query ?? "").trim();
+  if (!query) return "Error: query is required";
+
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "TAVILY_API_KEY");
+  if (!apiKey) return "Error: TAVILY_API_KEY not set. Add it in Settings → Skills → Tavily Research.";
+
+  const searchDepth = String(args.search_depth ?? "basic");
+  const maxResults = Math.min(Number(args.max_results) || 5, 10);
+
+  try {
+    const res = await fetch("https://api.tavily.com/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: apiKey,
+        query,
+        search_depth: searchDepth,
+        max_results: maxResults,
+        include_answer: true,
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!res.ok) return `Error: Tavily API returned HTTP ${res.status}`;
+
+    const data = (await res.json()) as {
+      answer?: string;
+      results?: Array<{ title: string; url: string; content: string }>;
+    };
+
+    const parts: string[] = [];
+    if (data.answer) parts.push(`**Answer:** ${data.answer}\n`);
+    if (data.results?.length) {
+      parts.push("**Sources:**");
+      for (const r of data.results) {
+        parts.push(`- [${r.title}](${r.url}): ${r.content.slice(0, 300)}`);
+      }
+    }
+
+    const output = parts.join("\n");
+    return output.slice(0, 8000) || "No results found.";
+  } catch (e: unknown) {
+    if (e instanceof Error && e.name === "TimeoutError") return "Error: Tavily search timed out (15s)";
+    return `Error: Web search failed - ${e instanceof Error ? e.message : "unknown error"}`;
+  }
+}
+
+async function handleExtractContent(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const url = String(args.url ?? "").trim();
+  if (!url) return "Error: url is required";
+
+  const maxLength = Math.min(Number(args.max_length) || 8000, 12000);
+
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "TAVILY_API_KEY");
+
+  // Try Tavily Extract first if API key available
+  if (apiKey) {
+    try {
+      const res = await fetch("https://api.tavily.com/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ api_key: apiKey, urls: [url] }),
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (res.ok) {
+        const data = (await res.json()) as {
+          results?: Array<{ url: string; raw_content: string }>;
+        };
+        const content = data.results?.[0]?.raw_content;
+        if (content) return content.slice(0, maxLength);
+      }
+      // Fall through to basic fetch on failure
+    } catch {
+      // Fall through to basic fetch
+    }
+  }
+
+  // Fallback: basic HTTP GET + stripHtml (same as handleWebFetch)
+  return handleWebFetch({ url }).then((text) => text.slice(0, maxLength));
+}
+
+async function handleQualityReview(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const draft = String(args.draft ?? "").trim();
+  if (!draft) return "Error: draft is required";
+
+  const reviewFocus = String(args.review_focus ?? "all");
+  const context = String(args.context ?? "");
+
+  const systemPrompt = `You are a senior research quality reviewer. Evaluate the following research draft.
+Focus: ${reviewFocus}. ${context ? `Context: ${context}.` : ""}
+
+Provide:
+1) Confidence score (0-100)
+2) Factual accuracy assessment
+3) Completeness gaps
+4) Reasoning quality
+5) Specific improvements needed
+
+Be concise and actionable.`;
+
+  try {
+    const { callAgentLlm } = await import("@/lib/agent-llm");
+    const result = await callAgentLlm({
+      userId: ctx.userId,
+      agentKind: "CHIEF_ADVISOR",
+      systemPrompt,
+      userMessage: `Draft to review:\n\n${draft.slice(0, 10000)}`,
+      maxOutputTokens: 2048,
+    });
+    return result.text || "Quality review returned no output.";
+  } catch (e: unknown) {
+    return `Quality review degraded (cloud model unavailable): ${e instanceof Error ? e.message : "unknown error"}. Proceed with caution — manual review recommended.`;
   }
 }
 
@@ -510,6 +629,9 @@ const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: T
   call_webhook: handleCallWebhook,
   figma_get_design: handleFigmaGetDesign,
   figma_get_image: handleFigmaGetImage,
+  web_search: handleWebSearch,
+  extract_content: handleExtractContent,
+  quality_review: handleQualityReview,
 };
 
 const RUNNER_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {

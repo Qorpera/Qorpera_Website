@@ -5,7 +5,8 @@ export type AgentKindKey =
   | "MARKETING_COORDINATOR"
   | "FINANCE_ANALYST"
   | "OPERATIONS_MANAGER"
-  | "EXECUTIVE_ASSISTANT";
+  | "EXECUTIVE_ASSISTANT"
+  | "RESEARCH_ANALYST";
 
 export type AgentTone = "teal" | "amber" | "rose" | "green" | "purple" | "cyan" | "slate" | "violet";
 export type AgentFigureVariant = "assistant" | "manager";
@@ -264,6 +265,34 @@ export const UI_AGENTS: UiAgent[] = [
       evals: [
         { name: "Action item recall accuracy", env: "staging", score: "95%", lastRun: "Today 07:00" },
         { name: "Briefing completeness", env: "production", score: "92%", lastRun: "Yesterday" },
+      ],
+    },
+  },
+  {
+    kind: "RESEARCH_ANALYST",
+    name: "Nova",
+    username: "nova",
+    role: "Research Analyst",
+    tone: "amber",
+    figureVariant: "manager",
+    status: "Available",
+    autonomy: "Execute with approval",
+    capabilities: ["Deep web research and source validation", "Cross-reference claims against multiple sources", "Synthesize findings into structured reports", "Quality-review outputs via cloud model critique"],
+    permissions: ["Can search the web and extract content", "Can create business logs with findings", "Cannot send emails or external comms", "All reports require human review"],
+    knowledgeSources: ["Web search (Tavily API)", "Business logs", "Business files"],
+    wins: ["Cross-validated 12 market claims across 5 independent sources", "Research report saved 6 hours of manual desk research"],
+    failures: ["Initial draft missed a key competitor — caught by quality review"],
+    dev: {
+      promptVersion: "research-analyst@v1",
+      tools: ["Web Search", "Extract Content", "Quality Review", "Business Logs"],
+      connectors: ["Tavily", "Business Logs"],
+      logs: [
+        { time: "10:00", event: "Searched 5 topics, extracted 8 pages", latencyMs: 4200, status: "ok" },
+        { time: "10:15", event: "Quality review passed (confidence: 87%)", latencyMs: 3100, status: "ok" },
+      ],
+      evals: [
+        { name: "Source citation accuracy", env: "staging", score: "91%", lastRun: "Today 09:00" },
+        { name: "Report completeness", env: "production", score: "88%", lastRun: "Yesterday" },
       ],
     },
   },

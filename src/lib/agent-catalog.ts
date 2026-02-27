@@ -8,7 +8,8 @@ export type HireAgentKind =
   | "MARKETING_COORDINATOR"
   | "FINANCE_ANALYST"
   | "OPERATIONS_MANAGER"
-  | "EXECUTIVE_ASSISTANT";
+  | "EXECUTIVE_ASSISTANT"
+  | "RESEARCH_ANALYST";
 
 export type HireSchedule = "DAILY" | "WEEKLY" | "MONTHLY";
 
@@ -77,6 +78,14 @@ export const AGENT_HIRE_CATALOG: AgentHireCatalogItem[] = [
     summary: "A dedicated executive support team that triages your inbox, prepares meeting briefs and agendas, and tracks open action items — so nothing falls through the cracks.",
     recurringCents: { DAILY: 1500, WEEKLY: 9000, MONTHLY: 25000 },
     recurringPrices: { DAILY: "15 kr/day", WEEKLY: "90 kr/wk", MONTHLY: "250 kr/mo" },
+  },
+  {
+    kind: "RESEARCH_ANALYST",
+    title: "Research Team",
+    subtitle: "Deep research + validation + reports",
+    summary: "A research team that searches the web, cross-validates findings, and produces structured reports — with cloud-model quality checks before anything is finalized.",
+    recurringCents: { DAILY: 2000, WEEKLY: 12000, MONTHLY: 38000 },
+    recurringPrices: { DAILY: "20 kr/day", WEEKLY: "120 kr/wk", MONTHLY: "380 kr/mo" },
   },
 ];
 
