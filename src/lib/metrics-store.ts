@@ -103,6 +103,7 @@ export async function getMetricsForUser(userId: string, rangeDays = 365): Promis
     projects,
     runnerJobs,
     ollamaRaw,
+    hiredJobs,
   ] = await Promise.all([
     prisma.submission.findMany({
       where: { userId },
@@ -148,6 +149,11 @@ export async function getMetricsForUser(userId: string, rangeDays = 365): Promis
       select: { status: true },
     }),
     getOllamaUsageThisMonth(userId),
+    prisma.hiredJob.findMany({
+      where: { userId, enabled: true },
+      select: { agentKind: true },
+      distinct: ["agentKind"],
+    }),
   ]);
 
   // KPIs
@@ -318,7 +324,10 @@ export async function getMetricsForUser(userId: string, rangeDays = 365): Promis
     latencyByTarget.set(key, arr);
   }
 
-  const agentRows: AgentMetricRow[] = UI_AGENTS.map((agent) => {
+  const hiredKinds = new Set(hiredJobs.map((j) => j.agentKind));
+  const activeAgents = UI_AGENTS.filter((a) => hiredKinds.has(a.kind));
+
+  const agentRows: AgentMetricRow[] = activeAgents.map((agent) => {
     const kindKey = agent.kind;
     const subStats = submissionsByKind.get(kindKey) ?? { total: 0, accepted: 0 };
     const delStats = delegatedByTarget.get(kindKey) ?? { done: 0, total: 0 };
