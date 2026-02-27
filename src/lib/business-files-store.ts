@@ -19,6 +19,13 @@ const ALLOWED_MIME_PREFIXES = [
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml",
   "application/zip",
+  "application/typescript",
+  "application/javascript",
+  "application/x-yaml",
+  "application/x-sh",
+  "application/sql",
+  "application/toml",
+  "application/octet-stream",
 ];
 const ALLOWED_EXTENSIONS = new Set([
   ".txt",
@@ -35,6 +42,31 @@ const ALLOWED_EXTENSIONS = new Set([
   ".xlsx",
   ".rtf",
   ".zip",
+  // Source code
+  ".ts",
+  ".tsx",
+  ".js",
+  ".jsx",
+  ".py",
+  ".rb",
+  ".go",
+  ".rs",
+  ".java",
+  ".kt",
+  ".swift",
+  ".c",
+  ".cpp",
+  ".h",
+  ".css",
+  ".scss",
+  ".sql",
+  ".sh",
+  ".yaml",
+  ".yml",
+  ".toml",
+  ".env.example",
+  ".gitignore",
+  ".prisma",
 ]);
 
 function clean(value: unknown, max: number) {
@@ -48,7 +80,12 @@ function safeName(name: string) {
 function extIsText(name: string, mime?: string | null) {
   const ext = path.extname(name).toLowerCase();
   if (mime?.startsWith("text/")) return true;
-  return [".txt", ".md", ".json", ".csv", ".tsv", ".xml", ".html"].includes(ext);
+  return [
+    ".txt", ".md", ".json", ".csv", ".tsv", ".xml", ".html",
+    ".ts", ".tsx", ".js", ".jsx", ".py", ".rb", ".go", ".rs",
+    ".java", ".kt", ".swift", ".c", ".cpp", ".h", ".css", ".scss",
+    ".sql", ".sh", ".yaml", ".yml", ".toml", ".prisma",
+  ].includes(ext);
 }
 
 function fileTypeAllowed(name: string, mime?: string | null) {
@@ -164,6 +201,9 @@ export async function deleteBusinessFile(userId: string, fileId: string) {
 
 const EXTRACTABLE_EXTENSIONS = new Set([
   ".txt", ".md", ".csv", ".json", ".xml", ".html", ".tsv", ".rtf", ".docx", ".pdf",
+  ".ts", ".tsx", ".js", ".jsx", ".py", ".rb", ".go", ".rs",
+  ".java", ".kt", ".swift", ".c", ".cpp", ".h", ".css", ".scss",
+  ".sql", ".sh", ".yaml", ".yml", ".toml", ".prisma",
 ]);
 
 /**

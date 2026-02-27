@@ -29,6 +29,9 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 WORKDIR /app
 
+# Writable data directory for file uploads (owned by nextjs user)
+RUN mkdir -p /app/.data && chown nextjs:nodejs /app/.data
+
 # Extra node_modules not bundled by standalone (prisma CLI, node-pty, tsx, etc.)
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
