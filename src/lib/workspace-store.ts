@@ -216,8 +216,9 @@ function inferRunStatus(status: string): RunStatus {
 
 export async function ensureWorkspaceSeeded(userId: string) {
   await ensureTemplatesSeeded();
-  await ensureProjectsSeeded(userId);
-  await ensureRunsSeeded(userId);
+  // Demo projects and runs are no longer auto-seeded — they polluted
+  // the advisor context with fake operational data (hardcoded timelines,
+  // phantom runs, etc.) that the LLM treated as real business activity.
 }
 
 async function ensureTemplatesSeeded() {
