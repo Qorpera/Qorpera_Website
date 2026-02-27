@@ -113,7 +113,7 @@ export function getAvailableModelCatalog() {
     .filter(Boolean);
 
   return {
-    OPENAI: ["gpt-4.1-mini", "gpt-4.1"].filter(Boolean),
+    OPENAI: ["gpt-4.1-mini", "gpt-4.1", "gpt-5.2"].filter(Boolean),
     OLLAMA: ollamaFromEnv.length ? ollamaFromEnv : ["glm-5", "llama3.1:8b", "qwen2.5:14b", "mistral:7b"],
     ANTHROPIC: ["claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5-20251001"],
     GOOGLE: ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro"],

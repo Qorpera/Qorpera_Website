@@ -43,6 +43,8 @@ export function ModelRouteSelector({
   const [availableCatalog, setAvailableCatalog] = useState<Catalog>(catalog);
   const [open, setOpen] = useState(false);
 
+  // Re-fetch catalog on mount and whenever the popover opens (picks up newly pulled models)
+  const refreshKey = chatTrigger ? open : false;
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -57,7 +59,8 @@ export function ModelRouteSelector({
     return () => {
       cancelled = true;
     };
-  }, [catalog]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catalog, refreshKey]);
 
   useEffect(() => {
     if (!showRuntimeWarnings) return;
