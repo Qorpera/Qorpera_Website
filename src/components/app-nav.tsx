@@ -9,6 +9,7 @@ type NavItem = {
   badge?: string | null;
   badgeTone?: "warn" | "info" | "neutral";
   badgeStyle?: React.CSSProperties;
+  dataTour?: string;
 };
 
 const STANDALONE_PATHS = new Set(["/agents/hire"]);
@@ -65,6 +66,7 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string | null })
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
+      data-tour={item.dataTour}
       className={`relative rounded-md px-2.5 py-1.5 pr-12 text-left text-[13px] transition ${
         active
           ? "bg-white/[0.06] text-white/95"

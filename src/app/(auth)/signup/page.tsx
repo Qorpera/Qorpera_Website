@@ -32,7 +32,7 @@ export default function SignupPage() {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error || "Signup failed");
       }
-      router.push("/");
+      router.push("/onboarding");
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Signup failed");

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import type { ExpectedFileStatus } from "@/lib/expected-business-files";
+import { ExpectedFilesBanner } from "@/components/expected-files-banner";
 
 type LogRow = {
   id: string;
@@ -24,7 +26,15 @@ type FileRow = {
   updatedAt: string;
 };
 
-export function BusinessLogsPanel({ initial, initialFiles }: { initial: LogRow[]; initialFiles: FileRow[] }) {
+export function BusinessLogsPanel({
+  initial,
+  initialFiles,
+  expectedFileStatuses,
+}: {
+  initial: LogRow[];
+  initialFiles: FileRow[];
+  expectedFileStatuses?: ExpectedFileStatus[];
+}) {
   const [logs, setLogs] = useState(initial);
   const [files, setFiles] = useState<FileRow[]>(initialFiles);
   const [title, setTitle] = useState("");
@@ -89,6 +99,22 @@ export function BusinessLogsPanel({ initial, initialFiles }: { initial: LogRow[]
 
   return (
     <div className="space-y-6">
+      {expectedFileStatuses && (
+        <ExpectedFilesBanner
+          statuses={expectedFileStatuses}
+          onFileUploaded={(newFiles) => {
+            const mapped = newFiles.map((f) => ({
+              ...f,
+              source: "IMPORT",
+              mimeType: null,
+              sizeBytes: 0,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            }));
+            setFiles((curr) => [...mapped, ...curr]);
+          }}
+        />
+      )}
       <header className="wf-panel rounded-3xl p-6">
         <h1 className="text-3xl font-semibold tracking-tight">Business Logs</h1>
         <p className="mt-2 text-base wf-muted">

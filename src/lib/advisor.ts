@@ -133,9 +133,12 @@ async function buildRunnerContext(userId: string) {
   };
 }
 
-function advisorSystemPrompt(ownerUsername: string, chiefAdvisorSoulPrompt?: string | null, runnerContext?: { onlineRunnerCount: number; pendingApprovalCount: number } | null) {
+function advisorSystemPrompt(ownerUsername: string, chiefAdvisorSoulPrompt?: string | null, runnerContext?: { onlineRunnerCount: number; pendingApprovalCount: number } | null, recentlyOnboarded?: boolean) {
   const runnerLines = runnerContext && runnerContext.onlineRunnerCount > 0
     ? ["", "RUNNER_CAPABILITIES", "When a runner is online you can ask to execute local commands or read/write files — these go through the runner approval queue."]
+    : [];
+  const onboardingLines = recentlyOnboarded
+    ? ["", "ONBOARDING_CONTEXT", "This user just completed setup. Be welcoming. Suggest a first project, hiring agents for their busiest workflow, or refining their Company Soul profile."]
     : [];
   return [
     "ROLE_IDENTITY",
@@ -174,6 +177,7 @@ function advisorSystemPrompt(ownerUsername: string, chiefAdvisorSoulPrompt?: str
     '{"answer":"string","priority":"low|medium|high","suggestedAgents":["..."],"onboardingSteps":["..."],"recommendedTemplate":"optional-template-slug","ownerFocus":["..."],"delegatedTasks":[{"toAgent":"ASSISTANT","title":"short task title","instructions":"detailed instructions for the agent"}]}',
     "delegatedTasks is optional — only include it when you are actually delegating work to an agent.",
     ...runnerLines,
+    ...onboardingLines,
   ].join("\n");
 }
 
@@ -192,9 +196,14 @@ export async function buildAdvisorContext(userId: string) {
     getChiefAdvisorSoulPackForUser(userId),
     listBusinessLogs(userId, 20),
     listBusinessFiles(userId, 30),
-    prisma.user.findUnique({ where: { id: userId }, select: { email: true, username: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { email: true, username: true, onboardedAt: true } }),
     buildRunnerContext(userId).catch(() => null),
   ]);
+
+  // Check if the user was onboarded within the last 24 hours
+  const recentlyOnboarded = owner?.onboardedAt
+    ? Date.now() - new Date(owner.onboardedAt).getTime() < 24 * 60 * 60 * 1000
+    : false;
   const ownerUsername = getPreferredUsername({ email: owner?.email, username: owner?.username });
 
   const inboxSummary = {
@@ -248,6 +257,7 @@ export async function buildAdvisorContext(userId: string) {
           pendingJobs: runnerContext.pendingJobs,
         }
       : null,
+    recentlyOnboarded,
   };
 }
 
@@ -355,7 +365,13 @@ async function callOpenAIAdvisor({
     "runnerState" in context
       ? (context as { runnerState?: { onlineRunnerCount: number; pendingApprovalCount: number } | null }).runnerState
       : null;
-  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx);
+  const isRecentlyOnboarded =
+    typeof context === "object" &&
+    context &&
+    "recentlyOnboarded" in context
+      ? Boolean((context as { recentlyOnboarded?: boolean }).recentlyOnboarded)
+      : false;
+  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx, isRecentlyOnboarded);
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -474,7 +490,13 @@ async function callOllamaAdvisor({
     "runnerState" in context
       ? (context as { runnerState?: { onlineRunnerCount: number; pendingApprovalCount: number } | null }).runnerState
       : null;
-  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtxOllama);
+  const isRecentlyOnboardedOllama =
+    typeof context === "object" &&
+    context &&
+    "recentlyOnboarded" in context
+      ? Boolean((context as { recentlyOnboarded?: boolean }).recentlyOnboarded)
+      : false;
+  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtxOllama, isRecentlyOnboardedOllama);
 
   const userPayload = clampText(
     JSON.stringify(

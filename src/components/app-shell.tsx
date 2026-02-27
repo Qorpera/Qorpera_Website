@@ -10,17 +10,20 @@ import { BasketSidebarButton } from "@/components/basket-sidebar-button";
 import { getModelRoutes, getAvailableModelCatalog } from "@/lib/model-routing-store";
 import { ModelRouteSelector } from "@/components/model-route-selector";
 import { RunnerApprovalsSidebar } from "@/components/runner-approvals-panel";
+import { PlatformTour } from "@/components/platform-tour";
 import { prisma } from "@/lib/db";
+import { listBusinessFiles } from "@/lib/business-files-store";
+import { checkExpectedFiles, getExpectedFileSummary } from "@/lib/expected-business-files";
 
 const NAV_GROUPS = [
   {
     label: "Work",
     items: [
       { href: "/", label: "New Advisor Chat" },
-      { href: "/inbox", label: "Review" },
+      { href: "/inbox", label: "Review", dataTour: "nav-inbox" },
       { href: "/projects", label: "Projects" },
       { href: "/metrics", label: "Metrics" },
-      { href: "/agents", label: "Agents" },
+      { href: "/agents", label: "Agents", dataTour: "nav-agents" },
     ],
   },
   {
@@ -34,7 +37,7 @@ const NAV_GROUPS = [
     label: "System",
     items: [
       { href: "/settings/connectors", label: "Connectors" },
-      { href: "/settings", label: "Settings" },
+      { href: "/settings", label: "Settings", dataTour: "nav-settings" },
     ],
   },
 ];
@@ -57,9 +60,10 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   let navGroups = NAV_GROUPS as NavGroup[];
 
   if (session) {
-    const [approvalCount, companySoul] = await Promise.all([
+    const [approvalCount, companySoul, businessFiles] = await Promise.all([
       getInboxOpenApprovalCount(session.userId),
       getCompanySoul(session.userId),
+      listBusinessFiles(session.userId, 200),
     ]);
     const soulFields = [
       companySoul.companyName,
@@ -94,12 +98,23 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       });
     }
 
+    const fileStatuses = checkExpectedFiles(
+      businessFiles.map((f) => ({ id: f.id, name: f.name, category: f.category })),
+    );
+    const { criticalMissing } = getExpectedFileSummary(fileStatuses);
+    if (criticalMissing > 0) {
+      badges.set("/business-logs", {
+        badge: String(criticalMissing),
+        badgeTone: "warn",
+      });
+    }
+
     navGroups = applyNavBadges(NAV_GROUPS as NavGroup[], badges);
     navItems = navGroups.flatMap((g) => g.items);
   }
 
   if (session) {
-    const [prefs, advisorHistory, routes, initialPendingJobs] = await Promise.all([
+    const [prefs, advisorHistory, routes, initialPendingJobs, tourUser] = await Promise.all([
       getAppPreferences(session.userId),
       listAdvisorSessions(session.userId, 30),
       getModelRoutes(session.userId),
@@ -109,13 +124,18 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         take: 10,
         select: { id: true, title: true, jobType: true, riskLevel: true, createdAt: true },
       }).catch(() => []),
+      prisma.user.findUnique({
+        where: { id: session.userId },
+        select: { onboardedAt: true, tourCompletedAt: true },
+      }),
     ]);
     const modelCatalog = getAvailableModelCatalog();
+    const showTour = Boolean(tourUser?.onboardedAt && !tourUser?.tourCompletedAt);
 
     return (
       <div className="wf-shell h-screen overflow-hidden text-[var(--foreground)]">
         <section className="grid h-full w-full xl:grid-cols-[220px_1fr]">
-          <aside className="flex h-full flex-col border-r border-[rgba(255,255,255,0.04)] bg-[rgba(255,255,255,0.008)]">
+          <aside data-tour="sidebar-nav" className="flex h-full flex-col border-r border-[rgba(255,255,255,0.04)] bg-[rgba(255,255,255,0.008)]">
             <div className="px-3 pt-3 pb-2">
               <Link href="/" className="mb-2 flex justify-start">
                 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="w-14" aria-label="Zygenic">
@@ -235,6 +255,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </main>
         </section>
+        {showTour ? <PlatformTour /> : null}
       </div>
     );
   }

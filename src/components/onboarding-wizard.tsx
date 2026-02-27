@@ -214,7 +214,7 @@ export function OnboardingWizard({ initial }: { initial: CompanySoulProfile }) {
     } else if (currentStep < STEPS.length - 1) {
       router.push(`/onboarding?step=${currentStep + 2}`);
     } else {
-      router.push("/onboarding/skills");
+      router.push("/onboarding/files");
     }
   }
 
@@ -297,7 +297,7 @@ export function OnboardingWizard({ initial }: { initial: CompanySoulProfile }) {
             onClick={() => saveAndNavigate("next")}
             className="wf-btn-primary px-5 py-2 text-sm font-medium disabled:opacity-50"
           >
-            {saving ? "Saving..." : currentStep === STEPS.length - 1 ? "Continue to skills" : "Continue"}
+            {saving ? "Saving..." : currentStep === STEPS.length - 1 ? "Continue to files" : "Continue"}
           </button>
         </div>
       </div>

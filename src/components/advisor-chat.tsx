@@ -443,7 +443,7 @@ export function AdvisorChat({
           </div>
         ) : null}
 
-        <div className={`${showCenteredComposer ? "hidden" : ""} ${frameless ? "sticky bottom-0 bg-[linear-gradient(180deg,rgba(6,10,14,0)_0%,rgba(6,10,14,0.92)_22%,rgba(6,10,14,0.97)_100%)] pt-6" : "wf-soft rounded-2xl p-3"}`}>
+        <div data-tour="chat-input" className={`${showCenteredComposer ? "hidden" : ""} ${frameless ? "sticky bottom-0 bg-[linear-gradient(180deg,rgba(6,10,14,0)_0%,rgba(6,10,14,0.92)_22%,rgba(6,10,14,0.97)_100%)] pt-6" : "wf-soft rounded-2xl p-3"}`}>
           <div className="mx-auto w-full max-w-4xl">
             <div className={`${frameless ? "rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-3" : ""}`}>
               <textarea
