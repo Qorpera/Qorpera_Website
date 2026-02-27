@@ -81,6 +81,7 @@ services:
     environment:
       WF_RUNNER_BASE_URL: http://app:3000
       WF_RUNNER_TOKEN: ${WF_RUNNER_TOKEN:-}
+      WF_RUNNER_ALLOWED_ROOTS: ${WF_RUNNER_ALLOWED_ROOTS:-/workspace}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       APP_SECRET: ${APP_SECRET}
       CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:-}
