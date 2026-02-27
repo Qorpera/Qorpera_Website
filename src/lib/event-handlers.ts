@@ -1,5 +1,5 @@
 /**
- * Centralized event handlers for Zygenic.
+ * Centralized event handlers for qorpera.
  * Wires up the event bus to domain actions.
  */
 

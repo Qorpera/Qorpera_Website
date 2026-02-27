@@ -1493,11 +1493,11 @@ function buildApprovedEmailBody(task: { title: string; instructions: string }) {
     html: `
       <div style="font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55;color:#111">
         <p>Hi,</p>
-        <p>This message was prepared from an approved delegated task in Zygenic.</p>
+        <p>This message was prepared from an approved delegated task in qorpera.</p>
         <p><strong>Task:</strong> ${task.title.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
         <p><strong>Summary:</strong> ${compact.slice(0, 900).replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
         <p>Please review and respond if you'd like adjustments.</p>
-        <p>Best,<br/>Zygenic Assistant</p>
+        <p>Best,<br/>Qorpera Assistant</p>
       </div>
     `.trim(),
   };

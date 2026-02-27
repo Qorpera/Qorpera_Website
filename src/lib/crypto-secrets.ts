@@ -11,7 +11,7 @@ function getKey() {
   const raw =
     process.env.CREDENTIAL_ENCRYPTION_KEY ||
     process.env.APP_SECRET ||
-    "zygenic-dev-only-insecure-key-change-me";
+    "qorpera-dev-only-insecure-key-change-me";
   return crypto.createHash("sha256").update(raw).digest();
 }
 

@@ -76,7 +76,7 @@ async function sendViaPostmark(apiKey: string, payload: EmailPayload, from: stri
   return { ok: true, provider: "postmark", messageId: data.MessageID };
 }
 
-const DEFAULT_FROM = process.env.EMAIL_FROM ?? "Zygenic Agent <agent@zygenic.ai>";
+const DEFAULT_FROM = process.env.EMAIL_FROM ?? "Qorpera Agent <agent@qorpera.ai>";
 
 /** Send an email, resolving credentials from the DB for the given user. */
 export async function sendEmail(payload: EmailPayload, userId?: string): Promise<EmailResult> {

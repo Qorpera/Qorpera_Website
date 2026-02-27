@@ -181,7 +181,7 @@ async function upsertFinanceArtifacts(userId: string) {
     ...(recentPaymentLines.length ? recentPaymentLines : ["- None"]),
     "",
     "Notes:",
-    "- This report is generated automatically from Stripe checkout events stored in Zygenic.",
+    "- This report is generated automatically from Stripe checkout events stored in qorpera.",
     "- The CSV ledger is Excel-friendly and can be opened directly in Excel/Sheets.",
   ];
 

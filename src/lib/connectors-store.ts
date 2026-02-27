@@ -80,7 +80,7 @@ function toView(
     provider,
     mode: (row?.mode ?? CredentialMode.MANAGED) as CloudConnectorView["mode"],
     status: (row?.status ?? CredentialStatus.PENDING) as CloudConnectorView["status"],
-    label: row?.label ?? (provider === "OPENAI" ? "Managed by Zygenic" : null),
+    label: row?.label ?? (provider === "OPENAI" ? "Managed by Qorpera" : null),
     keyLast4: row?.keyLast4 ?? null,
     managedAvailable: managedEnvAvailable(provider),
     hasStoredKey: Boolean(row?.encryptedKey),
@@ -152,7 +152,7 @@ async function upsertConnectorBase(
 export async function setManagedConnector(userId: string, label?: string, provider: SupportedProvider = "OPENAI") {
   const row = await upsertConnectorBase(userId, provider, {
     mode: CredentialMode.MANAGED,
-    label: label ?? "Managed by Zygenic",
+    label: label ?? "Managed by Qorpera",
     status: managedEnvAvailable(provider) ? CredentialStatus.CONNECTED : CredentialStatus.NEEDS_ATTENTION,
   });
 
@@ -211,7 +211,7 @@ export async function clearByokConnector(userId: string, provider: SupportedProv
       keyLast4: null,
       mode: CredentialMode.MANAGED,
       status: managedEnvAvailable(provider) ? CredentialStatus.CONNECTED : CredentialStatus.NEEDS_ATTENTION,
-      label: "Managed by Zygenic",
+      label: "Managed by Qorpera",
     },
   });
 
@@ -245,7 +245,7 @@ export async function updateConnectorGuardrails(
       provider: providerEnum(provider),
       mode: CredentialMode.MANAGED,
       status: managedEnvAvailable(provider) ? CredentialStatus.CONNECTED : CredentialStatus.PENDING,
-      label: "Managed by Zygenic",
+      label: "Managed by Qorpera",
       monthlyRequestLimit: patch.monthlyRequestLimit ?? 500,
       monthlyUsdLimit: patch.monthlyUsdLimit ?? 10,
       usageMonthKey: currentMonthKey(),
@@ -388,7 +388,7 @@ export async function testConnectorConnection(userId: string, provider: Supporte
       provider: providerEnum(provider),
       mode: CredentialMode.MANAGED,
       status: result.ok ? CredentialStatus.CONNECTED : CredentialStatus.NEEDS_ATTENTION,
-      label: "Managed by Zygenic",
+      label: "Managed by Qorpera",
       lastTestedAt: new Date(),
       lastTestStatus: result.ok ? "PASSED" : "FAILED",
       lastTestMessage: result.message,

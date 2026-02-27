@@ -21,7 +21,7 @@ export function verifyTotpCode(code: string, secret: string): boolean {
 
 export function getTotpOtpAuthUrl(email: string, secret: string): string {
   return generateURI({
-    issuer: "Zygenic",
+    issuer: "Qorpera",
     label: email,
     secret,
     digits: DIGITS,

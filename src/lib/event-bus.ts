@@ -1,5 +1,5 @@
 /**
- * Typed event bus for Zygenic.
+ * Typed event bus for qorpera.
  * Decouples inline event-like code into a clean pub/sub pattern.
  * Uses Node EventEmitter under the hood with typed event payloads.
  */

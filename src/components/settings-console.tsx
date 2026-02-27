@@ -273,7 +273,7 @@ export function SettingsConsole({ initial, connector }: { initial: AppPreference
               <div className="space-y-6">
                 <div>
                   <div className="text-sm font-medium mb-0.5">Provider check cadence</div>
-                  <p className="text-sm text-white/45 mb-3">How often Zygenic should verify connector health.</p>
+                  <p className="text-sm text-white/45 mb-3">How often qorpera should verify connector health.</p>
                   <div className="flex gap-2">
                     {(["hourly", "daily", "manual"] as const).map((option) => (
                       <button

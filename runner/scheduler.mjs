@@ -1,5 +1,5 @@
 /**
- * Zygenic Background Scheduler
+ * Qorpera Background Scheduler
  *
  * Standalone Node process that calls POST /api/scheduler/tick at a configurable interval.
  * This triggers agent automation scheduling (wake-ups, queued task execution, etc.)

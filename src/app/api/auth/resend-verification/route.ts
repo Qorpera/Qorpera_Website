@@ -33,8 +33,8 @@ export async function POST(req: Request) {
 
   await sendEmail({
     to: user.email,
-    subject: "Verify your Zygenic email",
-    body: `Welcome to Zygenic!\n\nClick here to verify your email:\n${verifyUrl}\n\nThis link expires in 24 hours.`,
+    subject: "Verify your qorpera email",
+    body: `Welcome to qorpera!\n\nClick here to verify your email:\n${verifyUrl}\n\nThis link expires in 24 hours.`,
   }).catch(() => {});
 
   return NextResponse.json({ ok: true });

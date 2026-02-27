@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db";
 import { getAppPreferences } from "@/lib/settings-store";
 import { sendEmail } from "@/lib/email-sender";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.zygenic.ai";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.qorpera.ai";
 
 // ─── HTML template helpers ────────────────────────────────────────────────────
 
@@ -30,14 +30,14 @@ function buildHtml(opts: {
         <tr><td style="height:4px;background:${accent};"></td></tr>
         <!-- body -->
         <tr><td style="padding:32px 36px;">
-          <p style="margin:0 0 8px;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:${accent};">Zygenic Agent</p>
+          <p style="margin:0 0 8px;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:${accent};">Qorpera Agent</p>
           <h1 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#f1f5f9;">${opts.title}</h1>
           <p style="margin:0 0 28px;font-size:14px;line-height:1.6;color:rgba(241,245,249,0.65);">${opts.body}</p>
           <a href="${opts.ctaHref}" style="display:inline-block;background:${accent};color:#0d1117;font-size:13px;font-weight:700;padding:10px 22px;border-radius:8px;text-decoration:none;">${opts.ctaLabel}</a>
         </td></tr>
         <!-- footer -->
         <tr><td style="padding:16px 36px;border-top:1px solid rgba(255,255,255,0.06);">
-          <p style="margin:0;font-size:11px;color:rgba(241,245,249,0.3);">You're receiving this because email notifications are enabled in your Zygenic settings.</p>
+          <p style="margin:0;font-size:11px;color:rgba(241,245,249,0.3);">You're receiving this because email notifications are enabled in your qorpera settings.</p>
         </td></tr>
       </table>
     </td></tr>

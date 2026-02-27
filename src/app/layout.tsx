@@ -4,7 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { BasketProvider } from "@/components/basket-context";
 
 export const metadata: Metadata = {
-  title: "Zygenic",
+  title: "Qorpera",
   description: "Your AI workforce, visualized.",
 };
 

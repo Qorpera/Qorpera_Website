@@ -68,7 +68,7 @@ async function executeCallWebhook(args: Record<string, unknown>): Promise<Action
 
     const res = await fetch(url, {
       method,
-      headers: { "Content-Type": "application/json", "User-Agent": "Zygenic-Agent/1.0" },
+      headers: { "Content-Type": "application/json", "User-Agent": "Qorpera-Agent/1.0" },
       body: JSON.stringify(payload),
       signal: controller.signal,
     });

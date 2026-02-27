@@ -279,7 +279,7 @@ async function handleCallWebhook(args: Record<string, unknown>, ctx: ToolExecuti
     const timeout = setTimeout(() => controller.abort(), 10000);
     const res = await fetch(url, {
       method,
-      headers: { "Content-Type": "application/json", "User-Agent": "Zygenic-Agent/1.0" },
+      headers: { "Content-Type": "application/json", "User-Agent": "Qorpera-Agent/1.0" },
       body: method !== "GET" ? JSON.stringify(payload) : undefined,
       signal: controller.signal,
     });

@@ -1,6 +1,6 @@
-# Zygenic Local Runner (Prototype)
+# Qorpera Local Runner (Prototype)
 
-This is the first local/on-prem runner daemon for Zygenic.
+This is the first local/on-prem runner daemon for qorpera.
 
 It connects to the web app control plane and executes leased jobs locally.
 

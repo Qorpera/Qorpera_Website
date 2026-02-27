@@ -17,7 +17,7 @@ function buildPrompt(item: {
   state?: string;
 }) {
   return [
-    "You are a local open-source AI reviewer for Zygenic.",
+    "You are a local open-source AI reviewer for qorpera.",
     "Review the item and produce a practical recommendation for the business owner.",
     "Be concise and decisive.",
     "Return plain text with this format:",

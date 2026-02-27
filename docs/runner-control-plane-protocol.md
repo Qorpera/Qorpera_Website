@@ -1,6 +1,6 @@
 # Runner Control Plane Protocol (v1 Draft)
 
-This document describes the cloud-side API surface implemented in Zygenic for the first runner integration pass.
+This document describes the cloud-side API surface implemented in qorpera for the first runner integration pass.
 
 ## User / Web App Endpoints (session-authenticated)
 

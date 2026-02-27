@@ -1,4 +1,4 @@
-// Prisma schema for WorkforceHQ (v0)
+// Prisma schema for Qorpera (v0)
 
 generator client {
   provider = "prisma-client-js"

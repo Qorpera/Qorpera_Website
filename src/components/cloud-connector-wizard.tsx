@@ -157,7 +157,7 @@ export function CloudConnectorWizard({ initial }: { initial: CloudConnectorView[
 
   async function removeByok() {
     const confirmed = window.confirm(
-      `Remove the saved ${providerLabel(provider)} key from Zygenic? You can add it again later.`,
+      `Remove the saved ${providerLabel(provider)} key from qorpera? You can add it again later.`,
     );
     if (!confirmed) return;
     setBusy(true);
@@ -323,7 +323,7 @@ export function CloudConnectorWizard({ initial }: { initial: CloudConnectorView[
               </div>
             ) : null}
             <div className="mt-3 rounded-xl border border-[var(--border)] bg-white/80 p-3">
-              <div className="text-sm font-medium">Pull a local model in Zygenic</div>
+              <div className="text-sm font-medium">Pull a local model in qorpera</div>
               <div className="mt-1 text-xs wf-muted">
                 Use any Ollama tag, including <code>glm-5</code>.
               </div>

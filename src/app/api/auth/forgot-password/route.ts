@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
   await sendEmail({
     to: user.email,
-    subject: "Reset your Zygenic password",
+    subject: "Reset your qorpera password",
     body: `You requested a password reset.\n\nClick here to reset your password:\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email.`,
   }).catch(() => {});
 

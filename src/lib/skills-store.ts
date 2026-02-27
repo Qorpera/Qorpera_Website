@@ -209,7 +209,7 @@ async function fileExists(filePath: string): Promise<boolean> {
 // ---------------------------------------------------------------------------
 
 async function githubFetch(url: string): Promise<Response> {
-  const headers: Record<string, string> = { "User-Agent": "zygenic-skill-install" };
+  const headers: Record<string, string> = { "User-Agent": "qorpera-skill-install" };
   const token = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN;
   if (token) headers["Authorization"] = `token ${token}`;
   return fetch(url, { headers });

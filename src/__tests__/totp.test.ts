@@ -48,7 +48,7 @@ describe("getTotpOtpAuthUrl", () => {
     const secret = generateTotpSecret();
     const url = getTotpOtpAuthUrl("user@example.com", secret);
     expect(url).toMatch(/^otpauth:\/\/totp\//);
-    expect(url).toContain("Zygenic");
+    expect(url).toContain("Qorpera");
     expect(url).toContain(secret);
   });
 });

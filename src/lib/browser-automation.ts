@@ -1,5 +1,5 @@
 /**
- * Browser automation client for Zygenic.
+ * Browser automation client for qorpera.
  * Connects to a remote Playwright/Puppeteer service via BROWSER_AUTOMATION_URL.
  * The service must expose a REST API that accepts task instructions.
  */

@@ -1,4 +1,4 @@
-# Zygenic Runner Architecture (Business-Friendly OpenClaw Model)
+# Qorpera Runner Architecture (Business-Friendly OpenClaw Model)
 
 ## Goal
 

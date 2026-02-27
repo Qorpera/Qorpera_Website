@@ -42,7 +42,23 @@ export default function LoginPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold">Zygenic</h1>
+        <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg" className="mb-3 h-10 w-auto" aria-label="Qorpera">
+          <defs>
+            <linearGradient id="qp-login-streak" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="white" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="white" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="qp-login-streak2" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="white" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="white" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <circle cx="42" cy="50" r="28" fill="none" stroke="white" strokeWidth="2" strokeOpacity="0.85" />
+          <path d="M 52 26 A 28 28 0 0 1 52 74 A 22 28 0 0 0 52 26 Z" fill="white" fillOpacity="0.08" />
+          <polygon points="62,46 155,38 155,42 62,52" fill="url(#qp-login-streak)" />
+          <polygon points="58,40 150,28 150,30 58,43" fill="url(#qp-login-streak2)" />
+        </svg>
+        <h1 className="text-2xl font-semibold">Qorpera</h1>
         <p className="text-sm text-zinc-400">Log in to your digital office.</p>
       </div>
 

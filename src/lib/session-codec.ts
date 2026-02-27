@@ -66,7 +66,7 @@ export function getSessionSecret(): string {
     if (process.env.NODE_ENV === "production") {
       throw new Error("APP_SECRET (or CREDENTIAL_ENCRYPTION_KEY) must be set in production");
     }
-    return "zygenic-dev-session-secret-change-me";
+    return "qorpera-dev-session-secret-change-me";
   }
   return raw;
 }

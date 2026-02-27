@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       if (usable && !usable.includes(cleanModelName)) {
         return NextResponse.json(
           {
-            error: `OpenAI model "${cleanModelName}" is not available for your current API key or not supported for text responses in Zygenic.`,
+            error: `OpenAI model "${cleanModelName}" is not available for your current API key or not supported for text responses in qorpera.`,
             availableModels: usable,
           },
           { status: 400 },

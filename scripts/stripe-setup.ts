@@ -1,5 +1,5 @@
 /**
- * Stripe Setup Script for Zygenic
+ * Stripe Setup Script for Qorpera
  *
  * Creates all required products, prices, and (optionally) a webhook endpoint
  * in your Stripe account, then prints the env vars to add to .env.
@@ -98,7 +98,7 @@ type ProductDef = {
 const PRODUCTS: ProductDef[] = [
   {
     name: "Support Team",
-    description: "Zygenic Support Team — triage + drafts + customer communications",
+    description: "Qorpera Support Team — triage + drafts + customer communications",
     prices: [
       { envVar: "STRIPE_PRICE_ASSISTANT", unitAmount: 4900, recurring: false },
       { envVar: "STRIPE_SUB_PRICE_ASSISTANT_DAILY", unitAmount: 100, interval: "day", recurring: true },
@@ -108,7 +108,7 @@ const PRODUCTS: ProductDef[] = [
   },
   {
     name: "Sales Team",
-    description: "Zygenic Sales Team — prospecting + outreach + pipeline",
+    description: "Qorpera Sales Team — prospecting + outreach + pipeline",
     prices: [
       { envVar: "STRIPE_PRICE_SALES_REP", unitAmount: 5900, recurring: false },
       { envVar: "STRIPE_SUB_PRICE_SALES_REP_DAILY", unitAmount: 100, interval: "day", recurring: true },
@@ -118,7 +118,7 @@ const PRODUCTS: ProductDef[] = [
   },
   {
     name: "Customer Success Team",
-    description: "Zygenic Customer Success Team — health monitoring + renewals + check-ins",
+    description: "Qorpera Customer Success Team — health monitoring + renewals + check-ins",
     prices: [
       { envVar: "STRIPE_PRICE_CUSTOMER_SUCCESS", unitAmount: 5900, recurring: false },
       { envVar: "STRIPE_SUB_PRICE_CUSTOMER_SUCCESS_DAILY", unitAmount: 100, interval: "day", recurring: true },
@@ -128,7 +128,7 @@ const PRODUCTS: ProductDef[] = [
   },
   {
     name: "Marketing Team",
-    description: "Zygenic Marketing Team — content + campaigns + performance",
+    description: "Qorpera Marketing Team — content + campaigns + performance",
     prices: [
       { envVar: "STRIPE_PRICE_MARKETING_COORDINATOR", unitAmount: 5900, recurring: false },
       { envVar: "STRIPE_SUB_PRICE_MARKETING_COORDINATOR_DAILY", unitAmount: 100, interval: "day", recurring: true },
@@ -138,7 +138,7 @@ const PRODUCTS: ProductDef[] = [
   },
   {
     name: "Finance Team",
-    description: "Zygenic Finance Team — reports + reconciliation + invoicing",
+    description: "Qorpera Finance Team — reports + reconciliation + invoicing",
     prices: [
       { envVar: "STRIPE_PRICE_FINANCE_ANALYST", unitAmount: 6900, recurring: false },
       { envVar: "STRIPE_SUB_PRICE_FINANCE_ANALYST_DAILY", unitAmount: 200, interval: "day", recurring: true },
@@ -148,7 +148,7 @@ const PRODUCTS: ProductDef[] = [
   },
   {
     name: "Operations Team",
-    description: "Zygenic Operations Team — SOPs + vendor comms + process ops",
+    description: "Qorpera Operations Team — SOPs + vendor comms + process ops",
     prices: [
       { envVar: "STRIPE_PRICE_OPERATIONS_MANAGER", unitAmount: 5900, recurring: false },
       { envVar: "STRIPE_SUB_PRICE_OPERATIONS_MANAGER_DAILY", unitAmount: 100, interval: "day", recurring: true },
@@ -158,7 +158,7 @@ const PRODUCTS: ProductDef[] = [
   },
   {
     name: "Executive Support Team",
-    description: "Zygenic Executive Support Team — inbox + briefings + action tracking",
+    description: "Qorpera Executive Support Team — inbox + briefings + action tracking",
     prices: [
       { envVar: "STRIPE_PRICE_EXECUTIVE_ASSISTANT", unitAmount: 4900, recurring: false },
       { envVar: "STRIPE_SUB_PRICE_EXECUTIVE_ASSISTANT_DAILY", unitAmount: 100, interval: "day", recurring: true },
@@ -173,7 +173,7 @@ const PRODUCTS: ProductDef[] = [
 // ---------------------------------------------------------------------------
 
 async function main() {
-  console.log(`\n  Stripe Setup for Zygenic (${IS_TEST ? "TEST mode" : "LIVE mode"})\n`);
+  console.log(`\n  Stripe Setup for Qorpera (${IS_TEST ? "TEST mode" : "LIVE mode"})\n`);
 
   const envLines: string[] = [`STRIPE_SECRET_KEY=${STRIPE_KEY}`];
 

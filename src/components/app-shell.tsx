@@ -20,7 +20,7 @@ const NAV_GROUPS = [
   {
     label: "Work",
     items: [
-      { href: "/", label: "New Advisor Chat" },
+      { href: "/", label: "Consulting Chat" },
       { href: "/inbox", label: "Review", dataTour: "nav-inbox" },
       { href: "/projects", label: "Projects" },
       { href: "/metrics", label: "Metrics" },
@@ -141,28 +141,25 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           <aside data-tour="sidebar-nav" className="flex h-full flex-col border-r border-[rgba(255,255,255,0.04)] bg-[rgba(255,255,255,0.008)]">
             <div className="px-3 pt-3 pb-2">
               <Link href="/" className="mb-2 flex justify-start">
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="w-14" aria-label="Zygenic">
+                <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg" className="w-14" aria-label="Qorpera">
                   <defs>
-                    <clipPath id="zy-z-clip">
-                      <circle cx="50" cy="50" r="42" />
-                    </clipPath>
-                    <clipPath id="zy-ring-back">
-                      <rect x="0" y="49" width="100" height="51" />
-                    </clipPath>
-                    <clipPath id="zy-ring-front">
-                      <rect x="0" y="0" width="100" height="51" />
-                    </clipPath>
+                    <linearGradient id="qp-streak" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="white" stopOpacity="0.85" />
+                      <stop offset="100%" stopColor="white" stopOpacity="0" />
+                    </linearGradient>
+                    <linearGradient id="qp-streak2" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="white" stopOpacity="0.45" />
+                      <stop offset="100%" stopColor="white" stopOpacity="0" />
+                    </linearGradient>
                   </defs>
-                  {/* Orbital ring — back half (dim, behind Z) */}
-                  <ellipse cx="50" cy="50" rx="47" ry="13" transform="rotate(-12 50 50)" fill="none" stroke="white" strokeWidth="2.5" strokeOpacity="0.28" clipPath="url(#zy-ring-back)" />
-                  {/* Z body clipped to circle */}
-                  <g clipPath="url(#zy-z-clip)" fill="rgba(255,255,255,0.93)">
-                    <rect x="8" y="10" width="84" height="20" />
-                    <polygon points="86,21 95,39 15,79 6,61" />
-                    <rect x="8" y="70" width="84" height="20" />
-                  </g>
-                  {/* Orbital ring — front half (bright, over Z) */}
-                  <ellipse cx="50" cy="50" rx="47" ry="13" transform="rotate(-12 50 50)" fill="none" stroke="white" strokeWidth="2.5" strokeOpacity="0.88" clipPath="url(#zy-ring-front)" />
+                  {/* Sphere */}
+                  <circle cx="42" cy="50" r="28" fill="none" stroke="white" strokeWidth="2" strokeOpacity="0.85" />
+                  {/* Crescent shadow */}
+                  <path d="M 52 26 A 28 28 0 0 1 52 74 A 22 28 0 0 0 52 26 Z" fill="white" fillOpacity="0.08" />
+                  {/* Lower streak (bold) */}
+                  <polygon points="62,46 155,38 155,42 62,52" fill="url(#qp-streak)" />
+                  {/* Upper streak (thin) */}
+                  <polygon points="58,40 150,28 150,30 58,43" fill="url(#qp-streak2)" />
                 </svg>
               </Link>
               <AdvisorExecutionMode initial={prefs} compact />
@@ -183,8 +180,14 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             />
 
             <div className="min-h-0 flex-1 overflow-hidden">
-              <div className="px-3 py-2">
+              <div className="flex items-center justify-between px-3 py-2">
                 <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/30">History</div>
+                <Link
+                  href="/"
+                  className="rounded-md px-2 py-0.5 text-[11px] font-medium text-white/40 transition hover:bg-white/[0.06] hover:text-white/70"
+                >
+                  New Chat
+                </Link>
               </div>
               <div className="h-full max-h-[calc(100%-2.25rem)] space-y-px overflow-y-auto px-2 pb-2">
                 {advisorHistory.length === 0 ? (
@@ -283,11 +286,24 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
               <Link href="/" className="flex items-center gap-3">
-                <div className="grid h-9 w-9 place-items-center rounded-xl border border-teal-500/40 bg-teal-500/10 text-base font-bold text-teal-400">
-                  Z
-                </div>
+                <svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg" className="h-9 w-auto" aria-label="Qorpera">
+                  <defs>
+                    <linearGradient id="qp-hdr-streak" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="white" stopOpacity="0.85" />
+                      <stop offset="100%" stopColor="white" stopOpacity="0" />
+                    </linearGradient>
+                    <linearGradient id="qp-hdr-streak2" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="white" stopOpacity="0.45" />
+                      <stop offset="100%" stopColor="white" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="42" cy="50" r="28" fill="none" stroke="white" strokeWidth="2" strokeOpacity="0.85" />
+                  <path d="M 52 26 A 28 28 0 0 1 52 74 A 22 28 0 0 0 52 26 Z" fill="white" fillOpacity="0.08" />
+                  <polygon points="62,46 155,38 155,42 62,52" fill="url(#qp-hdr-streak)" />
+                  <polygon points="58,40 150,28 150,30 58,43" fill="url(#qp-hdr-streak2)" />
+                </svg>
                 <div>
-                  <div className="text-base font-semibold tracking-tight">Zygenic</div>
+                  <div className="text-base font-semibold tracking-tight">Qorpera</div>
                   <div className="text-xs wf-muted">AI workforce control room</div>
                 </div>
               </Link>

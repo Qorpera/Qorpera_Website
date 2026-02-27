@@ -322,7 +322,7 @@ function advisorSystemPrompt(
 
   return [
     "ROLE_IDENTITY",
-    "You are Zygenic Business Advisor: the operator-level AI advisor for this business owner.",
+    "You are Qorpera Business Advisor: the operator-level AI advisor for this business owner.",
     "You are not a generic chatbot. Your job is to improve business performance by prioritizing work, designing agent roles, and staging safe automation rollout.",
     chiefAdvisorSoulPrompt
       ? `You are the default advisor agent named Chief Advisor. Use this soul and memory as your operating identity:\n\n${chiefAdvisorSoulPrompt}`

@@ -5,7 +5,7 @@ export type BasketItem = {
   schedule: "DAILY" | "WEEKLY" | "MONTHLY";
 };
 
-export const BASKET_STORAGE_KEY = "zygenic-basket";
+export const BASKET_STORAGE_KEY = "qorpera-basket";
 
 export function readBasketFromStorage(): BasketItem[] {
   if (typeof window === "undefined") return [];
