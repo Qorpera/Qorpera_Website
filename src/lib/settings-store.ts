@@ -20,7 +20,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   compactDashboard: false,
   highlightApprovals: true,
   connectorChecks: "daily",
-  maxAgentOutputTokens: 8192,
+  maxAgentOutputTokens: 32768,
 };
 
 function fromDb(row: {

@@ -292,22 +292,24 @@ export function CloudConnectorWizard({ initial }: { initial: CloudConnectorView[
                 {runtimeStatus?.OLLAMA?.ready ? "Ready" : "Setup needed"}
               </span>
             </div>
-            <div className="mt-3 grid gap-2 text-sm">
-              <div className="rounded-xl border border-[var(--border)] bg-white/80 px-3 py-2">
-                1. Install Ollama on this machine.
-                <div className="mt-2">
-                  <a href="https://ollama.com" target="_blank" rel="noreferrer" className="wf-btn-info px-3 py-1.5 text-xs">
-                    Open Ollama homepage
-                  </a>
+            {!ollamaDetails?.cliInstalled ? (
+              <div className="mt-3 grid gap-2 text-sm">
+                <div className="rounded-xl border border-[var(--border)] bg-white/80 px-3 py-2">
+                  1. Install Ollama on this machine.
+                  <div className="mt-2">
+                    <a href="https://ollama.com" target="_blank" rel="noreferrer" className="wf-btn-info px-3 py-1.5 text-xs">
+                      Open Ollama homepage
+                    </a>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-[var(--border)] bg-white/80 px-3 py-2">
+                  2. Start Ollama and pull a model (example: <code>ollama pull llama3.1:8b</code>)
+                </div>
+                <div className="rounded-xl border border-[var(--border)] bg-white/80 px-3 py-2">
+                  3. All downloaded models from Ollama are available for agentic workflows.
                 </div>
               </div>
-              <div className="rounded-xl border border-[var(--border)] bg-white/80 px-3 py-2">
-                2. Start Ollama and pull a model (example: <code>ollama pull llama3.1:8b</code>)
-              </div>
-              <div className="rounded-xl border border-[var(--border)] bg-white/80 px-3 py-2">
-                3. now all downloaded models from ollama are available for agentic workflows.
-              </div>
-            </div>
+            ) : null}
             <div className="mt-3 rounded-xl border border-[var(--border)] bg-white/80 p-3">
               <div className="text-sm font-medium">Pull a local model in Zygenic</div>
               <div className="mt-1 text-xs wf-muted">
