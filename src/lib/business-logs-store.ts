@@ -14,9 +14,18 @@ function clean(value: unknown, max: number) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
-export async function listBusinessLogs(userId: string, limit = 40) {
+export async function listBusinessLogs(
+  userId: string,
+  limit = 40,
+  opts?: { excludeChatLogs?: boolean },
+) {
   return prisma.businessLogEntry.findMany({
-    where: { userId },
+    where: {
+      userId,
+      ...(opts?.excludeChatLogs
+        ? { NOT: { relatedRef: { startsWith: "CHAT_LOG:" } } }
+        : {}),
+    },
     orderBy: { createdAt: "desc" },
     take: limit,
   });

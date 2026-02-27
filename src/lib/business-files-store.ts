@@ -1,4 +1,4 @@
-import { mkdir, writeFile, unlink } from "node:fs/promises";
+import { mkdir, writeFile, unlink, readFile } from "node:fs/promises";
 import path from "node:path";
 import { BusinessFileCategory, BusinessLogSource } from "@prisma/client";
 import { prisma } from "@/lib/db";
@@ -160,6 +160,39 @@ export async function deleteBusinessFile(userId: string, fileId: string) {
       summary: `Deleted business file: ${row.name}`,
     },
   });
+}
+
+const EXTRACTABLE_EXTENSIONS = new Set([
+  ".txt", ".md", ".csv", ".json", ".xml", ".html", ".tsv", ".rtf", ".docx", ".pdf",
+]);
+
+/**
+ * Backfill text extracts for files that were uploaded before extraction was enabled.
+ * Reads files from disk, extracts text, and caches the result in the DB.
+ * Mutates the input array in-place so the current request benefits immediately.
+ */
+export async function backfillMissingExtracts(
+  files: Array<{ id: string; name: string; storagePath: string; textExtract: string | null }>,
+) {
+  const needed = files.filter(
+    (f) => f.textExtract === null && EXTRACTABLE_EXTENSIONS.has(path.extname(f.name).toLowerCase()),
+  );
+  if (needed.length === 0) return;
+
+  await Promise.all(
+    needed.map(async (file) => {
+      try {
+        const bytes = new Uint8Array(await readFile(file.storagePath));
+        const text = await extractTextFromBuffer(file.name, bytes);
+        if (text) {
+          await prisma.businessFile.update({ where: { id: file.id }, data: { textExtract: text } });
+          file.textExtract = text;
+        }
+      } catch {
+        // file missing from disk or extraction failed — skip
+      }
+    }),
+  );
 }
 
 export function summarizeBusinessFilesForAdvisor(

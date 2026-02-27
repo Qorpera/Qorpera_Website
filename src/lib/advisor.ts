@@ -11,8 +11,8 @@ import {
 import { companySoulForAdvisor, getCompanySoul } from "@/lib/company-soul-store";
 import { getChiefAdvisorSoulPackForUser } from "@/lib/agent-soul";
 import { getModelRoute } from "@/lib/model-routing-store";
-import { listBusinessLogs, summarizeBusinessLogsForAdvisor } from "@/lib/business-logs-store";
-import { listBusinessFiles, summarizeBusinessFilesForAdvisor } from "@/lib/business-files-store";
+import { listBusinessLogs } from "@/lib/business-logs-store";
+import { listBusinessFiles, backfillMissingExtracts } from "@/lib/business-files-store";
 import { postOllamaJson } from "@/lib/ollama";
 import { getPreferredUsername } from "@/lib/usernames";
 import { listRunnersForUser } from "@/lib/runner-control-plane";
@@ -68,6 +68,158 @@ function extractJsonObject(input: string): string | null {
   const last = input.lastIndexOf("}");
   if (first === -1 || last === -1 || last <= first) return null;
   return input.slice(first, last + 1);
+}
+
+/* ── Relevance-based retrieval helpers ─────────────────────────── */
+
+const STOP_WORDS = new Set([
+  "the","a","an","is","are","was","were","be","been","being","have","has","had",
+  "do","does","did","will","would","could","should","may","might","can","shall",
+  "to","of","in","for","on","with","at","by","from","as","into","about","between",
+  "through","during","before","after","above","below","it","its","this","that",
+  "these","those","i","me","my","we","our","you","your","he","she","they","them",
+  "their","what","which","who","when","where","how","why","all","each","every",
+  "both","few","more","most","other","some","such","no","not","only","own","same",
+  "so","than","too","very","just","also","and","or","but","if","then","else",
+  "because","until","while","up","out","any","there","here","tell","know","show",
+  "give","get","make","see","look","find","read","say","think","want","need",
+]);
+
+function extractSearchTerms(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
+}
+
+function scoreRelevance(text: string, terms: string[]): number {
+  if (terms.length === 0) return 0;
+  const lower = text.toLowerCase();
+  return terms.reduce((s, t) => s + (lower.includes(t) ? 1 : 0), 0);
+}
+
+type LogSummary = {
+  title: string;
+  category: string;
+  source: string;
+  author: string | null;
+  relatedRef: string | null;
+  createdAt: string;
+  body: string;
+};
+
+type FileSummary = {
+  name: string;
+  category: string;
+  source: string;
+  mimeType: string | null;
+  sizeBytes: number;
+  author: string | null;
+  relatedRef: string | null;
+  createdAt: string;
+  textExtract: string | null;
+};
+
+function buildSmartPayload(
+  context: Record<string, unknown>,
+  userMessage: string,
+  opts: {
+    mode: AdvisorMode;
+    projectDescription?: string;
+    history: ChatTurn[];
+    charLimit: number;
+  },
+): string {
+  const terms = extractSearchTerms(userMessage);
+  const logs = (context.businessLogs ?? []) as LogSummary[];
+  const files = (context.businessFiles ?? []) as FileSummary[];
+
+  // --- Score & sort logs ---
+  const scoredLogs = logs.map((log) => ({
+    log,
+    score: scoreRelevance(`${log.title} ${log.body}`, terms),
+  }));
+  scoredLogs.sort((a, b) => b.score - a.score || new Date(b.log.createdAt).getTime() - new Date(a.log.createdAt).getTime());
+
+  const smartLogs: unknown[] = [];
+  let relevantLogCount = 0;
+  for (const { log, score } of scoredLogs) {
+    if (score > 0) {
+      // Relevant: generous content (up to 4000 chars)
+      relevantLogCount++;
+      smartLogs.push({
+        ...log,
+        body: log.body.length > 4000 ? log.body.slice(0, 4000) + "…" : log.body,
+      });
+    } else if (smartLogs.length < relevantLogCount + 25) {
+      // Recent non-relevant: moderate content (up to 800 chars)
+      smartLogs.push({
+        ...log,
+        body: log.body.length > 800 ? log.body.slice(0, 800) + "…" : log.body,
+      });
+    } else {
+      // Rest: metadata only so advisor knows it exists
+      smartLogs.push({
+        title: log.title,
+        category: log.category,
+        source: log.source,
+        createdAt: log.createdAt,
+      });
+    }
+  }
+
+  // --- Score & sort files ---
+  const scoredFiles = files.map((file) => ({
+    file,
+    score: scoreRelevance(`${file.name} ${file.textExtract ?? ""}`, terms),
+  }));
+  scoredFiles.sort((a, b) => b.score - a.score || new Date(b.file.createdAt).getTime() - new Date(a.file.createdAt).getTime());
+
+  const smartFiles: unknown[] = [];
+  let relevantFileCount = 0;
+  for (const { file, score } of scoredFiles) {
+    if (score > 0) {
+      relevantFileCount++;
+      smartFiles.push({
+        ...file,
+        textExtract: file.textExtract
+          ? file.textExtract.length > 6000
+            ? file.textExtract.slice(0, 6000) + "…"
+            : file.textExtract
+          : null,
+      });
+    } else if (smartFiles.length < relevantFileCount + 20) {
+      smartFiles.push({
+        ...file,
+        textExtract: file.textExtract
+          ? file.textExtract.length > 1500
+            ? file.textExtract.slice(0, 1500) + "…"
+            : file.textExtract
+          : null,
+      });
+    } else {
+      smartFiles.push({
+        name: file.name,
+        category: file.category,
+        mimeType: file.mimeType,
+        sizeBytes: file.sizeBytes,
+        createdAt: file.createdAt,
+      });
+    }
+  }
+
+  // Build payload with business context FIRST so it survives truncation
+  const smartContext = { ...context, businessLogs: smartLogs, businessFiles: smartFiles };
+  const payload = {
+    businessContext: smartContext,
+    mode: opts.mode,
+    projectDescription: opts.projectDescription,
+    message: userMessage,
+    history: opts.history.slice(-8),
+  };
+
+  return clampText(JSON.stringify(payload), opts.charLimit);
 }
 
 function safeParseStructured(text: string): AdvisorStructuredReply | null {
@@ -199,6 +351,7 @@ function advisorSystemPrompt(
     "If Company Soul is empty or incomplete, say so directly — do not infer business details.",
     "If no agents are hired (agents list is empty), say so — do not describe agents as available.",
     "If businessLogs and businessFiles arrays are empty, the business has no recorded operational history yet.",
+    "Business logs and files are ranked by relevance to the user's message — the most relevant entries appear first with full content. Other entries may have abbreviated or metadata-only content.",
     "Never conflate project templates (available options) with active projects (user-created work).",
     "When you don't know something, say \"I don't have that information yet\" rather than guessing.",
     "When the user asks you to read or summarize a file or log, use the actual body/textExtract content provided in the context. If the content is truncated, say so.",
@@ -243,12 +396,15 @@ export async function buildAdvisorContext(userId: string) {
     prisma.submission.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 8 }),
     getCompanySoul(userId),
     getChiefAdvisorSoulPackForUser(userId),
-    listBusinessLogs(userId, 20),
-    listBusinessFiles(userId, 30),
+    listBusinessLogs(userId, 200, { excludeChatLogs: true }),
+    listBusinessFiles(userId, 100),
     prisma.user.findUnique({ where: { id: userId }, select: { email: true, username: true, onboardedAt: true } }),
     buildRunnerContext(userId).catch(() => null),
     prisma.hiredJob.findMany({ where: { userId, enabled: true }, select: { agentKind: true }, distinct: ["agentKind"] }),
   ]);
+
+  // Backfill text extracts for files uploaded before extraction was enabled
+  await backfillMissingExtracts(businessFiles);
 
   // Check if the user was onboarded within the last 24 hours
   const recentlyOnboarded = owner?.onboardedAt
@@ -300,8 +456,26 @@ export async function buildAdvisorContext(userId: string) {
       agentKind: s.agentKind,
     })),
     companySoul: soulData,
-    businessLogs: summarizeBusinessLogsForAdvisor(businessLogs),
-    businessFiles: summarizeBusinessFilesForAdvisor(businessFiles),
+    businessLogs: businessLogs.map((row) => ({
+      title: row.title,
+      category: row.category,
+      source: row.source,
+      author: row.authorLabel,
+      relatedRef: row.relatedRef,
+      createdAt: row.createdAt.toISOString(),
+      body: row.body,
+    })),
+    businessFiles: businessFiles.map((row) => ({
+      name: row.name,
+      category: row.category,
+      source: row.source,
+      mimeType: row.mimeType,
+      sizeBytes: row.sizeBytes,
+      author: row.authorLabel,
+      relatedRef: row.relatedRef,
+      createdAt: row.createdAt.toISOString(),
+      textExtract: row.textExtract,
+    })),
     // chiefAdvisorSoul prompt is injected into system prompt directly — not duplicated in context JSON
     chiefAdvisorSoulPromptText: chiefAdvisorSoul?.promptText ?? null,
     runnerState: runnerContext
@@ -446,16 +620,12 @@ async function callOpenAIAdvisor({
           content: [
             {
               type: "input_text",
-              text: clampText(
-                JSON.stringify({
-                  mode,
-                  projectDescription,
-                  message: userMessage,
-                  history: history.slice(-8),
-                  businessContext: context,
-                }),
-                32000,
-              ),
+              text: buildSmartPayload(context as Record<string, unknown>, userMessage, {
+                mode,
+                projectDescription,
+                history,
+                charLimit: 120_000,
+              }),
             },
           ],
         },
@@ -550,10 +720,12 @@ async function callOllamaAdvisor({
   const dataSignalsOllama = extractDataSignals(context);
   const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtxOllama, isRecentlyOnboardedOllama, dataSignalsOllama);
 
-  const userPayload = clampText(
-    JSON.stringify({ mode, projectDescription, message: userMessage, history: history.slice(-8), businessContext: context }),
-    28000,
-  );
+  const userPayload = buildSmartPayload(context as Record<string, unknown>, userMessage, {
+    mode,
+    projectDescription,
+    history,
+    charLimit: 80_000,
+  });
 
   type OllamaTokenFields = { eval_count?: number; prompt_eval_count?: number };
 
