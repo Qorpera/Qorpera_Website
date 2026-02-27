@@ -125,6 +125,7 @@ export function CloudConnectorWizard({ initial }: { initial: CloudConnectorView[
   const [localModelName, setLocalModelName] = useState("glm-5");
   const [localPullBusy, setLocalPullBusy] = useState(false);
   const [localPullOutput, setLocalPullOutput] = useState<string | null>(null);
+  const [ollamaChecking, setOllamaChecking] = useState(false);
   const current = connectors[provider];
   const ollamaDetails = runtimeStatus?.OLLAMA?.details;
 
@@ -296,10 +297,21 @@ export function CloudConnectorWizard({ initial }: { initial: CloudConnectorView[
               <div className="mt-3 grid gap-2 text-sm">
                 <div className="rounded-xl border border-[var(--border)] bg-white/80 px-3 py-2">
                   1. Install Ollama on this machine.
-                  <div className="mt-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     <a href="https://ollama.com" target="_blank" rel="noreferrer" className="wf-btn-info px-3 py-1.5 text-xs">
                       Open Ollama homepage
                     </a>
+                    <button
+                      type="button"
+                      disabled={ollamaChecking}
+                      onClick={async () => {
+                        setOllamaChecking(true);
+                        try { await refreshRuntimeStatus(); } catch { /* ignore */ } finally { setOllamaChecking(false); }
+                      }}
+                      className="wf-btn px-3 py-1.5 text-xs disabled:opacity-60"
+                    >
+                      {ollamaChecking ? "Checking…" : "Already installed? Test connection"}
+                    </button>
                   </div>
                 </div>
                 <div className="rounded-xl border border-[var(--border)] bg-white/80 px-3 py-2">

@@ -24,9 +24,11 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || "Login failed");
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || "Login failed");
+      if (j.requiresTwoFactor) {
+        router.push(`/verify-2fa${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`);
+        return;
       }
       router.push(next);
       router.refresh();

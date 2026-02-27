@@ -5,6 +5,10 @@ import {
   decodeSession,
   SESSION_COOKIE,
   SESSION_TTL_SECONDS,
+  encode2faPending,
+  decode2faPending,
+  TOTP_PENDING_COOKIE,
+  TOTP_PENDING_TTL,
 } from "@/lib/session-codec";
 import { prisma } from "@/lib/db";
 
@@ -67,4 +71,31 @@ export async function requireUserId(): Promise<string> {
   const session = await getSession();
   if (!session) throw new Error("Unauthorized");
   return session.userId;
+}
+
+// ─── 2FA pending cookie ──────────────────────────────────────────────────────
+
+export async function set2faPendingCookie(userId: string) {
+  const store = await cookies();
+  const token = await encode2faPending(userId);
+  store.set(TOTP_PENDING_COOKIE, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: TOTP_PENDING_TTL,
+  });
+}
+
+export async function get2faPendingUserId(): Promise<string | null> {
+  const store = await cookies();
+  const raw = store.get(TOTP_PENDING_COOKIE)?.value;
+  if (!raw) return null;
+  const decoded = await decode2faPending(raw);
+  return decoded?.userId ?? null;
+}
+
+export async function clear2faPendingCookie() {
+  const store = await cookies();
+  store.delete(TOTP_PENDING_COOKIE);
 }

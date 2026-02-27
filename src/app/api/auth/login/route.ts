@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { setSession, verifyPassword } from "@/lib/auth";
+import { setSession, verifyPassword, set2faPendingCookie } from "@/lib/auth";
 import { LoginBody } from "@/lib/schemas";
 import { verifySameOrigin } from "@/lib/request-security";
 
@@ -14,7 +14,10 @@ export async function POST(req: Request) {
   }
 
   const { email, password } = parsed.data;
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, passwordHash: true, totpEnabled: true },
+  });
   if (!user) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
@@ -22,6 +25,11 @@ export async function POST(req: Request) {
   const ok = await verifyPassword(password, user.passwordHash);
   if (!ok) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+  }
+
+  if (user.totpEnabled) {
+    await set2faPendingCookie(user.id);
+    return NextResponse.json({ requiresTwoFactor: true });
   }
 
   await setSession(user.id);

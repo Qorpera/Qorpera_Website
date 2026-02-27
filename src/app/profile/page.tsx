@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getSession, hashPassword, verifyPassword } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { TwoFactorSetup } from "@/components/two-factor-setup";
 import { getCompanySoul } from "@/lib/company-soul-store";
 import { getInboxOpenApprovalCount } from "@/lib/inbox-store";
 import { listBusinessFiles } from "@/lib/business-files-store";
@@ -89,7 +90,7 @@ export default async function ProfilePage({
       take: 20,
     }),
   ]);
-  const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true, username: true, createdAt: true } });
+  const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true, username: true, createdAt: true, totpEnabled: true } });
   const email = user?.email ?? "Unknown account";
   const username = user?.username ?? "";
   const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : null;
@@ -212,6 +213,9 @@ export default async function ProfilePage({
               </form>
             </div>
           </section>
+
+          {/* 2FA */}
+          <TwoFactorSetup initialEnabled={user?.totpEnabled ?? false} />
 
           {/* Change password */}
           <section className="py-6">

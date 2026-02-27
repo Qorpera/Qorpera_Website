@@ -141,3 +141,44 @@ export async function decodeSession(
 
 export const SESSION_COOKIE = "wf_session";
 export { SESSION_TTL_SECONDS };
+
+// ─── 2FA pending token ───────────────────────────────────────────────────────
+
+export const TOTP_PENDING_COOKIE = "wf_2fa";
+export const TOTP_PENDING_TTL = 5 * 60; // 5 minutes
+
+export async function encode2faPending(userId: string, secret?: string): Promise<string> {
+  const s = secret ?? getSessionSecret();
+  const now = Math.floor(Date.now() / 1000);
+  const exp = now + TOTP_PENDING_TTL;
+  const payload = `2fa.${base64urlFromString(userId)}.${exp}`;
+  const sig = await signPayload(payload, s);
+  return `${payload}.${sig}`;
+}
+
+export async function decode2faPending(
+  token: string,
+  secret?: string,
+): Promise<{ userId: string } | null> {
+  const s = secret ?? getSessionSecret();
+  const parts = token.split(".");
+  if (parts.length !== 4) return null;
+  const [version, userIdB64, expRaw, sig] = parts;
+  if (version !== "2fa") return null;
+
+  const payload = `${version}.${userIdB64}.${expRaw}`;
+  const valid = await verifyPayload(payload, sig, s);
+  if (!valid) return null;
+
+  const exp = Number(expRaw);
+  if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) return null;
+
+  try {
+    const bytes = fromBase64url(userIdB64);
+    const userId = new TextDecoder().decode(bytes);
+    if (!userId) return null;
+    return { userId };
+  } catch {
+    return null;
+  }
+}
