@@ -78,7 +78,20 @@ type ConnectorAvailability = {
   hint: string;
 };
 
-async function getConnectorAvailability(toolName: string): Promise<ConnectorAvailability> {
+// Map from tool/integration key to OAuth provider name
+const TOOL_TO_OAUTH_PROVIDER: Record<string, string> = {
+  crm: "hubspot",
+  hubspot: "hubspot",
+  slack: "slack",
+  google: "google",
+  calendar: "google",
+  docs: "google",
+  sheets: "google",
+  drive: "google",
+  linear: "linear",
+};
+
+async function getConnectorAvailability(toolName: string, userId?: string): Promise<ConnectorAvailability> {
   if (toolName === "browser") {
     const health = await checkBrowserServiceHealth();
     return {
@@ -98,7 +111,7 @@ async function getConnectorAvailability(toolName: string): Promise<ConnectorAvai
     crm: {
       vars: ["HUBSPOT_CLIENT_ID", "SALESFORCE_CLIENT_ID", "PIPEDRIVE_API_TOKEN"],
       label: "CRM connector",
-      hint: "Configure HubSpot/Salesforce/Pipedrive credentials.",
+      hint: "Configure HubSpot/Salesforce/Pipedrive credentials, or connect HubSpot in Settings → Integrations.",
     },
     meta: {
       vars: ["META_APP_ID", "META_APP_SECRET", "META_ACCESS_TOKEN"],
@@ -108,17 +121,17 @@ async function getConnectorAvailability(toolName: string): Promise<ConnectorAvai
     calendar: {
       vars: ["GOOGLE_CLIENT_ID", "MICROSOFT_CLIENT_ID", "NYLAS_API_KEY"],
       label: "Calendar connector",
-      hint: "Configure Google/Microsoft/Nylas calendar credentials.",
+      hint: "Connect Google Workspace in Settings → Integrations to enable calendar tools.",
     },
     docs: {
       vars: ["GOOGLE_CLIENT_ID", "MICROSOFT_CLIENT_ID"],
       label: "Docs connector",
-      hint: "Configure Google Workspace or Microsoft Graph credentials for remote docs actions.",
+      hint: "Connect Google Workspace in Settings → Integrations for remote docs actions.",
     },
     sheets: {
       vars: ["GOOGLE_CLIENT_ID", "MICROSOFT_CLIENT_ID"],
       label: "Sheets connector",
-      hint: "Configure Google Sheets or Microsoft Graph credentials for remote spreadsheet actions.",
+      hint: "Connect Google Workspace in Settings → Integrations for remote spreadsheet actions.",
     },
     excel: {
       vars: ["MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET"],
@@ -130,15 +143,61 @@ async function getConnectorAvailability(toolName: string): Promise<ConnectorAvai
       label: "Word connector",
       hint: "Configure Microsoft Graph credentials for Word document actions.",
     },
+    slack: {
+      vars: ["SLACK_CLIENT_ID"],
+      label: "Slack connector",
+      hint: "Connect Slack in Settings → Integrations to enable messaging tools.",
+    },
+    linear: {
+      vars: ["LINEAR_CLIENT_ID"],
+      label: "Linear connector",
+      hint: "Connect Linear in Settings → Integrations to enable issue tracking tools.",
+    },
   };
+
   const check = envChecks[toolName];
+  const envConfigured = check ? check.vars.some((k) => Boolean(process.env[k])) : false;
+
+  if (envConfigured) {
+    return {
+      configured: true,
+      healthy: true,
+      label: check!.label,
+      hint: `${check!.label} credentials detected.`,
+    };
+  }
+
+  // Fallback: check OAuth IntegrationConnection in DB
+  if (userId) {
+    const provider = TOOL_TO_OAUTH_PROVIDER[toolName];
+    if (provider) {
+      try {
+        const { prisma } = await import("@/lib/db");
+        const conn = await prisma.integrationConnection.findUnique({
+          where: { userId_provider: { userId, provider } },
+          select: { status: true },
+        });
+        if (conn?.status === "CONNECTED") {
+          return {
+            configured: true,
+            healthy: true,
+            label: `${provider.charAt(0).toUpperCase() + provider.slice(1)} (OAuth connected)`,
+            hint: `${provider} integration connected via OAuth.`,
+          };
+        }
+      } catch {
+        // DB unavailable — fall through
+      }
+    }
+  }
+
   if (!check) return { configured: false, healthy: false, label: `${toolName} connector`, hint: "No connector mapping defined yet." };
-  const configured = check.vars.some((k) => Boolean(process.env[k]));
+
   return {
-    configured,
-    healthy: configured,
+    configured: false,
+    healthy: false,
     label: check.label,
-    hint: configured ? `${check.label} credentials detected.` : check.hint,
+    hint: check.hint,
   };
 }
 
@@ -813,8 +872,8 @@ function connectorRequiredTrace(toolName: string, instructions?: string): Adapte
   };
 }
 
-async function connectorAwareExternalTrace(toolName: string, instructions: string): Promise<AdapterStepResult> {
-  const availability = await getConnectorAvailability(toolName);
+async function connectorAwareExternalTrace(toolName: string, instructions: string, userId?: string): Promise<AdapterStepResult> {
+  const availability = await getConnectorAvailability(toolName, userId);
   if (!availability.configured) return connectorRequiredTrace(toolName, instructions);
   return {
     trace: {
@@ -853,7 +912,7 @@ async function runAdapterByKey(input: {
   if (key === "docs") {
     const local = await runDocsAdapter(input.userId);
     if (!remoteDocActionLikely(input.instructions)) return local;
-    const remote = await connectorAwareExternalTrace("docs", input.instructions);
+    const remote = await connectorAwareExternalTrace("docs", input.instructions, input.userId);
     return {
       trace: { ...local.trace, outputSummary: `${local.trace.outputSummary}. ${remote.trace.outputSummary}` },
       findings: [...local.findings, ...remote.findings],
@@ -862,7 +921,7 @@ async function runAdapterByKey(input: {
   if (key === "sheets") {
     const local = await runSheetsAdapter(input.userId);
     if (!remoteDocActionLikely(input.instructions)) return local;
-    const remote = await connectorAwareExternalTrace("sheets", input.instructions);
+    const remote = await connectorAwareExternalTrace("sheets", input.instructions, input.userId);
     return {
       trace: { ...local.trace, outputSummary: `${local.trace.outputSummary}. ${remote.trace.outputSummary}` },
       findings: [...local.findings, ...remote.findings],
@@ -871,7 +930,7 @@ async function runAdapterByKey(input: {
   if (key === "excel") {
     const local = await runExcelAdapter(input.userId);
     if (!remoteDocActionLikely(input.instructions)) return local;
-    const remote = await connectorAwareExternalTrace("excel", input.instructions);
+    const remote = await connectorAwareExternalTrace("excel", input.instructions, input.userId);
     return {
       trace: { ...local.trace, outputSummary: `${local.trace.outputSummary}. ${remote.trace.outputSummary}` },
       findings: [...local.findings, ...remote.findings],
@@ -880,7 +939,7 @@ async function runAdapterByKey(input: {
   if (key === "word") {
     const local = await runWordAdapter(input.userId);
     if (!remoteDocActionLikely(input.instructions)) return local;
-    const remote = await connectorAwareExternalTrace("word", input.instructions);
+    const remote = await connectorAwareExternalTrace("word", input.instructions, input.userId);
     return {
       trace: { ...local.trace, outputSummary: `${local.trace.outputSummary}. ${remote.trace.outputSummary}` },
       findings: [...local.findings, ...remote.findings],
@@ -895,6 +954,10 @@ async function runAdapterByKey(input: {
   if (key === "crm") return runCrmAdapter(input.instructions);
   if (key === "meta") return runMetaAdapter(input.instructions);
   if (key === "calendar") return runCalendarAdapter(input.instructions);
+  // For new OAuth integration keys, check connector availability with userId
+  if (["hubspot", "slack", "google", "linear"].includes(key)) {
+    return connectorAwareExternalTrace(key, input.instructions, input.userId);
+  }
   return connectorRequiredTrace(key, input.instructions);
 }
 
