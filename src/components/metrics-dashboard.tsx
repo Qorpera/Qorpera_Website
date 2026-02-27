@@ -74,7 +74,7 @@ function ActivityHeatmap({ data }: { data: DailyActivityPoint[] }) {
     weeks.push(week);
   }
 
-  const CELL = 16, GAP = 4;
+  const CELL = 22, GAP = 5;
 
   return (
     <div className="space-y-3">
@@ -334,46 +334,28 @@ export function MetricsDashboard({ metrics, rangeDays }: { metrics: MetricsSumma
       {/* ══ PERFORMANCE ═══════════════════════════════════════════════════════ */}
       {tab === "performance" && (
         <div className="space-y-5">
-          {/* Activity + quality trend side by side */}
-          <section className="grid gap-4 xl:grid-cols-2">
-            <div className="wf-panel rounded-3xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-lg font-semibold tracking-tight">Activity</h2>
-                  <p className="mt-0.5 text-sm wf-muted">Last {Math.min(rangeDays, 90)} days</p>
-                </div>
-                {rangeDays === 7 && (
-                  <div className="flex items-center gap-3 text-xs wf-muted">
-                    <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-sm bg-white/20" />Tasks</span>
-                    <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-sm bg-teal-500/50" />Submissions</span>
-                  </div>
-                )}
+          {/* Quality trend — full width */}
+          <section className="wf-panel rounded-3xl p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-semibold tracking-tight">Quality over time</h2>
+                <p className="mt-0.5 text-sm wf-muted">Acceptance rate by week · last 8 weeks</p>
               </div>
-              {rangeDays === 7 ? <ActivityBars data={metrics.dailyActivity} /> : <ActivityHeatmap data={metrics.dailyActivity} />}
+              {trendDelta !== null && (
+                <div className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-semibold ${
+                  trendDelta > 0 ? "border-teal-500/25 bg-teal-500/10 text-teal-300"
+                  : trendDelta < 0 ? "border-rose-500/25 bg-rose-500/10 text-rose-300"
+                  : "border-white/10 bg-white/5 text-white/40"
+                }`}>
+                  {trendDelta > 0 ? "↑" : trendDelta < 0 ? "↓" : "→"} {Math.round(Math.abs(trendDelta) * 100)}%
+                  <span className="text-xs font-normal opacity-60 ml-0.5">4wk</span>
+                </div>
+              )}
             </div>
-
-            <div className="wf-panel rounded-3xl p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h2 className="text-lg font-semibold tracking-tight">Quality over time</h2>
-                  <p className="mt-0.5 text-sm wf-muted">Acceptance rate by week · last 8 weeks</p>
-                </div>
-                {trendDelta !== null && (
-                  <div className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-semibold ${
-                    trendDelta > 0 ? "border-teal-500/25 bg-teal-500/10 text-teal-300"
-                    : trendDelta < 0 ? "border-rose-500/25 bg-rose-500/10 text-rose-300"
-                    : "border-white/10 bg-white/5 text-white/40"
-                  }`}>
-                    {trendDelta > 0 ? "↑" : trendDelta < 0 ? "↓" : "→"} {Math.round(Math.abs(trendDelta) * 100)}%
-                    <span className="text-xs font-normal opacity-60 ml-0.5">4wk</span>
-                  </div>
-                )}
-              </div>
-              <WeeklyTrendChart data={metrics.weeklyAcceptanceTrend} />
-              <div className="mt-3 flex items-center gap-3 text-xs wf-muted">
-                <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-sm bg-teal-500/60" />Above avg</span>
-                <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-sm bg-white/15" />Below avg</span>
-              </div>
+            <WeeklyTrendChart data={metrics.weeklyAcceptanceTrend} />
+            <div className="mt-3 flex items-center gap-3 text-xs wf-muted">
+              <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-sm bg-teal-500/60" />Above avg</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-sm bg-white/15" />Below avg</span>
             </div>
           </section>
 
