@@ -15,6 +15,7 @@ import { PlatformTour } from "@/components/platform-tour";
 import { prisma } from "@/lib/db";
 import { listBusinessFiles } from "@/lib/business-files-store";
 import { checkExpectedFiles, getExpectedFileSummary } from "@/lib/expected-business-files";
+import { isOwner } from "@/lib/admin-auth";
 
 const NAV_GROUPS: NavGroup[] = [
   {
@@ -43,6 +44,9 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+// Dev nav item — injected at runtime for the owner only
+const DEV_NAV_ITEM = { href: "/dev", label: "Dev" };
 
 const PRIMARY_NAV = NAV_GROUPS.flatMap((g) => g.items);
 
@@ -115,6 +119,19 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
     navGroups = applyNavBadges(NAV_GROUPS as NavGroup[], badges);
     navItems = navGroups.flatMap((g) => g.items);
+  }
+
+  if (session) {
+    const ownerFlag = await isOwner(session.userId);
+if (ownerFlag) {
+      // Append "Dev" to the System group for the owner
+      navGroups = navGroups.map((g) =>
+        g.label === "System"
+          ? { ...g, items: [...g.items, DEV_NAV_ITEM] }
+          : g,
+      );
+      navItems = navGroups.flatMap((g) => g.items);
+    }
   }
 
   if (session) {

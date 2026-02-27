@@ -25,6 +25,7 @@ enum AgentKind {
   OPERATIONS_MANAGER
   EXECUTIVE_ASSISTANT
   RESEARCH_ANALYST
+  SEO_SPECIALIST
 }
 
 enum AgentStatus {
@@ -971,6 +972,7 @@ model PlanSubscription {
   userId               String
   planId               String
   status               String    @default("PENDING")
+  source               String    @default("STRIPE") // "STRIPE" | "MANUAL"
   stripeSubscriptionId String?   @unique
   stripeCustomerId     String?
   checkoutSessionId    String?   @unique
@@ -985,6 +987,18 @@ model PlanSubscription {
   plan Plan @relation(fields: [planId], references: [id])
 
   @@index([userId, status])
+}
+
+model FeatureFlag {
+  id        String   @id @default(cuid())
+  key       String
+  label     String   @default("")
+  enabled   Boolean  @default(false)
+  userId    String?  // null = global; non-null = per-user override
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([key, userId])
 }
 
 model PlanInquiry {
