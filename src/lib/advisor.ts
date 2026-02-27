@@ -17,6 +17,8 @@ import { postOllamaJson } from "@/lib/ollama";
 import { getPreferredUsername } from "@/lib/usernames";
 import { listRunnersForUser } from "@/lib/runner-control-plane";
 import { recordOllamaUsage } from "@/lib/ollama-usage-store";
+import { getPlanStatus } from "@/lib/plan-store";
+import { AGENT_HIRE_CATALOG } from "@/lib/agent-catalog";
 
 export type AdvisorMode = "home" | "new_project";
 
@@ -24,6 +26,11 @@ export type AdvisorDelegation = {
   toAgent: string;
   title: string;
   instructions: string;
+};
+
+export type AdvisorHire = {
+  agentKind: string;
+  reason: string;
 };
 
 export type AdvisorStructuredReply = {
@@ -34,6 +41,7 @@ export type AdvisorStructuredReply = {
   recommendedTemplate?: string;
   ownerFocus?: string[];
   delegatedTasks?: AdvisorDelegation[];
+  hireAgents?: AdvisorHire[];
 };
 
 type ChatTurn = {
@@ -53,6 +61,11 @@ function extractDataSignals(context: unknown): { hasCompanySoul: boolean; hiredA
     hiredAgentCount: Array.isArray(ctx.hiredAgentKinds) ? ctx.hiredAgentKinds.length : 0,
     projectCount: typeof ctx.projectCount === "number" ? ctx.projectCount : 0,
   };
+}
+
+function extractPlanContext(context: unknown): { planName: string | null; tier: string | null; agentCap: number; hiredCount: number; slotsAvailable: number } | null {
+  if (typeof context !== "object" || !context || !("planContext" in context)) return null;
+  return (context as { planContext: { planName: string | null; tier: string | null; agentCap: number; hiredCount: number; slotsAvailable: number } | null }).planContext;
 }
 
 function extractMaxTokens(context: unknown): number {
@@ -247,6 +260,16 @@ function safeParseStructured(text: string): AdvisorStructuredReply | null {
           .map((t) => ({ toAgent: t.toAgent.toUpperCase(), title: t.title.slice(0, 240), instructions: t.instructions.slice(0, 12000) }))
       : undefined;
 
+    const hireAgents = Array.isArray((parsed as { hireAgents?: unknown }).hireAgents)
+      ? ((parsed as { hireAgents: unknown[] }).hireAgents)
+          .filter((h): h is { agentKind: string; reason: string } =>
+            typeof h === "object" && h !== null &&
+            typeof (h as Record<string, unknown>).agentKind === "string",
+          )
+          .slice(0, 4)
+          .map((h) => ({ agentKind: (h.agentKind as string).toUpperCase(), reason: typeof h.reason === "string" ? h.reason.slice(0, 200) : "" }))
+      : undefined;
+
     return {
       answer: parsed.answer,
       priority:
@@ -264,6 +287,7 @@ function safeParseStructured(text: string): AdvisorStructuredReply | null {
         ? parsed.ownerFocus.filter((v): v is string => typeof v === "string").slice(0, 5)
         : [],
       ...(delegatedTasks?.length ? { delegatedTasks } : {}),
+      ...(hireAgents?.length ? { hireAgents } : {}),
     };
   } catch {
     const plain = text.trim();
@@ -301,6 +325,7 @@ function advisorSystemPrompt(
   runnerContext?: { onlineRunnerCount: number; pendingApprovalCount: number } | null,
   recentlyOnboarded?: boolean,
   dataSignals?: { hasCompanySoul: boolean; hiredAgentCount: number; projectCount: number },
+  planContext?: { planName: string | null; tier: string | null; agentCap: number; hiredCount: number; slotsAvailable: number } | null,
 ) {
   const runnerLines = runnerContext && runnerContext.onlineRunnerCount > 0
     ? ["", "RUNNER_CAPABILITIES", "When a runner is online you can ask to execute local commands or read/write files — these go through the runner approval queue."]
@@ -309,13 +334,36 @@ function advisorSystemPrompt(
   const signals = dataSignals ?? { hasCompanySoul: false, hiredAgentCount: 0, projectCount: 0 };
   const isEmptyWorkspace = !signals.hasCompanySoul || (signals.hiredAgentCount === 0 && signals.projectCount === 0);
 
+  const planLines: string[] = [];
+  if (planContext?.planName) {
+    planLines.push(
+      "",
+      "PLAN_CONTEXT",
+      `The user is on the ${planContext.planName} plan (${planContext.tier} tier).`,
+      `Agent capacity: ${planContext.hiredCount}/${planContext.agentCap} slots used, ${planContext.slotsAvailable} available.`,
+    );
+    if (planContext.slotsAvailable > 0) {
+      planLines.push(
+        "The user has unused agent slots. When relevant, proactively recommend which agents to activate based on their Company Soul data (departments, goals, workflows).",
+        "Example: \"Based on your mission and departments, I'd recommend activating the Sales Rep and Marketing Coordinator agents. You have N slots available.\"",
+      );
+    }
+  } else {
+    planLines.push(
+      "",
+      "PLAN_CONTEXT",
+      "The user does not have an active plan. They can subscribe at /pricing to start hiring AI agents.",
+    );
+  }
+
   const onboardingLines = recentlyOnboarded || isEmptyWorkspace
     ? [
         "",
         "ONBOARDING_CONTEXT",
         ...(recentlyOnboarded ? ["This user just completed setup. Be welcoming."] : []),
         ...(!signals.hasCompanySoul ? ["Company Soul is empty or incomplete — ask the user to fill it in before making business-specific recommendations."] : []),
-        ...(signals.hiredAgentCount === 0 ? ["No agents have been hired yet. Suggest hiring agents for their busiest workflow."] : []),
+        ...(signals.hiredAgentCount === 0 && planContext?.planName ? ["No agents have been activated yet. Recommend agents based on Company Soul."] : []),
+        ...(signals.hiredAgentCount === 0 && !planContext?.planName ? ["No agents have been hired yet. Suggest subscribing to a plan at /pricing."] : []),
         ...(signals.projectCount === 0 ? ["No projects exist yet. Suggest creating a first project or using a template."] : []),
       ]
     : [];
@@ -372,22 +420,36 @@ function advisorSystemPrompt(
     "- OPERATIONS_MANAGER: SOP maintenance (versioned), vendor SLA tracking, blocker identification with impact assessment, cross-team delegation. Use for process, ops, logistics, or vendor work.",
     "- EXECUTIVE_ASSISTANT: Inbox triage (Critical/Today/This Week/FYI), meeting briefs, action item tracking with owners and due dates. Use for admin, scheduling, triage, or executive prep. Treats all info as confidential.",
     "",
+    "HIRING",
+    "You can hire agents directly by including the 'hireAgents' field in your JSON response.",
+    "CRITICAL: When the user explicitly asks to hire, add, activate, or set up an agent — you MUST include that agent in hireAgents. Do NOT just say you are hiring it in the answer field without also including it in hireAgents. The answer text alone does nothing; only hireAgents triggers the actual hire.",
+    "Only hire agents from the hireableAgents list in the context. Do NOT include agents already in the agents list.",
+    planContext && planContext.slotsAvailable > 0
+      ? `There are ${planContext.slotsAvailable} open slot(s) on the current plan. You may hire up to ${planContext.slotsAvailable} more agent(s).`
+      : planContext && planContext.agentCap > 0
+        ? "The agent cap is full. Tell the user to deactivate an agent or upgrade the plan before hiring."
+        : "No active plan detected — hiring is disabled. Tell the user to subscribe at /pricing.",
+    "",
     "STYLE",
-    "Be concise, direct, and operational. Sound like a sharp chief of staff / operator, not a motivational coach.",
-    "Explain why a recommendation matters in business terms (risk, throughput, cost, customer impact).",
+    "Lead with the action or recommendation — no preamble, no filler.",
+    "Keep the 'answer' field to 1-3 sentences for simple questions, max 4-5 for complex ones. Let suggestedAgents, ownerFocus, and onboardingSteps carry the supporting detail.",
+    "Sound like a sharp chief of staff, not a motivational coach. State what to do, why it matters (risk, throughput, cost, customer impact), and move on.",
+    "Never repeat information that's already in the structured fields.",
     `When addressing the owner directly, call them @${ownerUsername}.`,
     "",
     "OUTPUT_CONTRACT",
     "Respond ONLY with valid JSON using this shape:",
-    '{"answer":"string","priority":"low|medium|high","suggestedAgents":["..."],"onboardingSteps":["..."],"recommendedTemplate":"optional-template-slug","ownerFocus":["..."],"delegatedTasks":[{"toAgent":"ASSISTANT|SALES_REP|CUSTOMER_SUCCESS|MARKETING_COORDINATOR|FINANCE_ANALYST|OPERATIONS_MANAGER|EXECUTIVE_ASSISTANT","title":"short task title","instructions":"detailed instructions for the agent"}]}',
+    '{"answer":"string","priority":"low|medium|high","suggestedAgents":["..."],"onboardingSteps":["..."],"recommendedTemplate":"optional-template-slug","ownerFocus":["..."],"delegatedTasks":[{"toAgent":"ASSISTANT|SALES_REP|CUSTOMER_SUCCESS|MARKETING_COORDINATOR|FINANCE_ANALYST|OPERATIONS_MANAGER|EXECUTIVE_ASSISTANT","title":"short task title","instructions":"detailed instructions for the agent"}],"hireAgents":[{"agentKind":"AGENT_KIND","reason":"one-sentence reason"}]}',
     "delegatedTasks is optional — only include it when you are actually delegating work to an agent.",
+    "hireAgents is optional — only include it when hiring is warranted and slots are available.",
     ...runnerLines,
+    ...planLines,
     ...onboardingLines,
   ].join("\n");
 }
 
 export async function buildAdvisorContext(userId: string) {
-  const [projects, runs, inboxItems, prefs, agents, submissions, companySoul, chiefAdvisorSoul, businessLogs, businessFiles, owner, runnerContext, hiredJobs] = await Promise.all([
+  const [projects, runs, inboxItems, prefs, agents, submissions, companySoul, chiefAdvisorSoul, businessLogs, businessFiles, owner, runnerContext, hiredJobs, planStatus] = await Promise.all([
     getProjectsForUser(userId),
     getRunsForUser(userId),
     getInboxItems(userId),
@@ -401,6 +463,7 @@ export async function buildAdvisorContext(userId: string) {
     prisma.user.findUnique({ where: { id: userId }, select: { email: true, username: true, onboardedAt: true } }),
     buildRunnerContext(userId).catch(() => null),
     prisma.hiredJob.findMany({ where: { userId, enabled: true }, select: { agentKind: true }, distinct: ["agentKind"] }),
+    getPlanStatus(userId),
   ]);
 
   // Backfill text extracts for files uploaded before extraction was enabled
@@ -422,6 +485,12 @@ export async function buildAdvisorContext(userId: string) {
   const hiredKinds = new Set(hiredJobs.map((j) => j.agentKind));
   const hiredAgents = UI_AGENTS.filter((a) => hiredKinds.has(a.kind));
 
+  // Agents available to hire (not yet hired)
+  const slotsAvailable = Math.max(0, (planStatus.agentCap ?? 0) - (planStatus.hiredCount ?? 0));
+  const hireableAgents = AGENT_HIRE_CATALOG
+    .filter((a) => !hiredKinds.has(a.kind as Parameters<typeof hiredKinds.has>[0]))
+    .map((a) => ({ kind: a.kind, title: a.title, subtitle: a.subtitle }));
+
   const soulData = companySoulForAdvisor(companySoul);
   const hasCompanySoul = Boolean(soulData.companyName || soulData.mission);
 
@@ -429,6 +498,8 @@ export async function buildAdvisorContext(userId: string) {
     owner: { username: ownerUsername },
     hasCompanySoul,
     hiredAgentKinds: Array.from(hiredKinds),
+    slotsAvailable,
+    hireableAgents,
     maxAgentOutputTokens: prefs.maxAgentOutputTokens,
     projectCount: projects.length,
     businessLogCount: businessLogs.length,
@@ -486,6 +557,15 @@ export async function buildAdvisorContext(userId: string) {
         }
       : null,
     recentlyOnboarded,
+    planContext: planStatus.plan
+      ? {
+          planName: planStatus.plan.name,
+          tier: planStatus.plan.tier,
+          agentCap: planStatus.agentCap,
+          hiredCount: planStatus.hiredCount,
+          slotsAvailable: planStatus.agentCap - planStatus.hiredCount,
+        }
+      : null,
   };
 }
 
@@ -600,7 +680,8 @@ async function callOpenAIAdvisor({
       ? Boolean((context as { recentlyOnboarded?: boolean }).recentlyOnboarded)
       : false;
   const dataSignals = extractDataSignals(context);
-  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx, isRecentlyOnboarded, dataSignals);
+  const planCtx = extractPlanContext(context);
+  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx, isRecentlyOnboarded, dataSignals, planCtx);
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -718,7 +799,8 @@ async function callOllamaAdvisor({
       ? Boolean((context as { recentlyOnboarded?: boolean }).recentlyOnboarded)
       : false;
   const dataSignalsOllama = extractDataSignals(context);
-  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtxOllama, isRecentlyOnboardedOllama, dataSignalsOllama);
+  const planCtxOllama = extractPlanContext(context);
+  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtxOllama, isRecentlyOnboardedOllama, dataSignalsOllama, planCtxOllama);
 
   const userPayload = buildSmartPayload(context as Record<string, unknown>, userMessage, {
     mode,

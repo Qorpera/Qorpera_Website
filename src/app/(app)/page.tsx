@@ -56,6 +56,7 @@ export default async function HomePage({
   return (
     <div className="h-[calc(100vh-4rem)] min-h-[580px]">
       <AdvisorChat
+        key={sessionThread?.id ?? "new"}
         mode="home"
         title=""
         subtitle=""

@@ -23,6 +23,13 @@ type TaskCard = {
   error?: string;
 };
 
+type HiredAgent = {
+  agentKind: string;
+  title: string;
+  created: boolean;
+  error?: string;
+};
+
 type Message = {
   id: string;
   role: "user" | "assistant";
@@ -32,6 +39,7 @@ type Message = {
   model?: string;
   warning?: string | null;
   tasks?: TaskCard[];
+  hiredAgents?: HiredAgent[];
 };
 
 const AGENT_LABELS: Record<string, string> = {
@@ -241,6 +249,7 @@ export function AdvisorChat({
           warning?: string | null;
         };
         delegatedTasks?: Array<{ id: string; title: string; toAgent: string; error?: string }>;
+        hiredAgents?: Array<{ agentKind: string; title: string; created: boolean; error?: string }>;
       };
       if (!res.ok || !payload.reply) {
         if (Array.isArray(payload.help)) setErrorHelp(payload.help.filter((v): v is string => typeof v === "string"));
@@ -267,6 +276,8 @@ export function AdvisorChat({
           }))
         : undefined;
 
+      const hiredAgents = payload.hiredAgents?.length ? payload.hiredAgents : undefined;
+
       setMessages((curr) => [
         ...curr,
         {
@@ -278,6 +289,7 @@ export function AdvisorChat({
           model: payload.runtime?.selectedModel,
           warning: payload.runtime?.warning ?? null,
           tasks,
+          hiredAgents,
         },
       ]);
     } catch (e: unknown) {
@@ -410,6 +422,23 @@ export function AdvisorChat({
                   {msg.tasks?.map((task) => (
                     <TaskCardView key={task.id || task.title} task={task} />
                   ))}
+                  {msg.hiredAgents?.length ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {msg.hiredAgents.map((h) =>
+                        h.error ? (
+                          <span key={h.agentKind} className="flex items-center gap-1.5 rounded-lg border border-rose-400/25 bg-rose-500/10 px-3 py-1.5 text-xs text-rose-300/80">
+                            <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="none"><path d="M10 6v4m0 3h.01M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                            {h.title} — {h.error}
+                          </span>
+                        ) : (
+                          <span key={h.agentKind} className="flex items-center gap-1.5 rounded-lg border border-teal-400/25 bg-teal-500/10 px-3 py-1.5 text-xs text-teal-300/80">
+                            <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="none"><path d="m5 10 3.5 3.5L15 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            {h.created ? "Hired" : "Already active"}: {h.title}
+                          </span>
+                        )
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               )}
             </div>

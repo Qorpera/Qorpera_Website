@@ -7,8 +7,8 @@ import { getCompanySoul } from "@/lib/company-soul-store";
 import { getAppPreferences } from "@/lib/settings-store";
 import { AdvisorExecutionMode } from "@/components/advisor-execution-mode";
 import { listAdvisorSessions } from "@/lib/advisor-sessions-store";
-import { BasketSidebarButton } from "@/components/basket-sidebar-button";
 import { getModelRoutes, getAvailableModelCatalog } from "@/lib/model-routing-store";
+import { getPlanStatus } from "@/lib/plan-store";
 import { ModelRouteSelector } from "@/components/model-route-selector";
 import { RunnerApprovalsSidebar } from "@/components/runner-approvals-panel";
 import { PlatformTour } from "@/components/platform-tour";
@@ -16,11 +16,11 @@ import { prisma } from "@/lib/db";
 import { listBusinessFiles } from "@/lib/business-files-store";
 import { checkExpectedFiles, getExpectedFileSummary } from "@/lib/expected-business-files";
 
-const NAV_GROUPS = [
+const NAV_GROUPS: NavGroup[] = [
   {
     label: "Work",
     items: [
-      { href: "/", label: "Consulting Chat" },
+      { href: "/", label: "Consulting Chat", actionLabel: "New Chat", actionHref: "/" },
       { href: "/inbox", label: "Review", dataTour: "nav-inbox" },
       { href: "/projects", label: "Projects" },
       { href: "/metrics", label: "Metrics" },
@@ -117,7 +117,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   if (session) {
-    const [prefs, advisorHistory, routes, initialPendingJobs, tourUser] = await Promise.all([
+    const [prefs, advisorHistory, routes, initialPendingJobs, tourUser, planStatus] = await Promise.all([
       getAppPreferences(session.userId),
       listAdvisorSessions(session.userId, 30),
       getModelRoutes(session.userId),
@@ -131,6 +131,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         where: { id: session.userId },
         select: { onboardedAt: true, tourCompletedAt: true },
       }),
+      getPlanStatus(session.userId),
     ]);
     const modelCatalog = getAvailableModelCatalog();
     const showTour = Boolean(tourUser?.onboardedAt && !tourUser?.tourCompletedAt);
@@ -162,7 +163,6 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
                   <polygon points="58,40 150,28 150,30 58,43" fill="url(#qp-streak2)" />
                 </svg>
               </Link>
-              <AdvisorExecutionMode initial={prefs} compact />
             </div>
 
             <div className="border-y border-[rgba(255,255,255,0.04)] px-2 py-2">
@@ -180,14 +180,8 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             />
 
             <div className="min-h-0 flex-1 overflow-hidden">
-              <div className="flex items-center justify-between px-3 py-2">
+              <div className="px-3 py-2">
                 <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/30">History</div>
-                <Link
-                  href="/"
-                  className="rounded-md px-2 py-0.5 text-[11px] font-medium text-white/40 transition hover:bg-white/[0.06] hover:text-white/70"
-                >
-                  New Chat
-                </Link>
               </div>
               <div className="h-full max-h-[calc(100%-2.25rem)] space-y-px overflow-y-auto px-2 pb-2">
                 {advisorHistory.length === 0 ? (
@@ -234,14 +228,24 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
                     <path d="M10 10a3.25 3.25 0 1 0 0-6.5A3.25 3.25 0 0 0 10 10Zm0 1.5c-3.13 0-5.75 1.68-6.8 4.17-.2.48.18.83.66.83h12.28c.48 0 .86-.35.66-.83C15.75 13.18 13.13 11.5 10 11.5Z" fill="currentColor"/>
                   </svg>
                 </Link>
-                <Link
-                  href="/agents/hire"
-                  className="group relative flex-1 overflow-hidden rounded-lg border border-emerald-300/30 bg-gradient-to-r from-emerald-400/85 via-teal-400/80 to-cyan-400/80 px-3 py-1.5 text-[13px] font-semibold tracking-tight text-zinc-950 shadow-[0_0_0_1px_rgba(16,185,129,0.12)] transition hover:brightness-105"
-                >
-                  <span className="absolute inset-0 opacity-25 bg-[linear-gradient(110deg,transparent_20%,rgba(255,255,255,0.9)_50%,transparent_80%)]" />
-                  <span className="relative">Hire Agents</span>
-                </Link>
-                <BasketSidebarButton />
+                {planStatus.plan ? (
+                  <Link
+                    href="/agents"
+                    className="flex flex-1 items-center gap-2 rounded-lg border border-teal-500/30 bg-teal-500/10 px-3 py-1.5 text-[13px] font-medium text-teal-300 transition hover:bg-teal-500/15"
+                  >
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-teal-400" />
+                    <span className="truncate">{planStatus.plan.name}</span>
+                    <span className="ml-auto text-[11px] text-teal-400/70">{planStatus.hiredCount}/{planStatus.agentCap}</span>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/pricing"
+                    className="group relative flex-1 overflow-hidden rounded-lg border border-emerald-300/30 bg-gradient-to-r from-emerald-400/85 via-teal-400/80 to-cyan-400/80 px-3 py-1.5 text-[13px] font-semibold tracking-tight text-zinc-950 shadow-[0_0_0_1px_rgba(16,185,129,0.12)] transition hover:brightness-105"
+                  >
+                    <span className="absolute inset-0 opacity-25 bg-[linear-gradient(110deg,transparent_20%,rgba(255,255,255,0.9)_50%,transparent_80%)]" />
+                    <span className="relative">View Plans</span>
+                  </Link>
+                )}
               </div>
             </div>
           </aside>

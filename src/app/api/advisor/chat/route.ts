@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireUserId } from "@/lib/auth";
-import { runAdvisorChat, type AdvisorMode, type AdvisorDelegation } from "@/lib/advisor";
+import { runAdvisorChat, type AdvisorMode, type AdvisorDelegation, type AdvisorHire } from "@/lib/advisor";
 import { appendAdvisorMessage, ensureAdvisorSession, syncAdvisorSessionToBusinessLog } from "@/lib/advisor-sessions-store";
 import { verifySameOrigin } from "@/lib/request-security";
 import { createDelegatedTask, executeDelegatedTask, type AgentTarget } from "@/lib/orchestration-store";
+import { hireAgentWithinPlan, type HireAgentKind } from "@/lib/agent-hiring";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,33 @@ const VALID_TARGETS = new Set<string>([
   "OPERATIONS_MANAGER",
   "EXECUTIVE_ASSISTANT",
 ]);
+
+const VALID_HIRE_KINDS = new Set<string>([
+  "ASSISTANT", "SALES_REP", "CUSTOMER_SUCCESS", "MARKETING_COORDINATOR",
+  "FINANCE_ANALYST", "OPERATIONS_MANAGER", "EXECUTIVE_ASSISTANT", "RESEARCH_ANALYST",
+]);
+
+async function processHires(
+  userId: string,
+  hires: AdvisorHire[],
+): Promise<Array<{ agentKind: string; title: string; created: boolean; error?: string }>> {
+  const results: Array<{ agentKind: string; title: string; created: boolean; error?: string }> = [];
+  for (const h of hires) {
+    const kind = h.agentKind.toUpperCase();
+    if (!VALID_HIRE_KINDS.has(kind)) continue;
+    try {
+      const result = await hireAgentWithinPlan(userId, kind as HireAgentKind);
+      if (!result.ok) {
+        results.push({ agentKind: kind, title: kind, created: false, error: result.error });
+      } else {
+        results.push({ agentKind: kind, title: result.job.title, created: result.created });
+      }
+    } catch (e: unknown) {
+      results.push({ agentKind: kind, title: kind, created: false, error: e instanceof Error ? e.message : "Hire failed" });
+    }
+  }
+  return results;
+}
 
 type Body = {
   mode?: AdvisorMode;
@@ -125,6 +153,12 @@ export async function POST(request: Request) {
     delegatedTaskResults = await createAndExecuteTasks(userId, result.reply.delegatedTasks);
   }
 
+  // Process any agent hires the advisor requested.
+  let hireResults: Array<{ agentKind: string; title: string; created: boolean; error?: string }> = [];
+  if (result.reply.hireAgents?.length) {
+    hireResults = await processHires(userId, result.reply.hireAgents);
+  }
+
   await appendAdvisorMessage({
     sessionId: sessionRow.id,
     role: "assistant",
@@ -141,5 +175,6 @@ export async function POST(request: Request) {
     source: result.source,
     runtime: result.runtime,
     delegatedTasks: delegatedTaskResults.length ? delegatedTaskResults : undefined,
+    hiredAgents: hireResults.length ? hireResults : undefined,
   });
 }

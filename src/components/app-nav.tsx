@@ -10,6 +10,8 @@ type NavItem = {
   badgeTone?: "warn" | "info" | "neutral";
   badgeStyle?: React.CSSProperties;
   dataTour?: string;
+  actionLabel?: string;
+  actionHref?: string;
 };
 
 const STANDALONE_PATHS = new Set(["/agents/hire"]);
@@ -63,32 +65,43 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string | null })
         (pathname?.startsWith(`${item.href}/`) && !STANDALONE_PATHS.has(pathname ?? ""));
 
   return (
-    <Link
-      href={item.href}
-      aria-current={active ? "page" : undefined}
-      data-tour={item.dataTour}
-      className={`relative rounded-md px-2.5 py-1.5 pr-12 text-left text-[13px] transition ${
-        active
-          ? "bg-white/[0.06] text-white/95"
-          : "text-white/55 hover:bg-white/[0.04] hover:text-white/85"
-      }`}
-    >
-      {item.label}
-      {item.badge ? (
-        <span
-          style={item.badgeStyle}
-          className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-md border px-2 py-0.5 text-[10px] leading-none shadow-sm ${
-            item.badgeTone === "warn"
-              ? "border-orange-300 bg-orange-100 text-orange-900 shadow-[0_0_0_1px_rgba(251,146,60,0.18),0_0_14px_rgba(251,146,60,0.18)]"
-              : item.badgeTone === "info"
-                ? "border-blue-200 bg-blue-100 text-blue-900"
-                : "border-[var(--border)] bg-zinc-100 text-zinc-700"
-          }`}
+    <div className="relative">
+      <Link
+        href={item.href}
+        aria-current={active ? "page" : undefined}
+        data-tour={item.dataTour}
+        onClick={active && item.href === "/" ? (e: React.MouseEvent) => e.preventDefault() : undefined}
+        className={`block rounded-md px-2.5 py-1.5 pr-12 text-left text-[13px] transition ${
+          active
+            ? "bg-white/[0.06] text-white/95"
+            : "text-white/55 hover:bg-white/[0.04] hover:text-white/85"
+        }`}
+      >
+        {item.label}
+        {item.badge ? (
+          <span
+            style={item.badgeStyle}
+            className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-md border px-2 py-0.5 text-[10px] leading-none shadow-sm ${
+              item.badgeTone === "warn"
+                ? "border-orange-300 bg-orange-100 text-orange-900 shadow-[0_0_0_1px_rgba(251,146,60,0.18),0_0_14px_rgba(251,146,60,0.18)]"
+                : item.badgeTone === "info"
+                  ? "border-blue-200 bg-blue-100 text-blue-900"
+                  : "border-[var(--border)] bg-zinc-100 text-zinc-700"
+            }`}
+          >
+            {item.badge}
+          </span>
+        ) : null}
+      </Link>
+      {item.actionLabel && item.actionHref ? (
+        <Link
+          href={item.actionHref}
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md px-2 py-0.5 text-[11px] font-medium text-white/35 transition hover:bg-white/[0.06] hover:text-white/65"
         >
-          {item.badge}
-        </span>
+          {item.actionLabel}
+        </Link>
       ) : null}
-    </Link>
+    </div>
   );
 }
 
