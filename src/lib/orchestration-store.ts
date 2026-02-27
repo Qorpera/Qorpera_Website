@@ -36,6 +36,8 @@ export type AgentAutomationConfigView = {
   dailyTimes: string[];
   timezone: string;
   runContinuously: boolean;
+  heartbeatEnabled: boolean;
+  heartbeatIntervalMin: number;
   maxLoopIterations: number;
   maxAgentCallsPerRun: number;
   maxToolRetries: number;
@@ -83,6 +85,8 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     dailyTimes: ["08:00", "13:00", "17:00"],
     timezone: "UTC",
     runContinuously: true,
+    heartbeatEnabled: false,
+    heartbeatIntervalMin: 15,
     maxLoopIterations: 10,
     maxAgentCallsPerRun: 12,
     maxToolRetries: 2,
@@ -101,6 +105,8 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     dailyTimes: ["09:00", "14:00"],
     timezone: "UTC",
     runContinuously: false,
+    heartbeatEnabled: false,
+    heartbeatIntervalMin: 15,
     maxLoopIterations: 8,
     maxAgentCallsPerRun: 10,
     maxToolRetries: 2,
@@ -119,6 +125,8 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     dailyTimes: ["09:00", "15:00"],
     timezone: "UTC",
     runContinuously: false,
+    heartbeatEnabled: false,
+    heartbeatIntervalMin: 15,
     maxLoopIterations: 8,
     maxAgentCallsPerRun: 10,
     maxToolRetries: 2,
@@ -137,6 +145,8 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     dailyTimes: ["09:30", "14:00"],
     timezone: "UTC",
     runContinuously: false,
+    heartbeatEnabled: false,
+    heartbeatIntervalMin: 15,
     maxLoopIterations: 8,
     maxAgentCallsPerRun: 10,
     maxToolRetries: 2,
@@ -155,6 +165,8 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     dailyTimes: ["09:00", "17:00"],
     timezone: "UTC",
     runContinuously: false,
+    heartbeatEnabled: false,
+    heartbeatIntervalMin: 15,
     maxLoopIterations: 10,
     maxAgentCallsPerRun: 10,
     maxToolRetries: 2,
@@ -173,6 +185,8 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     dailyTimes: ["08:00", "17:00"],
     timezone: "UTC",
     runContinuously: false,
+    heartbeatEnabled: false,
+    heartbeatIntervalMin: 15,
     maxLoopIterations: 10,
     maxAgentCallsPerRun: 10,
     maxToolRetries: 2,
@@ -191,6 +205,8 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     dailyTimes: ["08:30", "16:00"],
     timezone: "UTC",
     runContinuously: false,
+    heartbeatEnabled: false,
+    heartbeatIntervalMin: 15,
     maxLoopIterations: 10,
     maxAgentCallsPerRun: 10,
     maxToolRetries: 2,
@@ -209,6 +225,8 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     dailyTimes: ["08:00", "12:00", "17:00"],
     timezone: "UTC",
     runContinuously: false,
+    heartbeatEnabled: false,
+    heartbeatIntervalMin: 15,
     maxLoopIterations: 8,
     maxAgentCallsPerRun: 10,
     maxToolRetries: 2,
@@ -227,6 +245,8 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     dailyTimes: [],
     timezone: "UTC",
     runContinuously: false,
+    heartbeatEnabled: false,
+    heartbeatIntervalMin: 15,
     maxLoopIterations: 12,
     maxAgentCallsPerRun: 15,
     maxToolRetries: 2,
@@ -245,6 +265,8 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     dailyTimes: [],
     timezone: "UTC",
     runContinuously: false,
+    heartbeatEnabled: false,
+    heartbeatIntervalMin: 15,
     maxLoopIterations: 12,
     maxAgentCallsPerRun: 15,
     maxToolRetries: 2,
@@ -290,6 +312,8 @@ function toConfigView(row: {
   dailyTimesCsv: string;
   timezone: string;
   runContinuously: boolean;
+  heartbeatEnabled: boolean;
+  heartbeatIntervalMin: number;
   maxLoopIterations: number;
   maxAgentCallsPerRun: number;
   maxToolRetries: number;
@@ -308,6 +332,8 @@ function toConfigView(row: {
     dailyTimes: parseCsv(row.dailyTimesCsv),
     timezone: row.timezone,
     runContinuously: row.runContinuously,
+    heartbeatEnabled: row.heartbeatEnabled,
+    heartbeatIntervalMin: row.heartbeatIntervalMin,
     maxLoopIterations: row.maxLoopIterations,
     maxAgentCallsPerRun: row.maxAgentCallsPerRun,
     maxToolRetries: row.maxToolRetries,
@@ -406,10 +432,12 @@ export async function upsertAgentAutomationConfig(
       dailyTimesCsv: (next.dailyTimes ?? []).join(","),
       timezone: (next.timezone ?? "UTC").slice(0, 80),
       runContinuously: Boolean(next.runContinuously),
+      heartbeatEnabled: Boolean(next.heartbeatEnabled),
+      heartbeatIntervalMin: Math.max(5, Math.min(60, Number(next.heartbeatIntervalMin ?? 15) || 15)),
       maxLoopIterations: Math.max(1, Math.min(20, Number(next.maxLoopIterations ?? 3) || 3)),
       maxAgentCallsPerRun: Math.max(1, Math.min(30, Number(next.maxAgentCallsPerRun ?? 6) || 6)),
       maxToolRetries: Math.max(0, Math.min(5, Number(next.maxToolRetries ?? 2) || 0)),
-      maxRuntimeSeconds: Math.max(15, Math.min(1800, Number(next.maxRuntimeSeconds ?? 120) || 120)),
+      maxRuntimeSeconds: Math.max(15, Math.min(14400, Number(next.maxRuntimeSeconds ?? 120) || 120)),
       requireApprovalForExternalActions: Boolean(next.requireApprovalForExternalActions ?? true),
       allowAgentDelegation: Boolean(next.allowAgentDelegation ?? true),
       integrationsCsv: (next.integrations ?? []).join(","),
@@ -424,10 +452,12 @@ export async function upsertAgentAutomationConfig(
       dailyTimesCsv: (next.dailyTimes ?? []).join(","),
       timezone: (next.timezone ?? "UTC").slice(0, 80),
       runContinuously: Boolean(next.runContinuously),
+      heartbeatEnabled: Boolean(next.heartbeatEnabled),
+      heartbeatIntervalMin: Math.max(5, Math.min(60, Number(next.heartbeatIntervalMin ?? 15) || 15)),
       maxLoopIterations: Math.max(1, Math.min(20, Number(next.maxLoopIterations ?? 3) || 3)),
       maxAgentCallsPerRun: Math.max(1, Math.min(30, Number(next.maxAgentCallsPerRun ?? 6) || 6)),
       maxToolRetries: Math.max(0, Math.min(5, Number(next.maxToolRetries ?? 2) || 0)),
-      maxRuntimeSeconds: Math.max(15, Math.min(1800, Number(next.maxRuntimeSeconds ?? 120) || 120)),
+      maxRuntimeSeconds: Math.max(15, Math.min(14400, Number(next.maxRuntimeSeconds ?? 120) || 120)),
       requireApprovalForExternalActions: Boolean(next.requireApprovalForExternalActions ?? true),
       allowAgentDelegation: Boolean(next.allowAgentDelegation ?? true),
       integrationsCsv: (next.integrations ?? []).join(","),
@@ -635,7 +665,86 @@ export async function runSchedulerTick(userId: string) {
     console.error("[scheduler] optimizer error:", e);
   });
 
+  // Run heartbeat tick — checks agents with heartbeat mode enabled
+  const heartbeatCreated = await runHeartbeatTick(userId).catch((e) => {
+    console.error("[scheduler] heartbeat error:", e);
+    return [] as DelegatedTaskView[];
+  });
+  created.push(...heartbeatCreated);
+
   return { utcTime: nowKey, created };
+}
+
+export async function runHeartbeatTick(userId: string): Promise<DelegatedTaskView[]> {
+  const configs = await prisma.agentAutomationConfig.findMany({
+    where: { userId, heartbeatEnabled: true, scheduleEnabled: true },
+  });
+  const created: DelegatedTaskView[] = [];
+
+  for (const cfg of configs) {
+    const intervalMs = (cfg.heartbeatIntervalMin || 15) * 60 * 1000;
+
+    // Skip if there's already a heartbeat task in-flight within the interval window
+    const existing = await prisma.delegatedTask.findFirst({
+      where: {
+        userId,
+        toAgentTarget: cfg.agentTarget,
+        triggerSource: "HEARTBEAT",
+        status: { in: [DelegatedTaskStatus.QUEUED, DelegatedTaskStatus.RUNNING] },
+        createdAt: { gte: new Date(Date.now() - intervalMs) },
+      },
+    });
+    if (existing) continue;
+
+    // Skip if last completed heartbeat was too recent
+    const lastCompleted = await prisma.delegatedTask.findFirst({
+      where: {
+        userId,
+        toAgentTarget: cfg.agentTarget,
+        triggerSource: "HEARTBEAT",
+        status: { in: [DelegatedTaskStatus.DONE, DelegatedTaskStatus.REVIEW] },
+      },
+      orderBy: { completedAt: "desc" },
+      select: { completedAt: true },
+    });
+    if (lastCompleted?.completedAt && Date.now() - lastCompleted.completedAt.getTime() < intervalMs) continue;
+
+    // Run pre-check to avoid unnecessary LLM cost
+    const { runHeartbeatPrecheck } = await import("@/lib/heartbeat-precheck");
+    const precheck = await runHeartbeatPrecheck(userId, cfg.agentTarget);
+
+    // Log the heartbeat check result
+    await prisma.heartbeatLog.create({
+      data: {
+        userId,
+        agentTarget: cfg.agentTarget,
+        checkResult: precheck.shouldWake ? "WAKE" : "SKIP",
+        signalsFound: precheck.signals.length > 0 ? precheck.signals.join("; ") : null,
+        llmSavedMs: precheck.shouldWake ? 0 : 15000, // rough estimate of LLM call saved
+      },
+    });
+
+    if (!precheck.shouldWake) continue;
+
+    try {
+      const signalSummary = precheck.signals.length > 0
+        ? `\n\nSignals detected:\n${precheck.signals.map((s) => `- ${s}`).join("\n")}`
+        : "";
+      const task = await createDelegatedTask(userId, {
+        fromAgent: "HEARTBEAT",
+        toAgentTarget: cfg.agentTarget as AgentTarget,
+        title: `${cfg.agentTarget.replaceAll("_", " ")} heartbeat wake`,
+        instructions: `Heartbeat wake (every ${cfg.heartbeatIntervalMin}min). Check for pending work, review inbox, and continue any active tasks.${signalSummary}`,
+        triggerSource: "HEARTBEAT",
+        dueLabel: "Now",
+      });
+      created.push(task);
+    } catch {
+      // Agent not hired or other issue — skip silently
+    }
+  }
+
+  return created;
 }
 
 function delegatedTaskNeedsReview(task: {
@@ -1031,13 +1140,17 @@ function generateCompletionDigest(task: { title: string; instructions: string; t
 }
 
 export async function executeDelegatedTask(userId: string, taskId: string, onEvent?: (event: AgenticStreamEvent) => void) {
+  // Atomic claim — prevents double-execution in parallel scenarios
+  const claimed = await prisma.delegatedTask.updateMany({
+    where: { id: taskId, userId, status: { in: [DelegatedTaskStatus.QUEUED, DelegatedTaskStatus.PAUSED] } },
+    data: { status: DelegatedTaskStatus.RUNNING },
+  });
+  if (claimed.count === 0) throw new Error("Task already claimed or not runnable");
+
   const row = await prisma.delegatedTask.findFirst({ where: { id: taskId, userId } });
   if (!row) throw new Error("Task not found");
   if (!(await isAgentTargetAvailableToUser(userId, row.toAgentTarget as AgentTarget))) {
     throw new Error(`${row.toAgentTarget.replaceAll("_", " ")} is not hired for this workspace`);
-  }
-  if (!([DelegatedTaskStatus.QUEUED, DelegatedTaskStatus.PAUSED] as DelegatedTaskStatus[]).includes(row.status)) {
-    throw new Error("Task is not runnable");
   }
 
   // Gate on skill readiness — fail fast if required API keys are missing
@@ -1051,11 +1164,6 @@ export async function executeDelegatedTask(userId: string, taskId: string, onEve
       `Add them in Settings → Skills.`
     );
   }
-
-  await prisma.delegatedTask.update({
-    where: { id: row.id },
-    data: { status: DelegatedTaskStatus.RUNNING },
-  });
 
   // If this task was chained from another task, fetch the source task's output
   // and prepend it so the receiving agent has full context.
@@ -1483,28 +1591,49 @@ export async function executeDelegatedTask(userId: string, taskId: string, onEve
   return toTaskView(updated);
 }
 
-export async function runDelegatedTaskQueue(userId: string, limit = 3) {
+export async function runDelegatedTaskQueue(userId: string, limit = 10) {
   const queued = await prisma.delegatedTask.findMany({
     where: { userId, status: DelegatedTaskStatus.QUEUED },
     orderBy: { createdAt: "asc" },
     take: limit,
   });
-  const processed: DelegatedTaskView[] = [];
+
+  // Group by agent target — take first task per agent (same-agent stays serial)
+  const byAgent = new Map<string, typeof queued>();
   for (const task of queued) {
-    try {
-      const result = await executeDelegatedTask(userId, task.id);
-      processed.push(result);
-    } catch {
-      await prisma.delegatedTask.update({
-        where: { id: task.id },
-        data: { status: DelegatedTaskStatus.FAILED },
-      }).catch(() => null);
-      notifyTaskFailed(userId, {
-        taskTitle: task.title,
-        agentName: task.toAgentTarget === "ASSISTANT" ? "Mara" : task.toAgentTarget.replaceAll("_", " "),
-      }).catch(() => {});
+    if (!byAgent.has(task.toAgentTarget)) {
+      byAgent.set(task.toAgentTarget, []);
     }
+    byAgent.get(task.toAgentTarget)!.push(task);
   }
+
+  // Pick one task per agent for parallel execution
+  const tasksToRun = [...byAgent.values()].map((tasks) => tasks[0]);
+
+  // Execute all agents in parallel with Promise.allSettled
+  const results = await Promise.allSettled(
+    tasksToRun.map(async (task) => {
+      try {
+        return await executeDelegatedTask(userId, task.id);
+      } catch {
+        await prisma.delegatedTask.update({
+          where: { id: task.id },
+          data: { status: DelegatedTaskStatus.FAILED },
+        }).catch(() => null);
+        notifyTaskFailed(userId, {
+          taskTitle: task.title,
+          agentName: task.toAgentTarget === "ASSISTANT" ? "Mara" : task.toAgentTarget.replaceAll("_", " "),
+        }).catch(() => {});
+        return null;
+      }
+    }),
+  );
+
+  const processed: DelegatedTaskView[] = results
+    .filter((r): r is PromiseFulfilledResult<DelegatedTaskView | null> => r.status === "fulfilled")
+    .map((r) => r.value)
+    .filter((v): v is DelegatedTaskView => v !== null);
+
   return { processed };
 }
 

@@ -25,7 +25,9 @@ export const UpsertAutomationConfigBody = z.object({
   maxLoopIterations: z.number().int().min(1).max(20).optional(),
   maxAgentCallsPerRun: z.number().int().min(1).max(30).optional(),
   maxToolRetries: z.number().int().min(0).max(5).optional(),
-  maxRuntimeSeconds: z.number().int().min(15).max(1800).optional(),
+  maxRuntimeSeconds: z.number().int().min(15).max(14400).optional(),
+  heartbeatEnabled: z.boolean().optional(),
+  heartbeatIntervalMin: z.number().int().min(5).max(60).optional(),
   requireApprovalForExternalActions: z.boolean().optional(),
   allowAgentDelegation: z.boolean().optional(),
   integrations: z.array(z.string()).optional(),
@@ -141,6 +143,7 @@ export const CreateLicenseKeyBody = z.object({
   agentKind: z.enum([
     "ASSISTANT", "SALES_REP", "CUSTOMER_SUCCESS", "MARKETING_COORDINATOR",
     "FINANCE_ANALYST", "OPERATIONS_MANAGER", "EXECUTIVE_ASSISTANT", "RESEARCH_ANALYST",
+    "SEO_SPECIALIST",
   ]),
   schedule: z.enum(["DAILY", "WEEKLY", "MONTHLY"]),
 });
@@ -151,6 +154,29 @@ export const RevokeLicenseKeyBody = z.object({
 
 export const RedeemLicenseKeyBody = z.object({
   code: z.string().min(1).transform((s) => s.trim().toUpperCase()),
+});
+
+// Plan license keys
+export const CreatePlanLicenseKeyBody = z.object({
+  tier: z.enum(["SMALL_BUSINESS", "MID_SIZE"]),
+});
+
+export const RedeemPlanLicenseKeyBody = z.object({
+  code: z.string().min(1).transform((s) => s.trim().toUpperCase()),
+});
+
+export const RevokePlanLicenseKeyBody = z.object({
+  keyId: z.string().min(1),
+});
+
+// Webhooks
+export const CreateWebhookBody = z.object({
+  agentTarget: z.string().min(1).max(80),
+  label: z.string().max(200).optional(),
+});
+
+export const DeleteWebhookBody = z.object({
+  agentTarget: z.string().min(1).max(80),
 });
 
 // Agent feedback

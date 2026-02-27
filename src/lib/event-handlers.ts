@@ -75,6 +75,24 @@ export function registerEventHandlers(): void {
     }
   });
 
+  // WEBHOOK_EVENT_RECEIVED -> audit log
+  eventBus.on("WEBHOOK_EVENT_RECEIVED", async (event) => {
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: event.userId,
+          scope: "WEBHOOK",
+          entityId: event.taskId,
+          action: "WEBHOOK_RECEIVED",
+          summary: `Webhook event "${event.eventType}" received for ${event.agentTarget}, created task ${event.taskId}`,
+          metadata: JSON.stringify({ agentTarget: event.agentTarget, eventType: event.eventType }),
+        },
+      });
+    } catch {
+      // Non-critical audit logging
+    }
+  });
+
   // RUNNER_JOB_COMPLETED -> capture result into delegation traces if linked
   eventBus.on("RUNNER_JOB_COMPLETED", async (event) => {
     try {

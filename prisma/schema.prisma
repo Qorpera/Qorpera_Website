@@ -674,6 +674,8 @@ model AgentAutomationConfig {
   maxAgentCallsPerRun Int        @default(6)
   maxToolRetries    Int          @default(2)
   maxRuntimeSeconds Int          @default(120)
+  heartbeatEnabled      Boolean  @default(false)
+  heartbeatIntervalMin  Int      @default(15)
   requireApprovalForExternalActions Boolean @default(true)
   allowAgentDelegation            Boolean @default(true)
   integrationsCsv String         @default("")
@@ -1033,6 +1035,40 @@ model PlanInquiry {
   message       String   @default("")
   status        String   @default("NEW")
   createdAt     DateTime @default(now())
+}
+
+// ── Webhook Endpoints ───────────────────────────────────────────
+
+model WebhookEndpoint {
+  id             String   @id @default(cuid())
+  userId         String
+  agentTarget    String
+  label          String   @default("")
+  secretHash     String
+  secretLast4    String?
+  enabled        Boolean  @default(true)
+  lastCalledAt   DateTime?
+  callCount      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, agentTarget])
+  @@index([userId, enabled])
+}
+
+// ── Heartbeat Logs ──────────────────────────────────────────────
+
+model HeartbeatLog {
+  id             String   @id @default(cuid())
+  userId         String
+  agentTarget    String
+  checkResult    String   @default("SKIP")  // SKIP | WAKE
+  signalsFound   String?
+  llmSavedMs     Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@index([userId, agentTarget, createdAt])
+  @@index([userId, createdAt])
 }
 
 // ── Agent Optimizer ──────────────────────────────────────────────

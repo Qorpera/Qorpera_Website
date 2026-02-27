@@ -399,6 +399,32 @@ export function MetricsDashboard({ metrics, rangeDays }: { metrics: MetricsSumma
         </div>
       )}
 
+      {/* Heartbeat efficiency — always visible on overview if there are heartbeat checks */}
+      {tab === "overview" && metrics.heartbeatStats.totalChecks > 0 && (
+        <section className="wf-panel rounded-3xl p-6">
+          <h2 className="text-lg font-semibold tracking-tight mb-1">Heartbeat efficiency</h2>
+          <p className="text-sm wf-muted mb-4">Cost-aware pre-checks prevent unnecessary LLM calls during heartbeat wakes.</p>
+          <div className="grid gap-4 sm:grid-cols-4">
+            {[
+              { label: "Total checks", value: metrics.heartbeatStats.totalChecks.toLocaleString() },
+              { label: "Skipped (no work)", value: metrics.heartbeatStats.skipped.toLocaleString() },
+              { label: "Woken (work found)", value: metrics.heartbeatStats.woken.toLocaleString() },
+              { label: "Est. saved", value: usd(metrics.heartbeatStats.estimatedSavedUsd) },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-2xl border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
+                <div className="text-xs wf-muted">{stat.label}</div>
+                <div className="mt-1 text-xl font-semibold tabular-nums">{stat.value}</div>
+              </div>
+            ))}
+          </div>
+          {metrics.heartbeatStats.totalChecks > 0 && (
+            <div className="mt-3 text-xs wf-muted">
+              Skip ratio: {pct(metrics.heartbeatStats.skipped / metrics.heartbeatStats.totalChecks)}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* ══ PERFORMANCE ═══════════════════════════════════════════════════════ */}
       {tab === "performance" && (
         <div className="space-y-5">

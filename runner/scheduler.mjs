@@ -46,7 +46,7 @@ async function tick() {
       method: "POST",
       headers,
       body: JSON.stringify({}),
-      signal: AbortSignal.timeout(180000),
+      signal: AbortSignal.timeout(600000),
     });
 
     if (!response.ok) {

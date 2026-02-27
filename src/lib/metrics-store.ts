@@ -74,6 +74,14 @@ export type MetricsSummary = {
     cloudEquivalents: { label: string; usd: number }[];
   };
 
+  // Heartbeat efficiency
+  heartbeatStats: {
+    totalChecks: number;
+    skipped: number;
+    woken: number;
+    estimatedSavedUsd: number;
+  };
+
   // Daily activity (last 14 days)
   dailyActivity: DailyActivityPoint[];
 
@@ -103,6 +111,7 @@ export async function getMetricsForUser(userId: string, rangeDays = 365): Promis
     projects,
     runnerJobs,
     ollamaRaw,
+    heartbeatLogs,
     hiredJobs,
   ] = await Promise.all([
     prisma.submission.findMany({
@@ -149,6 +158,10 @@ export async function getMetricsForUser(userId: string, rangeDays = 365): Promis
       select: { status: true },
     }),
     getOllamaUsageThisMonth(userId),
+    prisma.heartbeatLog.findMany({
+      where: { userId, createdAt: { gte: thirtyDaysAgo } },
+      select: { checkResult: true, llmSavedMs: true },
+    }),
     prisma.hiredJob.findMany({
       where: { userId, enabled: true },
       select: { agentKind: true },
@@ -265,6 +278,18 @@ export async function getMetricsForUser(userId: string, rangeDays = 365): Promis
     usdEstimate: c.monthlyEstimatedUsd ?? 0,
   }));
 
+  // Heartbeat efficiency
+  const heartbeatSkipped = heartbeatLogs.filter((l) => l.checkResult === "SKIP").length;
+  const heartbeatWoken = heartbeatLogs.filter((l) => l.checkResult === "WAKE").length;
+  const totalSavedMs = heartbeatLogs.reduce((sum, l) => sum + l.llmSavedMs, 0);
+  // Rough cost estimate: ~$0.002 per LLM call saved (based on typical Ollama-equivalent cost)
+  const heartbeatStats = {
+    totalChecks: heartbeatLogs.length,
+    skipped: heartbeatSkipped,
+    woken: heartbeatWoken,
+    estimatedSavedUsd: heartbeatSkipped * 0.002,
+  };
+
   // Local AI usage
   const localAiUsage = {
     requestCount: ollamaRaw.requestCount,
@@ -376,6 +401,7 @@ export async function getMetricsForUser(userId: string, rangeDays = 365): Promis
     runnerJobStats,
     providerUsage,
     localAiUsage,
+    heartbeatStats,
     dailyActivity,
     weeklyAcceptanceTrend,
   };

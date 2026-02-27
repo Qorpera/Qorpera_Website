@@ -45,6 +45,13 @@ export type WorkforceEvent =
       jobType: string;
       ok: boolean;
       errorMessage: string | null;
+    }
+  | {
+      type: "WEBHOOK_EVENT_RECEIVED";
+      userId: string;
+      agentTarget: string;
+      taskId: string;
+      eventType: string;
     };
 
 export type WorkforceEventType = WorkforceEvent["type"];
