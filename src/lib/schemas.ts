@@ -122,6 +122,23 @@ export const InboxActionBody = z.object({
   action: z.enum(["approve", "edit", "ask_agent", "pause", "terminate"]),
 });
 
+// Recurring tasks
+export const CreateRecurringTaskBody = z.object({
+  agentTarget: z.string().min(1),
+  title: z.string().min(1).max(240),
+  instructions: z.string().min(1).max(12000),
+  scheduleTime: z.string().regex(/^\d{2}:\d{2}$/),
+  daysOfWeek: z.array(z.enum(["0", "1", "2", "3", "4", "5", "6"])).min(1),
+});
+
+export const UpdateRecurringTaskBody = z.object({
+  isActive: z.boolean().optional(),
+  title: z.string().min(1).max(240).optional(),
+  instructions: z.string().min(1).max(12000).optional(),
+  scheduleTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  daysOfWeek: z.array(z.enum(["0", "1", "2", "3", "4", "5", "6"])).min(1).optional(),
+});
+
 // Submissions
 export const SubmissionReviewBody = z.object({
   status: z.enum(["SUBMITTED", "ACCEPTED", "NEEDS_REVISION"]),

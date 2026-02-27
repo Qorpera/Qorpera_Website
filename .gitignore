@@ -45,3 +45,4 @@ dev.db
 *.db
 .data/
 .runtime/
+.env*.local
