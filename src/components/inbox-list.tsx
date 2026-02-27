@@ -11,7 +11,15 @@ type InboxAction = "approve" | "edit" | "ask_agent" | "pause" | "terminate";
 function itemTone(type: InboxItem["type"]) {
   if (type === "approval") return "border-orange-300 bg-orange-100 text-orange-900";
   if (type === "incident") return "border-rose-300 bg-rose-100 text-rose-900";
+  if (type === "system_update") return "border-teal-400/40 bg-teal-500/10 text-teal-300";
   return "border-emerald-200 bg-emerald-50";
+}
+
+function itemLabel(type: InboxItem["type"]) {
+  if (type === "approval") return "Needs approval";
+  if (type === "incident") return "Issue / retry";
+  if (type === "system_update") return "System update";
+  return "Draft ready";
 }
 
 function stateTone(state: InboxItem["state"]) {
@@ -107,7 +115,7 @@ export function InboxList({ initialItems }: { initialItems: InboxItem[] }) {
             <div className="min-w-0 space-y-1.5">
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className={`inline-flex rounded-md border px-2 py-0.5 text-xs ${itemTone(item.type)}`}>
-                  {item.type === "approval" ? "Needs approval" : item.type === "incident" ? "Issue / retry" : "Draft ready"}
+                  {itemLabel(item.type)}
                 </span>
                 <span className={`inline-flex rounded-md border px-2 py-0.5 text-xs ${stateTone(item.state)}`}>{item.stateLabel ?? "Open"}</span>
               </div>
@@ -136,38 +144,50 @@ export function InboxList({ initialItems }: { initialItems: InboxItem[] }) {
             </div>
 
             <div className="flex flex-wrap gap-1.5 shrink-0">
-              <button
-                className="wf-btn-success px-3 py-1.5 text-xs disabled:opacity-60"
-                disabled={pending !== null}
-                onClick={() => runAction(item.id, "approve")}
-              >
-                {pending === `${item.id}:approve` ? "…" : "Approve"}
-              </button>
-              <Link href="/projects" className="wf-btn-info grid place-items-center px-3 py-1.5 text-xs text-center">
-                Open
-              </Link>
-              <button
-                className="wf-btn-purple px-3 py-1.5 text-xs disabled:opacity-60"
-                disabled={pending !== null}
-                onClick={() => runAiReview(item)}
-              >
-                {pending === `${item.id}:ai_review` ? "…" : "AI review"}
-              </button>
-              <button
-                className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs text-rose-300 transition hover:bg-rose-500/15 disabled:opacity-60"
-                disabled={pending !== null}
-                onClick={() => runAction(item.id, "terminate")}
-              >
-                {pending === `${item.id}:terminate` ? "…" : "Terminate"}
-              </button>
-              <button
-                className="wf-btn-muted px-3 py-1.5 text-xs disabled:opacity-60"
-                disabled={pending !== null}
-                onClick={() => runAction(item.id, "ask_agent")}
-              >
-                {pending === `${item.id}:ask_agent` ? "…" : "Ask agent"}
-              </button>
-              <ReportIssueButton agentKind={item.owner} sourceRef={item.id} />
+              {item.type === "system_update" ? (
+                <button
+                  className="wf-btn-muted px-3 py-1.5 text-xs disabled:opacity-60"
+                  disabled={pending !== null}
+                  onClick={() => runAction(item.id, "approve")}
+                >
+                  {pending === `${item.id}:approve` ? "…" : "Dismiss"}
+                </button>
+              ) : (
+                <>
+                  <button
+                    className="wf-btn-success px-3 py-1.5 text-xs disabled:opacity-60"
+                    disabled={pending !== null}
+                    onClick={() => runAction(item.id, "approve")}
+                  >
+                    {pending === `${item.id}:approve` ? "…" : "Approve"}
+                  </button>
+                  <Link href="/projects" className="wf-btn-info grid place-items-center px-3 py-1.5 text-xs text-center">
+                    Open
+                  </Link>
+                  <button
+                    className="wf-btn-purple px-3 py-1.5 text-xs disabled:opacity-60"
+                    disabled={pending !== null}
+                    onClick={() => runAiReview(item)}
+                  >
+                    {pending === `${item.id}:ai_review` ? "…" : "AI review"}
+                  </button>
+                  <button
+                    className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs text-rose-300 transition hover:bg-rose-500/15 disabled:opacity-60"
+                    disabled={pending !== null}
+                    onClick={() => runAction(item.id, "terminate")}
+                  >
+                    {pending === `${item.id}:terminate` ? "…" : "Terminate"}
+                  </button>
+                  <button
+                    className="wf-btn-muted px-3 py-1.5 text-xs disabled:opacity-60"
+                    disabled={pending !== null}
+                    onClick={() => runAction(item.id, "ask_agent")}
+                  >
+                    {pending === `${item.id}:ask_agent` ? "…" : "Ask agent"}
+                  </button>
+                  <ReportIssueButton agentKind={item.owner} sourceRef={item.id} />
+                </>
+              )}
             </div>
           </article>
         ))}

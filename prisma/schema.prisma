@@ -223,6 +223,8 @@ model User {
   agentMemories      AgentMemory[]
   licenseKeysCreated  AgentLicenseKey[] @relation("LicenseKeyCreator")
   licenseKeysRedeemed AgentLicenseKey[] @relation("LicenseKeyRedeemer")
+  planLicenseKeysCreated  PlanLicenseKey[] @relation("PlanLicenseKeyCreator")
+  planLicenseKeysRedeemed PlanLicenseKey[] @relation("PlanLicenseKeyRedeemer")
   agentFeedback       AgentFeedback[]
   planSubscriptions   PlanSubscription[]
   optimizationCycles  AgentOptimizationCycle[]
@@ -553,6 +555,7 @@ model BusinessLogEntry {
   authorLabel  String?
   body         String
   relatedRef   String?
+  locked       Boolean           @default(false)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 
@@ -932,6 +935,25 @@ model AgentLicenseKey {
 
   creator        User             @relation("LicenseKeyCreator", fields: [creatorUserId], references: [id], onDelete: Cascade)
   redeemedBy     User?            @relation("LicenseKeyRedeemer", fields: [redeemedById], references: [id], onDelete: SetNull)
+
+  @@index([creatorUserId, createdAt])
+  @@index([redeemedById])
+}
+
+model PlanLicenseKey {
+  id             String           @id @default(cuid())
+  creatorUserId  String
+  tier           PlanTier
+  code           String           @unique
+  status         LicenseKeyStatus @default(ACTIVE)
+  redeemedById   String?
+  redeemedAt     DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  creator        User             @relation("PlanLicenseKeyCreator", fields: [creatorUserId], references: [id], onDelete: Cascade)
+  redeemedBy     User?            @relation("PlanLicenseKeyRedeemer", fields: [redeemedById], references: [id], onDelete: SetNull)
 
   @@index([creatorUserId, createdAt])
   @@index([redeemedById])

@@ -6,9 +6,10 @@ export type AgentKindKey =
   | "FINANCE_ANALYST"
   | "OPERATIONS_MANAGER"
   | "EXECUTIVE_ASSISTANT"
-  | "RESEARCH_ANALYST";
+  | "RESEARCH_ANALYST"
+  | "SEO_SPECIALIST";
 
-export type AgentTone = "teal" | "amber" | "rose" | "green" | "purple" | "cyan" | "slate" | "violet";
+export type AgentTone = "teal" | "amber" | "rose" | "green" | "purple" | "cyan" | "slate" | "violet" | "emerald";
 export type AgentFigureVariant = "assistant" | "manager";
 
 export type UiAgent = {
@@ -38,7 +39,7 @@ export type InboxItem = {
   id: string;
   summary: string;
   impact: string;
-  type: "approval" | "draft" | "incident";
+  type: "approval" | "draft" | "incident" | "system_update";
   owner: string;
   department: string;
   state?: "open" | "approved" | "needs_changes" | "agent_followup" | "paused";
@@ -293,6 +294,34 @@ export const UI_AGENTS: UiAgent[] = [
       evals: [
         { name: "Source citation accuracy", env: "staging", score: "91%", lastRun: "Today 09:00" },
         { name: "Report completeness", env: "production", score: "88%", lastRun: "Yesterday" },
+      ],
+    },
+  },
+  {
+    kind: "SEO_SPECIALIST",
+    name: "Sage",
+    username: "sage",
+    role: "SEO Specialist",
+    tone: "emerald",
+    figureVariant: "manager",
+    status: "Available",
+    autonomy: "Execute with approval",
+    capabilities: ["Crawl and audit web pages for SEO issues", "Keyword research and opportunity analysis", "Competitor SEO analysis and benchmarking", "Produce optimization recommendations"],
+    permissions: ["Can search the web and extract content", "Can create business logs with findings", "Cannot publish changes without approval", "All recommendations require human review"],
+    knowledgeSources: ["Web search (Tavily API)", "Business logs", "Business files"],
+    wins: ["Identified 14 missing meta descriptions across the site", "Keyword gap analysis uncovered 8 high-intent terms competitors rank for"],
+    failures: ["Initial audit missed a noindex tag on a key landing page — caught by quality review"],
+    dev: {
+      promptVersion: "seo-specialist@v1",
+      tools: ["Web Search", "Extract Content", "Quality Review", "Business Logs"],
+      connectors: ["Tavily", "Business Logs"],
+      logs: [
+        { time: "10:30", event: "Crawled 12 pages, flagged 6 SEO issues", latencyMs: 3800, status: "ok" },
+        { time: "10:45", event: "Quality review passed (confidence: 89%)", latencyMs: 2900, status: "ok" },
+      ],
+      evals: [
+        { name: "Audit issue detection accuracy", env: "staging", score: "90%", lastRun: "Today 09:30" },
+        { name: "Recommendation actionability", env: "production", score: "87%", lastRun: "Yesterday" },
       ],
     },
   },

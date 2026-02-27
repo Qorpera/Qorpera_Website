@@ -26,7 +26,6 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/projects", label: "Projects" },
       { href: "/metrics", label: "Metrics" },
       { href: "/agents", label: "Agents", dataTour: "nav-agents" },
-      { href: "/optimizer", label: "Optimizer" },
     ],
   },
   {
@@ -147,7 +146,7 @@ if (ownerFlag) {
       }).catch(() => []),
       prisma.user.findUnique({
         where: { id: session.userId },
-        select: { onboardedAt: true, tourCompletedAt: true },
+        select: { onboardedAt: true, tourCompletedAt: true, email: true, username: true },
       }),
       getPlanStatus(session.userId),
     ]);
@@ -234,37 +233,29 @@ if (ownerFlag) {
               </div>
             </div>
 
-            <div className="mt-auto border-t border-[rgba(255,255,255,0.04)] px-3 py-2">
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/profile"
-                  aria-label="Open profile"
-                  title="Profile"
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/8 hover:text-white/90"
-                >
-                  <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <path d="M10 10a3.25 3.25 0 1 0 0-6.5A3.25 3.25 0 0 0 10 10Zm0 1.5c-3.13 0-5.75 1.68-6.8 4.17-.2.48.18.83.66.83h12.28c.48 0 .86-.35.66-.83C15.75 13.18 13.13 11.5 10 11.5Z" fill="currentColor"/>
+            <div className="mt-auto border-t border-[rgba(255,255,255,0.04)]">
+              <Link
+                href="/profile"
+                className="flex w-full items-center gap-2.5 px-3 py-2.5 transition hover:bg-white/[0.04]"
+              >
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/8 text-white/55">
+                  <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path d="M10 10a3.25 3.25 0 1 0 0-6.5A3.25 3.25 0 0 0 10 10Zm0 1.5c-3.13 0-5.75 1.68-6.8 4.17-.2.48.18.83.66.83h12.28c.48 0 .86-.35.66-.83C15.75 13.18 13.13 11.5 10 11.5Z" />
                   </svg>
-                </Link>
-                {planStatus.plan ? (
-                  <Link
-                    href="/agents"
-                    className="flex flex-1 items-center gap-2 rounded-lg border border-teal-500/30 bg-teal-500/10 px-3 py-1.5 text-[13px] font-medium text-teal-300 transition hover:bg-teal-500/15"
-                  >
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-teal-400" />
-                    <span className="truncate">{planStatus.plan.name}</span>
-                    <span className="ml-auto text-[11px] text-teal-400/70">{planStatus.hiredCount}/{planStatus.agentCap}</span>
-                  </Link>
-                ) : (
-                  <Link
-                    href="/pricing"
-                    className="group relative flex-1 overflow-hidden rounded-lg border border-emerald-300/30 bg-gradient-to-r from-emerald-400/85 via-teal-400/80 to-cyan-400/80 px-3 py-1.5 text-[13px] font-semibold tracking-tight text-zinc-950 shadow-[0_0_0_1px_rgba(16,185,129,0.12)] transition hover:brightness-105"
-                  >
-                    <span className="absolute inset-0 opacity-25 bg-[linear-gradient(110deg,transparent_20%,rgba(255,255,255,0.9)_50%,transparent_80%)]" />
-                    <span className="relative">View Plans</span>
-                  </Link>
-                )}
-              </div>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[13px] text-white/70">
+                    {tourUser?.username ? `@${tourUser.username}` : (tourUser?.email ?? "Profile")}
+                  </div>
+                  {planStatus.plan ? (
+                    <div className="text-[11px] text-teal-400/60">
+                      {planStatus.plan.name} · {planStatus.hiredCount}/{planStatus.agentCap} agents
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-white/28">No plan</div>
+                  )}
+                </div>
+              </Link>
             </div>
           </aside>
 
@@ -340,6 +331,9 @@ if (ownerFlag) {
                 </form>
               ) : (
                 <>
+                  <Link className="wf-btn px-3 py-1.5" href="/pricing">
+                    View Plans
+                  </Link>
                   <Link className="wf-btn px-3 py-1.5" href="/login">
                     Login
                   </Link>

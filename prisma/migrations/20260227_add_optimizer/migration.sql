@@ -50,3 +50,6 @@ ALTER TABLE "AgentOptimizationApplication"
 ALTER TABLE "AgentOptimizationApplication"
   ADD CONSTRAINT "AgentOptimizationApplication_cycleId_fkey"
   FOREIGN KEY ("cycleId") REFERENCES "AgentOptimizationCycle"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Add locked field to BusinessLogEntry
+ALTER TABLE "BusinessLogEntry" ADD COLUMN "locked" BOOLEAN NOT NULL DEFAULT false;

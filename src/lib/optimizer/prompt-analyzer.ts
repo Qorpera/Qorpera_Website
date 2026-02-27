@@ -1,138 +1,150 @@
 /**
- * Analyzes the current advisor system prompt against research findings.
- * Scores it across dimensions and generates specific prompt patches.
+ * Analyzes a target agent against research findings and generates typed actions.
  */
 
 import type {
   ResearchFinding,
   ScoreDimension,
-  OptimizationImprovement,
+  OptimizationAction,
+  AgentContext,
 } from "./types";
 import { SCORE_DIMENSIONS } from "./types";
 
 function extractJson<T>(raw: string): T | null {
-  // Try object first, then array
-  for (const [open, close] of [
-    ["{", "}"],
-    ["[", "]"],
-  ] as const) {
+  for (const [open, close] of [["{", "}"], ["[", "]"]] as const) {
     const first = raw.indexOf(open);
     const last = raw.lastIndexOf(close);
     if (first !== -1 && last > first) {
-      try {
-        return JSON.parse(raw.slice(first, last + 1)) as T;
-      } catch {
-        // try next
-      }
+      try { return JSON.parse(raw.slice(first, last + 1)) as T; } catch { /* next */ }
     }
   }
   return null;
 }
 
-export async function analyzePrompt(
-  currentPrompt: string,
+function shortId() {
+  return Math.random().toString(36).slice(2, 8);
+}
+
+// ── Prompts vary by agent type ───────────────────────────────────
+
+const AGENT_FOCUS: Record<string, string> = {
+  CHIEF_ADVISOR:          "strategic reasoning, business grounding, delegation routing, plan-context injection",
+  ASSISTANT:              "triage accuracy, task decomposition, handoff clarity, multi-step research",
+  SALES_REP:              "ICP scoring, outreach personalization, pipeline logging discipline, objection handling",
+  CUSTOMER_SUCCESS:       "churn signal detection, health scoring, renewal prep, escalation triggers",
+  MARKETING_COORDINATOR:  "brand voice consistency, campaign analysis rigor, approval discipline, content quality",
+  FINANCE_ANALYST:        "numeric accuracy, anomaly thresholds, read-only discipline, report structure",
+  OPERATIONS_MANAGER:     "SOP versioning, blocker severity, vendor SLA tracking, cross-team delegation",
+  EXECUTIVE_ASSISTANT:    "inbox triage priority tiers, brief format, action item tracking, confidentiality",
+  RESEARCH_ANALYST:       "source citation rigor, claim verification, quality review gates, synthesis depth",
+};
+
+const AGENT_SYSTEM_PROMPT_SUMMARY: Record<string, string> = {
+  CHIEF_ADVISOR: `ROLE: Business Advisor (operator-level). Provides strategy, delegation, hiring recommendations.
+KEY SECTIONS: ROLE_IDENTITY, CORE_MANDATE, OPERATING_POLICY, GROUNDING RULES, DELEGATION, AGENT ROUTING TABLE, HIRING, STYLE, OUTPUT_CONTRACT.
+Notable: structured JSON output; delegates to specialist agents; anti-hallucination rules; plan context injection.`,
+
+  ASSISTANT: `ROLE: General Support / Triage Rep. Handles research, drafting, CRM notes, inbox triage.
+SOUL: coreTruths include execution-orientation, safe progress, escalation; boundaries include no policy invention.
+Notable: tool-based execution; delegates to specialists; approval-gated external actions.`,
+
+  SALES_REP: `ROLE: Sales Rep. Handles prospecting, ICP research, outreach drafts, pipeline logging.
+SOUL: focuses on lead qualification, personalization, pipeline hygiene.
+Notable: no automatic sends; escalates to CS on conversion; audit enrichment quality.`,
+
+  CUSTOMER_SUCCESS: `ROLE: CS Manager. Monitors health, churn risk, renewal prep.
+SOUL: focuses on retention, health score interpretation, escalation protocols.
+Notable: read-only on CRM; escalates at-risk accounts; renewal briefs require approval.`,
+
+  MARKETING_COORDINATOR: `ROLE: Marketing. Creates content, analyzes campaigns, reviews Figma designs.
+SOUL: brand voice adherence, campaign impact metrics, design token extraction.
+Notable: nothing publishes without approval; Figma integration for design review.`,
+
+  FINANCE_ANALYST: `ROLE: Finance. Financial analysis, anomaly detection (>20% deviation), structured reports.
+SOUL: verification workflow, numeric accuracy, read-only discipline.
+Notable: no external actions at all; escalates anomalies; structured table output.`,
+
+  OPERATIONS_MANAGER: `ROLE: Operations. SOP maintenance, vendor SLA, blockers, cross-team delegation.
+SOUL: versioned SOPs, vendor tracking, impact assessment.
+Notable: delegates cross-team; identifies blockers with business impact.`,
+
+  EXECUTIVE_ASSISTANT: `ROLE: Exec Assistant. Inbox triage (Critical/Today/This Week/FYI), meeting briefs, action items.
+SOUL: confidentiality, priority tiers, action tracking with owners/due dates.
+Notable: treats all info as confidential; meeting briefs require human review.`,
+
+  RESEARCH_ANALYST: `ROLE: Research Analyst. Web research, source validation, synthesis reports.
+SOUL: cite sources for every claim; use quality_review before finalizing; never present unverified claims as facts.
+Notable: quality_review tool required; Tavily for web search; structured citations.`,
+};
+
+// ── Main entrypoint ──────────────────────────────────────────────
+
+export async function analyzeAgent(
+  agentContext: AgentContext,
   research: ResearchFinding[],
   llmCaller: (system: string, user: string) => Promise<string | null>,
 ): Promise<{
   overallScore: number;
   dimensions: ScoreDimension[];
-  improvements: OptimizationImprovement[];
+  actions: OptimizationAction[];
   synthesis: string;
 }> {
-  // Step 1: synthesize research into actionable insights
-  const synthesis = await synthesizeResearch(research, llmCaller);
-
-  // Step 2: score the prompt
-  const { overallScore, dimensions } = await scorePrompt(
-    currentPrompt,
-    synthesis,
-    llmCaller,
-  );
-
-  // Step 3: generate improvement patches for the weakest dimensions
-  const improvements = await generateImprovements(
-    currentPrompt,
-    dimensions,
-    synthesis,
-    llmCaller,
-  );
-
-  return { overallScore, dimensions, improvements, synthesis };
+  const synthesis = await synthesizeResearch(research, agentContext, llmCaller);
+  const { overallScore, dimensions } = await scoreAgent(agentContext, synthesis, llmCaller);
+  const actions = await generateActions(agentContext, dimensions, synthesis, llmCaller);
+  return { overallScore, dimensions, actions, synthesis };
 }
 
 async function synthesizeResearch(
   research: ResearchFinding[],
-  llmCaller: (system: string, user: string) => Promise<string | null>,
+  ctx: AgentContext,
+  llmCaller: (s: string, u: string) => Promise<string | null>,
 ): Promise<string> {
   const researchText = research
-    .map(
-      (r) =>
-        `TECHNIQUE: ${r.technique}\nSOURCE: ${r.source}\nINSIGHTS:\n${r.keyInsights.map((i) => `  - ${i}`).join("\n")}`,
-    )
+    .map((r) => `TECHNIQUE: ${r.technique}\nSOURCE: ${r.source}\nINSIGHTS:\n${r.keyInsights.map((i) => `  - ${i}`).join("\n")}`)
     .join("\n\n");
 
-  const prompt = `You are an expert prompt engineer specializing in agentic AI systems for business applications.
-
-Synthesize the following research findings into a concise, actionable summary (300-400 words) of the most important principles for designing high-quality business AI advisor system prompts.
-
-Focus on: what the current state-of-the-art says about reasoning chains, uncertainty handling, grounding, delegation routing, and output quality for business-context agents.
-
-RESEARCH FINDINGS:
-${researchText}
-
-Write a synthesis that an AI systems engineer would use to evaluate and improve an existing prompt. Be specific and technical.`;
-
   const raw = await llmCaller(
-    "You synthesize AI research into actionable prompt engineering guidance.",
-    prompt,
+    "You synthesize AI research into actionable agent optimization guidance. Be concise and technical.",
+    `Synthesize these research findings into 250-word guidance for optimizing the ${ctx.agentName} (${ctx.role}) agent.
+Focus on: ${AGENT_FOCUS[ctx.agentKind] ?? "general agent quality"}.
+
+RESEARCH:
+${researchText}`,
   ).catch(() => null);
 
-  return raw?.trim() ?? "Research synthesis unavailable — using fallback analysis.";
+  return raw?.trim() ?? "Research synthesis unavailable.";
 }
 
-async function scorePrompt(
-  currentPrompt: string,
+async function scoreAgent(
+  ctx: AgentContext,
   synthesis: string,
-  llmCaller: (system: string, user: string) => Promise<string | null>,
+  llmCaller: (s: string, u: string) => Promise<string | null>,
 ): Promise<{ overallScore: number; dimensions: ScoreDimension[] }> {
-  const dimensionList = SCORE_DIMENSIONS.map(
-    (d) => `- ${d.name} (${d.label})`,
-  ).join("\n");
-
-  const prompt = `You are an expert prompt engineer auditing a production AI agent system prompt.
-
-RESEARCH CONTEXT (what best practices look like):
-${synthesis}
-
-CURRENT ADVISOR SYSTEM PROMPT TO AUDIT:
----
-${currentPrompt.slice(0, 8000)}
----
-
-Score this prompt on each dimension from 0 to 100 based on how well it implements current best practices.
-
-DIMENSIONS TO SCORE:
-${dimensionList}
-
-Return a JSON object (no markdown) with this exact shape:
-{
-  "overallScore": <0-100 weighted average>,
-  "dimensions": [
-    {
-      "name": "<dimension_name>",
-      "label": "<human label>",
-      "score": <0-100>,
-      "rationale": "<2-3 sentences explaining the score>",
-      "evidence": "<brief quote from the prompt that justifies this score, or 'Not found' if missing>"
-    }
-  ]
-}
-
-Be critical and honest. A score of 70 means solid but with clear room for improvement. 90+ means near-optimal.`;
+  const dimensionList = SCORE_DIMENSIONS.map((d) => `- ${d.name} (${d.label})`).join("\n");
 
   const raw = await llmCaller(
-    "You audit AI system prompts against research best practices. Return only valid JSON.",
-    prompt,
+    "You audit AI agent system prompts against research best practices. Return only valid JSON.",
+    `Score the ${ctx.agentName} (${ctx.role}) agent on each dimension (0–100).
+
+RESEARCH BEST PRACTICES:
+${synthesis}
+
+CURRENT AGENT DESIGN:
+${AGENT_SYSTEM_PROMPT_SUMMARY[ctx.agentKind] ?? "Standard agent design."}
+
+CURRENT CONFIG:
+- maxLoopIterations: ${ctx.currentConfig.maxLoopIterations}
+- maxRuntimeSeconds: ${ctx.currentConfig.maxRuntimeSeconds}
+- maxAgentCallsPerRun: ${ctx.currentConfig.maxAgentCallsPerRun}
+- requireApprovalForExternalActions: ${ctx.currentConfig.requireApprovalForExternalActions}
+- allowAgentDelegation: ${ctx.currentConfig.allowAgentDelegation}
+
+DIMENSIONS:
+${dimensionList}
+
+Return JSON (no markdown):
+{"overallScore":0-100,"dimensions":[{"name":"...","label":"...","score":0-100,"rationale":"2-3 sentences","evidence":"quote or Not found"}]}`,
   ).catch(() => null);
 
   if (raw) {
@@ -146,197 +158,140 @@ Be critical and honest. A score of 70 means solid but with clear room for improv
     }
   }
 
-  // Fallback: return estimated scores
   return {
-    overallScore: 58,
+    overallScore: 60,
     dimensions: SCORE_DIMENSIONS.map((d) => ({
-      name: d.name,
-      label: d.label,
-      score: 55 + Math.floor(Math.random() * 20),
-      rationale: "Score estimated — LLM analysis unavailable.",
-      evidence: "N/A",
+      name: d.name, label: d.label, score: 60, rationale: "Score estimated.", evidence: "N/A",
     })),
   };
 }
 
-async function generateImprovements(
-  currentPrompt: string,
+async function generateActions(
+  ctx: AgentContext,
   dimensions: ScoreDimension[],
   synthesis: string,
-  llmCaller: (system: string, user: string) => Promise<string | null>,
-): Promise<OptimizationImprovement[]> {
-  // Focus on the 4 weakest dimensions
-  const weakest = [...dimensions]
-    .sort((a, b) => a.score - b.score)
-    .slice(0, 4);
+  llmCaller: (s: string, u: string) => Promise<string | null>,
+): Promise<OptimizationAction[]> {
+  const weakest = [...dimensions].sort((a, b) => a.score - b.score).slice(0, 4);
+  const weakestText = weakest.map((d) => `${d.name} (${d.score}/100): ${d.rationale}`).join("\n");
 
-  const weakestText = weakest
-    .map((d) => `${d.name} (score: ${d.score}/100) — ${d.rationale}`)
-    .join("\n");
-
-  const prompt = `You are an expert prompt engineer. You must generate specific, immediately-applicable improvements to an AI advisor system prompt.
+  const raw = await llmCaller(
+    "You generate typed optimization actions for AI agent system prompts. Return only valid JSON arrays.",
+    `Generate 5–6 optimization actions for the ${ctx.agentName} (${ctx.role}) agent.
 
 RESEARCH BEST PRACTICES:
 ${synthesis}
 
-CURRENT PROMPT (abbreviated):
----
-${currentPrompt.slice(0, 6000)}
----
+AGENT FOCUS AREAS: ${AGENT_FOCUS[ctx.agentKind] ?? "general quality"}
 
-WEAKEST DIMENSIONS (these need improvement):
+WEAKEST DIMENSIONS:
 ${weakestText}
 
-Generate exactly 4 improvements — one per weak dimension. Each improvement must include a "promptPatch" that is EXACT TEXT ready to be appended to the system prompt. The patch should be a new section with a clear header and specific, actionable instructions.
+CURRENT CONFIG:
+- maxLoopIterations: ${ctx.currentConfig.maxLoopIterations}
+- maxRuntimeSeconds: ${ctx.currentConfig.maxRuntimeSeconds}
+- requireApprovalForExternalActions: ${ctx.currentConfig.requireApprovalForExternalActions}
 
-Return a JSON array (no markdown) with this shape:
+Generate a mix of action types. Return a JSON array (no markdown):
 [
   {
-    "id": "opt_<dimension_name>_v1",
-    "dimension": "<dimension_name>",
+    "type": "prompt_patch",
+    "id": "opt_<short_id>",
     "priority": "high|medium|low",
-    "issue": "<what is missing or weak in the current prompt — 1 sentence>",
-    "recommendation": "<what change to make — 1-2 sentences>",
-    "researchBasis": "<which technique/paper this is based on>",
-    "promptPatch": "<the exact text to append — use newlines, be specific, include a section header like REASONING_PROTOCOL or UNCERTAINTY_PROTOCOL>"
+    "dimension": "<dimension_name>",
+    "issue": "<what is missing — 1 sentence>",
+    "researchBasis": "<paper/technique>",
+    "sectionHeader": "<SECTION_NAME_IN_CAPS>",
+    "content": "<200-word body of the protocol — imperative, specific, examples>"
+  },
+  {
+    "type": "soul_addition",
+    "id": "opt_<short_id>",
+    "priority": "high|medium|low",
+    "field": "coreTruth|boundary",
+    "issue": "<what is missing>",
+    "researchBasis": "<paper/technique>",
+    "content": "<the exact truth or boundary text to add, 1–2 sentences>"
+  },
+  {
+    "type": "automation_config",
+    "id": "opt_<short_id>",
+    "priority": "medium|low",
+    "field": "maxLoopIterations|maxRuntimeSeconds|maxAgentCallsPerRun|requireApprovalForExternalActions|allowAgentDelegation|maxToolRetries",
+    "recommendedValue": <number or boolean>,
+    "issue": "<why this config value is suboptimal>",
+    "researchBasis": "<paper/technique>"
+  },
+  {
+    "type": "memory_seed",
+    "id": "opt_<short_id>",
+    "priority": "high|medium|low",
+    "topic": "<topic slug>",
+    "title": "<short title>",
+    "content": "<200-word knowledge to inject — specific techniques, patterns, or domain knowledge>",
+    "importance": <1-10>,
+    "issue": "<what knowledge is currently missing>",
+    "researchBasis": "<paper/technique>"
   }
 ]
 
-IMPORTANT for promptPatch:
-- Start with a section header (e.g., REASONING_PROTOCOL, UNCERTAINTY_PROTOCOL, DELEGATION_PRECISION, OUTPUT_QUALITY_GATE)
-- Be specific: list exact steps, phrases, or patterns to follow
-- Include examples of correct behavior where helpful
-- Keep each patch to 100-200 words
-- Write in imperative form ("Before answering...", "When uncertain...")`;
-
-  const raw = await llmCaller(
-    "You generate specific, appended prompt patches to improve AI agent system prompts. Return only valid JSON arrays.",
-    prompt,
+Assign priority: HIGH = directly improves quality with high confidence; MEDIUM = useful but needs review; LOW = minor.
+Ensure IDs are unique. Make prompt_patch content specific and immediately usable.`
   ).catch(() => null);
 
   if (raw) {
-    const parsed = extractJson<OptimizationImprovement[]>(raw);
+    const parsed = extractJson<OptimizationAction[]>(raw);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed.filter(
-        (imp) =>
-          imp.id && imp.dimension && imp.promptPatch && imp.issue,
-      );
+      return parsed
+        .filter((a) => a.type && a.id && a.priority)
+        .map((a) => ({ ...a, id: a.id || `opt_${shortId()}` }));
     }
   }
 
-  return getFallbackImprovements(dimensions);
+  return getFallbackActions(ctx, dimensions);
 }
 
-function getFallbackImprovements(
+function getFallbackActions(
+  ctx: AgentContext,
   dimensions: ScoreDimension[],
-): OptimizationImprovement[] {
-  const byDimension: Record<string, OptimizationImprovement> = {
-    reasoning_chain: {
-      id: "opt_reasoning_chain_v1",
-      dimension: "reasoning_chain",
+): OptimizationAction[] {
+  const weakest = [...dimensions].sort((a, b) => a.score - b.score).slice(0, 2);
+  const actions: OptimizationAction[] = [];
+
+  if (weakest[0]) {
+    actions.push({
+      type: "prompt_patch",
+      id: `opt_${shortId()}`,
       priority: "high",
-      issue:
-        "The prompt lacks an explicit internal reasoning protocol before answering.",
-      recommendation:
-        "Add a ReAct-style reasoning chain that the model works through before formulating the answer field.",
+      dimension: weakest[0].name,
+      issue: `${ctx.agentName} lacks explicit protocol for ${weakest[0].label.toLowerCase()}.`,
       researchBasis: "Wei et al., 2022 — Chain-of-Thought Prompting",
-      promptPatch: `REASONING_PROTOCOL
-Before formulating your answer, silently work through these steps:
-1. GOAL: What is the user actually asking? (restate in one sentence)
-2. EVIDENCE: What do I know from businessContext? (list what's relevant)
-3. GAPS: What context is missing that would change my answer?
-4. ASSUMPTIONS: What am I assuming? State explicitly.
-5. PRIORITY: What is the single highest-leverage action I can recommend?
-6. CONFIDENCE: Am I certain enough to give a direct recommendation, or should I ask a clarifying question?
-Only then write the answer field. Never skip this internal process.`,
-    },
-    uncertainty_handling: {
-      id: "opt_uncertainty_v1",
-      dimension: "uncertainty_handling",
-      priority: "high",
-      issue:
-        "The prompt lacks a structured protocol for expressing uncertainty.",
-      recommendation:
-        "Add explicit uncertainty expression tiers with example phrases.",
-      researchBasis: "Kadavath et al., 2022 — Language Models Know What They Know",
-      promptPatch: `UNCERTAINTY_PROTOCOL
-Express uncertainty using these tiers:
-- HIGH CONFIDENCE: State directly ("Based on [X in businessContext]...")
-- MEDIUM CONFIDENCE: "The context suggests X, but I'd want to confirm [specific data point]."
-- LOW CONFIDENCE: "I don't have enough data to answer this accurately. To help better, I'd need [specific thing]."
-- MISSING DATA: "I don't have that information yet — [businessContext field] is empty or unavailable."
-Never present a medium/low confidence answer as if it were certain. When context is thin, say so and ask for the specific data needed.`,
-    },
-    grounding_strength: {
-      id: "opt_grounding_v1",
-      dimension: "grounding_strength",
-      priority: "high",
-      issue: "Anti-hallucination rules exist but lack a positive citation discipline.",
-      recommendation: "Add source-citation protocol pairing each claim to a context field.",
-      researchBasis: "Lewis et al., 2020 — Retrieval-Augmented Generation",
-      promptPatch: `CITATION_DISCIPLINE
-For every factual claim in your answer:
-- Reference the specific businessContext field it came from ("According to [companySoul.strategicGoals]..." or "The log from [date] shows...")
-- If you cannot cite a specific context field, you must not state it as fact
-- Distinguish between: (a) what the context says, (b) what you're inferring, (c) what you're recommending
-- Pattern: "[context evidence] → [your interpretation] → [recommendation]"
-This makes your reasoning transparent and traceable.`,
-    },
-    delegation_precision: {
-      id: "opt_delegation_v1",
-      dimension: "delegation_precision",
-      priority: "medium",
-      issue: "Delegation rules are present but lack examples and edge case handling.",
-      recommendation: "Add concrete delegation triggers with examples of correct and incorrect routing.",
-      researchBasis: "Wu et al., 2023 — AutoGen Multi-Agent Conversation",
-      promptPatch: `DELEGATION_PRECISION
-Before delegating, verify:
-1. Is this agent HIRED? (only delegate to agents in context.agents — never invent agents)
-2. Is this clearly WORK, not advice? (delegation = user wants something done, not explained)
-3. Is the task scoped? (one clear outcome, not a vague request)
-If all three: delegate with a title (<10 words) and instructions (include: goal, constraints, output format, relevant context excerpts).
-If any fail: answer directly or ask a clarifying question instead.
-NEVER delegate to an agent that isn't listed in context.agents.`,
-    },
-    output_quality: {
-      id: "opt_output_quality_v1",
-      dimension: "output_quality",
-      priority: "medium",
-      issue: "Output contract specifies format but not quality criteria.",
-      recommendation: "Add a self-check step before finalizing the answer field.",
-      researchBasis: "Anthropic, 2023 — Constitutional AI",
-      promptPatch: `OUTPUT_QUALITY_GATE
-Before finalizing your JSON response, check:
-- answer: Is it ≤5 sentences? Does it lead with action or recommendation? Does it avoid generic filler?
-- ownerFocus: Are these items specific, measurable, and ordered by impact?
-- suggestedAgents: Are these based on actual context data (not default suggestions)?
-- delegatedTasks: Is each instruction complete enough for the agent to execute without follow-up?
-If any check fails, revise before outputting. Prefer one sharp insight over three generic ones.`,
-    },
-    communication_style: {
-      id: "opt_communication_v1",
-      dimension: "communication_style",
-      priority: "medium",
-      issue: "Style guidance is abstract; lacks specific anti-patterns to avoid.",
-      recommendation: "Add explicit communication anti-patterns to avoid.",
-      researchBasis: "OpenAI, 2023 — GPT-4 Technical Report communication guidelines",
-      promptPatch: `COMMUNICATION_ANTI_PATTERNS
-Never use these patterns:
-- "That's a great question!" or any affirmative opener
-- "Certainly!" / "Absolutely!" / "Of course!"
-- Bullet lists when a direct 2-sentence answer is better
-- Restating what the user said before answering
-- Hedging every sentence with "might", "could", "possibly" (reserve hedges for genuine uncertainty)
-- Ending with "Let me know if you need anything else!" or similar
-Lead every answer with the most important point. Cut anything that doesn't add information.`,
-    },
-  };
+      sectionHeader: `${weakest[0].name.toUpperCase()}_PROTOCOL`,
+      content: `Before executing any task, verify:\n1. Is the objective clear? (restate in 1 line)\n2. What context is available? (list relevant data)\n3. What assumptions am I making? (state explicitly)\n4. Is this within my approved scope?\nOnly proceed when all four checks pass.`,
+    });
+  }
 
-  const weakest = [...dimensions]
-    .sort((a, b) => a.score - b.score)
-    .slice(0, 4);
+  actions.push({
+    type: "soul_addition",
+    id: `opt_${shortId()}`,
+    priority: "high",
+    field: "boundary",
+    issue: `${ctx.agentName} needs explicit uncertainty boundary.`,
+    researchBasis: "Kadavath et al., 2022 — Language Models Know What They Know",
+    content: "When key inputs are missing or conflicting, explicitly state what is unknown and request clarification rather than proceeding with low-confidence assumptions.",
+  });
 
-  return weakest
-    .map((d) => byDimension[d.name])
-    .filter(Boolean);
+  actions.push({
+    type: "memory_seed",
+    id: `opt_${shortId()}`,
+    priority: "medium",
+    topic: "best_practices",
+    title: `${ctx.agentName} Quality Standards`,
+    content: `Key quality standards for ${ctx.role}: Always cite the specific business context data that informed each recommendation. Express uncertainty using confidence tiers (HIGH/MEDIUM/LOW). Escalate when confidence is LOW. Prefer reversible actions over irreversible ones when unsure.`,
+    importance: 8,
+    issue: "Agent lacks seeded quality standards in memory.",
+    researchBasis: "Anthropic Constitutional AI, 2023",
+  });
+
+  return actions;
 }

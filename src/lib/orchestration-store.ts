@@ -11,6 +11,8 @@ import { getEnabledSkillContents } from "@/lib/skills-store";
 import { getAppPreferences } from "@/lib/settings-store";
 import { getAgentMemoryIndex, ingestTaskCompletion } from "@/lib/agent-memory-store";
 import { notifyApprovalNeeded, notifySubmissionReady, notifyTaskCompleted, notifyTaskFailed } from "@/lib/notifications";
+import { runOptimizerIfDue } from "@/lib/optimizer";
+import { getAppliedPatches } from "@/lib/optimizer/optimizer-store";
 
 export type AgentTarget =
   | "CHIEF_ADVISOR"
@@ -21,7 +23,8 @@ export type AgentTarget =
   | "FINANCE_ANALYST"
   | "OPERATIONS_MANAGER"
   | "EXECUTIVE_ASSISTANT"
-  | "RESEARCH_ANALYST";
+  | "RESEARCH_ANALYST"
+  | "SEO_SPECIALIST";
 
 export type WorkerAgentTarget = Exclude<AgentTarget, "CHIEF_ADVISOR">;
 
@@ -232,6 +235,24 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     allowAgentDelegation: false,
     integrations: ["browser", "business_logs", "files"],
     notes: "Searches the web, validates findings, and produces structured research reports. Uses cloud model for quality review.",
+    updatedAt: null,
+  },
+  SEO_SPECIALIST: {
+    agentTarget: "SEO_SPECIALIST",
+    triggerMode: "DELEGATED",
+    wakeOnDelegation: true,
+    scheduleEnabled: false,
+    dailyTimes: [],
+    timezone: "UTC",
+    runContinuously: false,
+    maxLoopIterations: 12,
+    maxAgentCallsPerRun: 15,
+    maxToolRetries: 2,
+    maxRuntimeSeconds: 600,
+    requireApprovalForExternalActions: true,
+    allowAgentDelegation: false,
+    integrations: ["browser", "business_logs", "files"],
+    notes: "Crawls and audits pages, researches keywords, analyzes competitors, and produces SEO optimization recommendations.",
     updatedAt: null,
   },
 };
@@ -607,6 +628,11 @@ export async function runSchedulerTick(userId: string) {
       action: "TICK",
       summary: `Scheduler tick ran at ${nowKey} UTC (${created.length} tasks created)`,
     },
+  });
+
+  // Fire optimizer if due — runs in background, doesn't block scheduler tick
+  runOptimizerIfDue(userId).catch((e) => {
+    console.error("[scheduler] optimizer error:", e);
   });
 
   return { utcTime: nowKey, created };
@@ -1112,6 +1138,12 @@ export async function executeDelegatedTask(userId: string, taskId: string, onEve
       if (injected + block.length > MAX_SKILL_INJECTION) break;
       agenticSystemPrompt += block;
       injected += block.length;
+    }
+
+    // Inject optimizer prompt patches (evidence-based improvements auto-applied by background job)
+    const optimizerPatches = await getAppliedPatches(userId, row.toAgentTarget).catch(() => null);
+    if (optimizerPatches) {
+      agenticSystemPrompt += `\n\nAPPLIED_OPTIMIZATIONS\nEvidence-based improvements active for this agent:\n${optimizerPatches}`;
     }
 
     const agenticResult = await runAgenticLoop({
