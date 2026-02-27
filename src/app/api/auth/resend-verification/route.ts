@@ -33,9 +33,9 @@ export async function POST(req: Request) {
 
   await sendEmail({
     to: user.email,
-    subject: "Verify your qorpera email",
-    body: `Welcome to qorpera!\n\nClick here to verify your email:\n${verifyUrl}\n\nThis link expires in 24 hours.`,
-  }).catch(() => {});
+    subject: "Verify your Qorpera email",
+    body: `Welcome to Qorpera!\n\nClick here to verify your email:\n${verifyUrl}\n\nThis link expires in 24 hours.`,
+  }, userId).catch(() => {});
 
   return NextResponse.json({ ok: true });
 }

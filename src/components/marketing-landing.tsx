@@ -9,9 +9,30 @@ const PITCH_LINES = [
   "Customers see immediate ROI in support, sales ops, marketing ops, finance ops, and internal admin while humans keep judgment and oversight.",
 ];
 
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Qorpera",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  description:
+    "AI workforce platform with project-based execution, permissions, approvals, and hybrid local/cloud orchestration.",
+  url: "https://qorpera.com",
+  offers: {
+    "@type": "AggregateOffer",
+    priceCurrency: "USD",
+    lowPrice: "0",
+    offerCount: "3",
+  },
+};
+
 export function MarketingLanding() {
   return (
     <div className="space-y-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       <section className="wf-panel relative overflow-hidden rounded-3xl p-6 sm:p-8">
         <div className="absolute right-0 top-0 h-56 w-56 translate-x-14 -translate-y-10 rounded-full bg-teal-200/40 blur-3xl" />
         <div className="absolute bottom-0 left-0 h-44 w-44 -translate-x-8 translate-y-8 rounded-full bg-amber-200/50 blur-3xl" />

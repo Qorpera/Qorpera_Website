@@ -43,9 +43,9 @@ export async function POST(req: Request) {
   const verifyUrl = `${origin}/api/auth/verify-email?token=${emailVerifyToken}&email=${encodeURIComponent(email)}`;
   sendEmail({
     to: email,
-    subject: "Verify your qorpera email",
-    body: `Welcome to qorpera!\n\nClick here to verify your email:\n${verifyUrl}\n\nThis link expires in 24 hours.`,
-  }).catch(() => {});
+    subject: "Verify your Qorpera email",
+    body: `Welcome to Qorpera!\n\nClick here to verify your email:\n${verifyUrl}\n\nThis link expires in 24 hours.`,
+  }, user.id).catch(() => {});
 
   return NextResponse.json({ ok: true });
 }

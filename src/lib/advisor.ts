@@ -19,6 +19,7 @@ import { listRunnersForUser } from "@/lib/runner-control-plane";
 import { recordOllamaUsage } from "@/lib/ollama-usage-store";
 import { getPlanStatus } from "@/lib/plan-store";
 import { AGENT_HIRE_CATALOG } from "@/lib/agent-catalog";
+import { getAppliedPatches } from "@/lib/optimizer/optimizer-store";
 
 export type AdvisorMode = "home" | "new_project";
 
@@ -66,6 +67,18 @@ function extractDataSignals(context: unknown): { hasCompanySoul: boolean; hiredA
 function extractPlanContext(context: unknown): { planName: string | null; tier: string | null; agentCap: number; hiredCount: number; slotsAvailable: number } | null {
   if (typeof context !== "object" || !context || !("planContext" in context)) return null;
   return (context as { planContext: { planName: string | null; tier: string | null; agentCap: number; hiredCount: number; slotsAvailable: number } | null }).planContext;
+}
+
+function extractAppliedOptimizations(context: unknown): string | null {
+  if (
+    typeof context === "object" &&
+    context &&
+    "appliedOptimizationPatches" in context &&
+    typeof (context as { appliedOptimizationPatches?: string | null }).appliedOptimizationPatches === "string"
+  ) {
+    return (context as { appliedOptimizationPatches: string }).appliedOptimizationPatches;
+  }
+  return null;
 }
 
 function extractMaxTokens(context: unknown): number {
@@ -326,6 +339,7 @@ function advisorSystemPrompt(
   recentlyOnboarded?: boolean,
   dataSignals?: { hasCompanySoul: boolean; hiredAgentCount: number; projectCount: number },
   planContext?: { planName: string | null; tier: string | null; agentCap: number; hiredCount: number; slotsAvailable: number } | null,
+  appliedOptimizations?: string | null,
 ) {
   const runnerLines = runnerContext && runnerContext.onlineRunnerCount > 0
     ? ["", "RUNNER_CAPABILITIES", "When a runner is online you can ask to execute local commands or read/write files — these go through the runner approval queue."]
@@ -445,11 +459,14 @@ function advisorSystemPrompt(
     ...runnerLines,
     ...planLines,
     ...onboardingLines,
+    ...(appliedOptimizations
+      ? ["", "APPLIED_OPTIMIZATIONS", "The following evidence-based improvements have been validated and applied to enhance your performance:", appliedOptimizations]
+      : []),
   ].join("\n");
 }
 
 export async function buildAdvisorContext(userId: string) {
-  const [projects, runs, inboxItems, prefs, agents, submissions, companySoul, chiefAdvisorSoul, businessLogs, businessFiles, owner, runnerContext, hiredJobs, planStatus] = await Promise.all([
+  const [projects, runs, inboxItems, prefs, agents, submissions, companySoul, chiefAdvisorSoul, businessLogs, businessFiles, owner, runnerContext, hiredJobs, planStatus, appliedOptimizationPatches] = await Promise.all([
     getProjectsForUser(userId),
     getRunsForUser(userId),
     getInboxItems(userId),
@@ -464,6 +481,7 @@ export async function buildAdvisorContext(userId: string) {
     buildRunnerContext(userId).catch(() => null),
     prisma.hiredJob.findMany({ where: { userId, enabled: true }, select: { agentKind: true }, distinct: ["agentKind"] }),
     getPlanStatus(userId),
+    getAppliedPatches(userId, "CHIEF_ADVISOR").catch(() => null),
   ]);
 
   // Backfill text extracts for files uploaded before extraction was enabled
@@ -549,6 +567,7 @@ export async function buildAdvisorContext(userId: string) {
     })),
     // chiefAdvisorSoul prompt is injected into system prompt directly — not duplicated in context JSON
     chiefAdvisorSoulPromptText: chiefAdvisorSoul?.promptText ?? null,
+    appliedOptimizationPatches: appliedOptimizationPatches ?? null,
     runnerState: runnerContext
       ? {
           onlineRunnerCount: runnerContext.onlineRunnerCount,
@@ -681,7 +700,8 @@ async function callOpenAIAdvisor({
       : false;
   const dataSignals = extractDataSignals(context);
   const planCtx = extractPlanContext(context);
-  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx, isRecentlyOnboarded, dataSignals, planCtx);
+  const appliedOpts = extractAppliedOptimizations(context);
+  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx, isRecentlyOnboarded, dataSignals, planCtx, appliedOpts);
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -800,7 +820,8 @@ async function callOllamaAdvisor({
       : false;
   const dataSignalsOllama = extractDataSignals(context);
   const planCtxOllama = extractPlanContext(context);
-  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtxOllama, isRecentlyOnboardedOllama, dataSignalsOllama, planCtxOllama);
+  const appliedOptsOllama = extractAppliedOptimizations(context);
+  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtxOllama, isRecentlyOnboardedOllama, dataSignalsOllama, planCtxOllama, appliedOptsOllama);
 
   const userPayload = buildSmartPayload(context as Record<string, unknown>, userMessage, {
     mode,

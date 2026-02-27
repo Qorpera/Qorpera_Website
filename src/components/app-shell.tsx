@@ -25,6 +25,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/projects", label: "Projects" },
       { href: "/metrics", label: "Metrics" },
       { href: "/agents", label: "Agents", dataTour: "nav-agents" },
+      { href: "/optimizer", label: "Optimizer" },
     ],
   },
   {

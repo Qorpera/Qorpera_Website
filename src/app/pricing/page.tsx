@@ -1,6 +1,18 @@
+import type { Metadata } from "next";
 import { PLAN_CATALOG } from "@/lib/plan-catalog";
 import { PricingSubscribeButton } from "@/components/pricing-subscribe-button";
 import { PricingInquiryButton } from "@/components/pricing-inquiry-modal";
+
+export const metadata: Metadata = {
+  title: "Pricing",
+  description:
+    "Simple, transparent pricing for Qorpera. Scale from solo founder to a full AI-powered team.",
+  openGraph: {
+    title: "Pricing | Qorpera",
+    description:
+      "Simple, transparent pricing. Scale from solo founder to a full AI-powered team.",
+  },
+};
 
 export default function PricingPage() {
   return (

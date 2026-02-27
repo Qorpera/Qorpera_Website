@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { ensureBaseAgents } from "@/lib/seed";
@@ -7,6 +8,17 @@ import { AdvisorChat } from "@/components/advisor-chat";
 import { getAdvisorSessionWithMessages } from "@/lib/advisor-sessions-store";
 import { getCompanySoul } from "@/lib/company-soul-store";
 import { prisma } from "@/lib/db";
+
+export const metadata: Metadata = {
+  title: { absolute: "Qorpera — AI Workforce Platform" },
+  description:
+    "Get work done with AI agents that are safe, cheap, and reviewable. Project-based execution with permissions, approvals, and hybrid local/cloud orchestration.",
+  openGraph: {
+    title: "Qorpera — AI Workforce Platform",
+    description:
+      "Get work done with AI agents that are safe, cheap, and reviewable.",
+  },
+};
 
 export default async function HomePage({
   searchParams,
