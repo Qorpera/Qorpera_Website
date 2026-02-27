@@ -19,11 +19,19 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      let res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
+      // Retry once on 404 (Turbopack cold-compile can 404 on first hit)
+      if (res.status === 404) {
+        res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+      }
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error || "Login failed");
       if (j.requiresTwoFactor) {

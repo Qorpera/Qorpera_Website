@@ -36,11 +36,19 @@ export default function ResetPasswordPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/reset-password", {
+      let res = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, token, password }),
       });
+      // Retry once on 404 (Turbopack cold-compile can 404 on first hit)
+      if (res.status === 404) {
+        res = await fetch("/api/auth/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, token, password }),
+        });
+      }
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error || "Reset failed");
