@@ -13,12 +13,21 @@ export type AgentMetricRow = {
   delegatedTotal: number;
   completionRate: number;
   avgToolLatencyMs: number | null;
+  /** Acceptance rate change vs the first half of the selected period. Null if insufficient data. */
+  acceptanceRateDelta: number | null;
 };
 
 export type DailyActivityPoint = {
   date: string; // "YYYY-MM-DD"
   tasks: number;
   submissions: number;
+};
+
+export type WeeklyAcceptancePoint = {
+  weekStart: string; // "YYYY-MM-DD"
+  submissions: number;
+  accepted: number;
+  rate: number;
 };
 
 export type RunnerJobStats = {
@@ -34,6 +43,9 @@ export type MetricsSummary = {
   acceptanceRate: number;
   openApprovals: number;
   apiSpendThisMonth: number;
+
+  // Week-over-week delta for acceptance rate KPI card
+  acceptanceRateDelta: number | null;
 
   // Per-agent table rows
   agentRows: AgentMetricRow[];
@@ -64,11 +76,15 @@ export type MetricsSummary = {
 
   // Daily activity (last 14 days)
   dailyActivity: DailyActivityPoint[];
+
+  // 8-week acceptance rate trend
+  weeklyAcceptanceTrend: WeeklyAcceptancePoint[];
 };
 
 export async function getMetricsForUser(userId: string, rangeDays = 90): Promise<MetricsSummary> {
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
   const rangeAgo = new Date(now.getTime() - rangeDays * 24 * 60 * 60 * 1000);
   const fourteenDaysAgo = new Date(now.getTime() - Math.min(rangeDays, 14) * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(now.getTime() - Math.min(rangeDays, 30) * 24 * 60 * 60 * 1000);
@@ -149,6 +165,17 @@ export async function getMetricsForUser(userId: string, rangeDays = 90): Promise
     0,
   );
 
+  // Week-over-week acceptance rate delta for KPI card
+  const lastWeekSubs = allSubmissions.filter(
+    (s) => s.createdAt >= twoWeeksAgo && s.createdAt < weekAgo,
+  );
+  const thisWeekAccepted = recentSubmissions.filter((s) => s.status === "ACCEPTED").length;
+  const lastWeekAccepted = lastWeekSubs.filter((s) => s.status === "ACCEPTED").length;
+  const thisWeekRate = recentSubmissions.length > 0 ? thisWeekAccepted / recentSubmissions.length : null;
+  const lastWeekRate = lastWeekSubs.length > 0 ? lastWeekAccepted / lastWeekSubs.length : null;
+  const acceptanceRateDelta: number | null =
+    thisWeekRate !== null && lastWeekRate !== null ? thisWeekRate - lastWeekRate : null;
+
   // Workflow quality
   const needsRevisionCount = allSubmissions.filter((s) => s.status === "NEEDS_REVISION").length;
   const avgRevisionRate = totalSubmissions > 0 ? needsRevisionCount / totalSubmissions : 0;
@@ -195,6 +222,21 @@ export async function getMetricsForUser(userId: string, rangeDays = 90): Promise
     submissions: submissionsByDay.get(date) ?? 0,
   }));
 
+  // 8-week acceptance rate trend (fixed window, not affected by rangeDays)
+  const weeklyAcceptanceTrend: WeeklyAcceptancePoint[] = [];
+  for (let w = 7; w >= 0; w--) {
+    const wStart = new Date(now.getTime() - (w + 1) * 7 * 24 * 60 * 60 * 1000);
+    const wEnd = new Date(now.getTime() - w * 7 * 24 * 60 * 60 * 1000);
+    const wSubs = allSubmissions.filter((s) => s.createdAt >= wStart && s.createdAt < wEnd);
+    const wAccepted = wSubs.filter((s) => s.status === "ACCEPTED").length;
+    weeklyAcceptanceTrend.push({
+      weekStart: wStart.toISOString().slice(0, 10),
+      submissions: wSubs.length,
+      accepted: wAccepted,
+      rate: wSubs.length > 0 ? wAccepted / wSubs.length : 0,
+    });
+  }
+
   // Project health
   const projectHealthCounts = { green: 0, yellow: 0, red: 0 };
   for (const p of projects) {
@@ -221,8 +263,28 @@ export async function getMetricsForUser(userId: string, rangeDays = 90): Promise
     })),
   };
 
+  // Per-agent period comparison: split rangeDays into two halves to detect improvement
+  const halfMs = (rangeDays / 2) * 24 * 60 * 60 * 1000;
+  const halfAgo = new Date(now.getTime() - halfMs);
+  const firstHalfByKind = new Map<string, { total: number; accepted: number }>();
+  const secondHalfByKind = new Map<string, { total: number; accepted: number }>();
+  for (const s of allSubmissions) {
+    if (s.createdAt < rangeAgo) continue;
+    const key = String(s.agentKind);
+    if (s.createdAt < halfAgo) {
+      const e = firstHalfByKind.get(key) ?? { total: 0, accepted: 0 };
+      e.total++;
+      if (s.status === "ACCEPTED") e.accepted++;
+      firstHalfByKind.set(key, e);
+    } else {
+      const e = secondHalfByKind.get(key) ?? { total: 0, accepted: 0 };
+      e.total++;
+      if (s.status === "ACCEPTED") e.accepted++;
+      secondHalfByKind.set(key, e);
+    }
+  }
+
   // Per-agent rows
-  // Build submission maps per agent kind
   const submissionsByKind = new Map<string, { total: number; accepted: number }>();
   for (const s of allSubmissions) {
     const key = String(s.agentKind);
@@ -232,7 +294,6 @@ export async function getMetricsForUser(userId: string, rangeDays = 90): Promise
     submissionsByKind.set(key, entry);
   }
 
-  // Build delegated task maps per toAgentTarget
   const delegatedByTarget = new Map<string, { done: number; total: number }>();
   for (const t of delegatedTasks) {
     const key = t.toAgentTarget;
@@ -242,7 +303,6 @@ export async function getMetricsForUser(userId: string, rangeDays = 90): Promise
     delegatedByTarget.set(key, entry);
   }
 
-  // Build avg tool latency per toAgentTarget
   const latencyByTarget = new Map<string, number[]>();
   for (const tc of toolCalls) {
     const key = tc.delegatedTask.toAgentTarget;
@@ -261,6 +321,14 @@ export async function getMetricsForUser(userId: string, rangeDays = 90): Promise
         ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
         : null;
 
+    const firstHalf = firstHalfByKind.get(kindKey) ?? { total: 0, accepted: 0 };
+    const secondHalf = secondHalfByKind.get(kindKey) ?? { total: 0, accepted: 0 };
+    // Require at least 3 submissions in each half to avoid noisy single-sample comparisons
+    const firstRate = firstHalf.total >= 3 ? firstHalf.accepted / firstHalf.total : null;
+    const secondRate = secondHalf.total >= 3 ? secondHalf.accepted / secondHalf.total : null;
+    const acceptanceRateDelta =
+      firstRate !== null && secondRate !== null ? secondRate - firstRate : null;
+
     return {
       kind: kindKey,
       name: agent.name,
@@ -272,6 +340,7 @@ export async function getMetricsForUser(userId: string, rangeDays = 90): Promise
       delegatedTotal: delStats.total,
       completionRate: delStats.total > 0 ? delStats.done / delStats.total : 0,
       avgToolLatencyMs: avgLatency,
+      acceptanceRateDelta,
     };
   });
 
@@ -280,6 +349,7 @@ export async function getMetricsForUser(userId: string, rangeDays = 90): Promise
     acceptanceRate,
     openApprovals,
     apiSpendThisMonth,
+    acceptanceRateDelta,
     agentRows,
     totalSubmissions,
     needsRevisionCount,
@@ -291,5 +361,6 @@ export async function getMetricsForUser(userId: string, rangeDays = 90): Promise
     providerUsage,
     localAiUsage,
     dailyActivity,
+    weeklyAcceptanceTrend,
   };
 }

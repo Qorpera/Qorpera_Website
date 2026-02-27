@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { getMetricsForUser, type DailyActivityPoint } from "@/lib/metrics-store";
+import { getMetricsForUser, type DailyActivityPoint, type WeeklyAcceptancePoint } from "@/lib/metrics-store";
 
 function pct(rate: number) {
   return `${Math.round(rate * 100)}%`;
@@ -9,6 +9,21 @@ function pct(rate: number) {
 
 function usd(amount: number) {
   return `$${amount.toFixed(2)}`;
+}
+
+function DeltaBadge({ delta, unit = "%" }: { delta: number; unit?: string }) {
+  const sign = delta > 0 ? "+" : "";
+  const color =
+    delta > 0
+      ? "text-teal-400 bg-teal-500/10 border-teal-500/20"
+      : delta < 0
+      ? "text-rose-400 bg-rose-500/10 border-rose-500/20"
+      : "text-white/40 bg-white/5 border-white/10";
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium tabular-nums ${color}`}>
+      {sign}{unit === "%" ? Math.round(Math.abs(delta) * 100) : Math.abs(delta)}{unit} vs last wk
+    </span>
+  );
 }
 
 function ActivityChart({ data }: { data: DailyActivityPoint[] }) {
@@ -44,6 +59,49 @@ function ActivityChart({ data }: { data: DailyActivityPoint[] }) {
               <div className="rounded-lg border border-[var(--border)] bg-[rgba(8,12,16,0.95)] px-2 py-1 text-[10px] whitespace-nowrap shadow-lg">
                 <div className="text-white/70">{d.date}</div>
                 <div className="text-white/90">{d.tasks} tasks · {d.submissions} submissions</div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function WeeklyTrendChart({ data }: { data: WeeklyAcceptancePoint[] }) {
+  const activeBars = data.filter((d) => d.submissions > 0);
+  const avg =
+    activeBars.length > 0
+      ? activeBars.reduce((s, d) => s + d.rate, 0) / activeBars.length
+      : 0;
+  return (
+    <div className="flex items-end gap-2 h-20">
+      {data.map((d) => {
+        const height = Math.round(d.rate * 100);
+        const isAboveAvg = d.submissions > 0 && d.rate >= avg;
+        const label = d.weekStart.slice(5); // "MM-DD"
+        return (
+          <div key={d.weekStart} className="group flex flex-1 flex-col items-center gap-1 relative">
+            <div className="flex items-end w-full" style={{ height: "64px" }}>
+              {d.submissions > 0 ? (
+                <div
+                  className={`w-full rounded-sm ${isAboveAvg ? "bg-teal-500/60" : "bg-white/15"}`}
+                  style={{ height: `${Math.max(height, 2)}%` }}
+                />
+              ) : (
+                <div className="w-full rounded-sm bg-white/5" style={{ height: "2px" }} />
+              )}
+            </div>
+            <span className="text-[9px] wf-muted tabular-nums">{label}</span>
+            {/* tooltip */}
+            <div className="pointer-events-none absolute bottom-9 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-10">
+              <div className="rounded-lg border border-[var(--border)] bg-[rgba(8,12,16,0.95)] px-2 py-1 text-[10px] whitespace-nowrap shadow-lg">
+                <div className="text-white/70">{d.weekStart}</div>
+                {d.submissions > 0 ? (
+                  <div className="text-white/90">{pct(d.rate)} · {d.accepted}/{d.submissions} accepted</div>
+                ) : (
+                  <div className="wf-muted">No submissions</div>
+                )}
               </div>
             </div>
           </div>
@@ -95,6 +153,20 @@ export default async function MetricsPage({
 
   const metrics = await getMetricsForUser(session.userId, rangeDays);
 
+  // Overall trend direction: first 4 weeks vs last 4 weeks
+  const firstHalfWeeks = metrics.weeklyAcceptanceTrend.slice(0, 4).filter((w) => w.submissions > 0);
+  const secondHalfWeeks = metrics.weeklyAcceptanceTrend.slice(4).filter((w) => w.submissions > 0);
+  const firstAvgRate =
+    firstHalfWeeks.length > 0
+      ? firstHalfWeeks.reduce((s, w) => s + w.rate, 0) / firstHalfWeeks.length
+      : null;
+  const secondAvgRate =
+    secondHalfWeeks.length > 0
+      ? secondHalfWeeks.reduce((s, w) => s + w.rate, 0) / secondHalfWeeks.length
+      : null;
+  const overallTrendDelta =
+    firstAvgRate !== null && secondAvgRate !== null ? secondAvgRate - firstAvgRate : null;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -133,8 +205,13 @@ export default async function MetricsPage({
 
         <div className="wf-panel rounded-3xl p-5">
           <div className="text-sm wf-muted">Acceptance rate</div>
-          <div className="mt-2 text-4xl font-semibold tabular-nums">
-            {pct(metrics.acceptanceRate)}
+          <div className="mt-2 flex items-end gap-3 flex-wrap">
+            <span className="text-4xl font-semibold tabular-nums">
+              {pct(metrics.acceptanceRate)}
+            </span>
+            {metrics.acceptanceRateDelta !== null && (
+              <DeltaBadge delta={metrics.acceptanceRateDelta} unit="%" />
+            )}
           </div>
           <div className="mt-2 h-1.5 rounded-full bg-white/8">
             <div
@@ -161,31 +238,71 @@ export default async function MetricsPage({
         </div>
       </section>
 
-      {/* Row 2: Daily activity chart */}
-      <section className="wf-panel rounded-3xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight">Activity</h2>
-            <p className="mt-0.5 text-sm wf-muted">Tasks and submissions · last {Math.min(rangeDays, 90)} days</p>
+      {/* Row 2: Activity + Quality over time */}
+      <section className="grid gap-4 xl:grid-cols-2">
+        <div className="wf-panel rounded-3xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight">Activity</h2>
+              <p className="mt-0.5 text-sm wf-muted">Tasks and submissions · last {Math.min(rangeDays, 90)} days</p>
+            </div>
+            <div className="flex items-center gap-3 text-xs wf-muted">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-2 w-2 rounded-sm bg-white/20" />
+                Tasks
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-2 w-2 rounded-sm bg-teal-500/50" />
+                Submissions
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-3 text-xs wf-muted">
+          <ActivityChart data={metrics.dailyActivity} />
+        </div>
+
+        <div className="wf-panel rounded-3xl p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight">Quality over time</h2>
+              <p className="mt-0.5 text-sm wf-muted">Acceptance rate by week · last 8 weeks</p>
+            </div>
+            {overallTrendDelta !== null && (
+              <div
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-semibold ${
+                  overallTrendDelta > 0
+                    ? "border-teal-500/25 bg-teal-500/10 text-teal-300"
+                    : overallTrendDelta < 0
+                    ? "border-rose-500/25 bg-rose-500/10 text-rose-300"
+                    : "border-white/10 bg-white/5 text-white/40"
+                }`}
+              >
+                {overallTrendDelta > 0 ? "↑" : overallTrendDelta < 0 ? "↓" : "→"}{" "}
+                {Math.round(Math.abs(overallTrendDelta) * 100)}%
+                <span className="text-xs font-normal opacity-60 ml-0.5">4wk</span>
+              </div>
+            )}
+          </div>
+          <WeeklyTrendChart data={metrics.weeklyAcceptanceTrend} />
+          <div className="mt-3 flex items-center gap-3 text-xs wf-muted">
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-2 w-2 rounded-sm bg-white/20" />
-              Tasks
+              <span className="inline-block h-2 w-2 rounded-sm bg-teal-500/60" />
+              Above avg
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-2 w-2 rounded-sm bg-teal-500/50" />
-              Submissions
+              <span className="inline-block h-2 w-2 rounded-sm bg-white/15" />
+              Below avg
             </span>
           </div>
         </div>
-        <ActivityChart data={metrics.dailyActivity} />
       </section>
 
       {/* Row 3: Per-agent table */}
       <section className="wf-panel rounded-3xl p-6">
         <h2 className="text-lg font-semibold tracking-tight">Per-agent performance</h2>
-        <p className="mt-1 text-sm wf-muted">Last {rangeDays} days · submissions + delegated tasks</p>
+        <p className="mt-1 text-sm wf-muted">
+          Last {rangeDays} days · submissions + delegated tasks ·{" "}
+          <span className="text-white/40">Trend = recent half vs earlier half of period</span>
+        </p>
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
@@ -195,6 +312,7 @@ export default async function MetricsPage({
                 <th className="pb-2 pr-4 text-right font-medium">Submissions</th>
                 <th className="pb-2 pr-4 text-right font-medium">Accepted</th>
                 <th className="pb-2 pr-4 text-right font-medium">Acceptance %</th>
+                <th className="pb-2 pr-4 text-right font-medium">Trend</th>
                 <th className="pb-2 pr-4 text-right font-medium">Tasks done</th>
                 <th className="pb-2 pr-4 text-right font-medium">Completion %</th>
                 <th className="pb-2 text-right font-medium">Avg tool latency</th>
@@ -216,6 +334,28 @@ export default async function MetricsPage({
                     {row.submissions > 0 ? pct(row.acceptanceRate) : <span className="wf-muted">—</span>}
                   </td>
                   <td className="py-2.5 pr-4 text-right tabular-nums">
+                    {row.acceptanceRateDelta !== null ? (
+                      <span
+                        className={`text-xs font-semibold ${
+                          row.acceptanceRateDelta > 0.01
+                            ? "text-teal-400"
+                            : row.acceptanceRateDelta < -0.01
+                            ? "text-rose-400"
+                            : "wf-muted"
+                        }`}
+                      >
+                        {row.acceptanceRateDelta > 0.01
+                          ? "↑"
+                          : row.acceptanceRateDelta < -0.01
+                          ? "↓"
+                          : "→"}{" "}
+                        {Math.round(Math.abs(row.acceptanceRateDelta) * 100)}%
+                      </span>
+                    ) : (
+                      <span className="wf-muted text-xs">—</span>
+                    )}
+                  </td>
+                  <td className="py-2.5 pr-4 text-right tabular-nums">
                     {row.delegatedTotal > 0
                       ? `${row.delegatedDone} / ${row.delegatedTotal}`
                       : <span className="wf-muted">—</span>}
@@ -235,7 +375,7 @@ export default async function MetricsPage({
         </div>
       </section>
 
-      {/* Row 3: Workflow quality + Project health + Provider usage */}
+      {/* Row 4: Workflow quality + Project health + Provider usage */}
       <section className="grid gap-4 xl:grid-cols-2">
         {/* Left: Workflow quality */}
         <div className="wf-panel rounded-3xl p-6 space-y-4">
@@ -277,7 +417,7 @@ export default async function MetricsPage({
           </div>
         </div>
 
-        {/* Right: Project health + Provider usage */}
+        {/* Right: Project health + Runner health + Provider usage */}
         <div className="space-y-4">
           <div className="wf-panel rounded-3xl p-6">
             <h2 className="text-lg font-semibold tracking-tight">Project health</h2>
