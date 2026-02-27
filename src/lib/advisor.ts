@@ -9,7 +9,7 @@ import {
   recordManagedUsage,
 } from "@/lib/connectors-store";
 import { companySoulForAdvisor, getCompanySoul } from "@/lib/company-soul-store";
-import { getAgentSoulBlueprintsForAdvisor, getChiefAdvisorSoulPackForUser } from "@/lib/agent-soul";
+import { getChiefAdvisorSoulPackForUser } from "@/lib/agent-soul";
 import { getModelRoute } from "@/lib/model-routing-store";
 import { listBusinessLogs, summarizeBusinessLogsForAdvisor } from "@/lib/business-logs-store";
 import { listBusinessFiles, summarizeBusinessFilesForAdvisor } from "@/lib/business-files-store";
@@ -56,9 +56,9 @@ function extractDataSignals(context: unknown): { hasCompanySoul: boolean; hiredA
 }
 
 function extractMaxTokens(context: unknown): number {
-  if (typeof context === "object" && context && "preferences" in context) {
-    const prefs = (context as { preferences?: { maxAgentOutputTokens?: number } }).preferences;
-    if (typeof prefs?.maxAgentOutputTokens === "number") return prefs.maxAgentOutputTokens;
+  if (typeof context === "object" && context && "maxAgentOutputTokens" in context) {
+    const val = (context as { maxAgentOutputTokens?: number }).maxAgentOutputTokens;
+    if (typeof val === "number") return val;
   }
   return 8192;
 }
@@ -234,16 +234,14 @@ function advisorSystemPrompt(
 }
 
 export async function buildAdvisorContext(userId: string) {
-  const [projects, templates, runs, inboxItems, prefs, agents, submissions, companySoul, agentSoulBlueprints, chiefAdvisorSoul, businessLogs, businessFiles, owner, runnerContext, hiredJobs] = await Promise.all([
+  const [projects, runs, inboxItems, prefs, agents, submissions, companySoul, chiefAdvisorSoul, businessLogs, businessFiles, owner, runnerContext, hiredJobs] = await Promise.all([
     getProjectsForUser(userId),
-    getTemplates(),
     getRunsForUser(userId),
     getInboxItems(userId),
     getAppPreferences(userId),
     prisma.agent.findMany({ orderBy: { kind: "asc" } }),
     prisma.submission.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 8 }),
     getCompanySoul(userId),
-    getAgentSoulBlueprintsForAdvisor(userId),
     getChiefAdvisorSoulPackForUser(userId),
     listBusinessLogs(userId, 20),
     listBusinessFiles(userId, 30),
@@ -275,6 +273,7 @@ export async function buildAdvisorContext(userId: string) {
     owner: { username: ownerUsername },
     hasCompanySoul,
     hiredAgentKinds: Array.from(hiredKinds),
+    maxAgentOutputTokens: prefs.maxAgentOutputTokens,
     projectCount: projects.length,
     businessLogCount: businessLogs.length,
     businessFileCount: businessFiles.length,
@@ -285,10 +284,8 @@ export async function buildAdvisorContext(userId: string) {
       taskCounts: p.board.map((c) => ({ column: c.title, count: c.cards.length })),
       recentTimeline: p.timeline.slice(0, 4),
     })),
-    templates: templates.map((t) => ({ name: t.name, slug: t.slug, agents: t.agents, workflow: t.workflow })),
     runs,
     inboxSummary,
-    preferences: prefs,
     agents: hiredAgents.map((a) => ({
       kind: a.kind,
       name: agents.find((db) => db.kind === a.kind)?.name ?? a.name,
@@ -305,16 +302,8 @@ export async function buildAdvisorContext(userId: string) {
     companySoul: soulData,
     businessLogs: summarizeBusinessLogsForAdvisor(businessLogs),
     businessFiles: summarizeBusinessFilesForAdvisor(businessFiles),
-    chiefAdvisorSoul: chiefAdvisorSoul
-      ? {
-          agentName: chiefAdvisorSoul.agentName,
-          role: chiefAdvisorSoul.role,
-          companyAnchors: chiefAdvisorSoul.companyAnchors.slice(0, 8),
-          operatingMemory: chiefAdvisorSoul.operatingMemory.slice(0, 12),
-          promptText: chiefAdvisorSoul.promptText,
-        }
-      : null,
-    agentSoulBlueprints,
+    // chiefAdvisorSoul prompt is injected into system prompt directly — not duplicated in context JSON
+    chiefAdvisorSoulPromptText: chiefAdvisorSoul?.promptText ?? null,
     runnerState: runnerContext
       ? {
           onlineRunnerCount: runnerContext.onlineRunnerCount,
@@ -413,9 +402,9 @@ async function callOpenAIAdvisor({
   const chiefAdvisorSoulPrompt =
     typeof context === "object" &&
     context &&
-    "chiefAdvisorSoul" in context &&
-    typeof (context as { chiefAdvisorSoul?: { promptText?: string | null } }).chiefAdvisorSoul?.promptText === "string"
-      ? (context as { chiefAdvisorSoul: { promptText: string } }).chiefAdvisorSoul.promptText
+    "chiefAdvisorSoulPromptText" in context &&
+    typeof (context as { chiefAdvisorSoulPromptText?: string | null }).chiefAdvisorSoulPromptText === "string"
+      ? (context as { chiefAdvisorSoulPromptText: string }).chiefAdvisorSoulPromptText
       : null;
   const ownerUsername =
     typeof context === "object" &&
@@ -458,17 +447,13 @@ async function callOpenAIAdvisor({
             {
               type: "input_text",
               text: clampText(
-                JSON.stringify(
-                  {
-                    mode,
-                    projectDescription,
-                    message: userMessage,
-                    history: history.slice(-8),
-                    businessContext: context,
-                  },
-                  null,
-                  2,
-                ),
+                JSON.stringify({
+                  mode,
+                  projectDescription,
+                  message: userMessage,
+                  history: history.slice(-8),
+                  businessContext: context,
+                }),
                 32000,
               ),
             },
@@ -539,9 +524,9 @@ async function callOllamaAdvisor({
   const chiefAdvisorSoulPrompt =
     typeof context === "object" &&
     context &&
-    "chiefAdvisorSoul" in context &&
-    typeof (context as { chiefAdvisorSoul?: { promptText?: string | null } }).chiefAdvisorSoul?.promptText === "string"
-      ? (context as { chiefAdvisorSoul: { promptText: string } }).chiefAdvisorSoul.promptText
+    "chiefAdvisorSoulPromptText" in context &&
+    typeof (context as { chiefAdvisorSoulPromptText?: string | null }).chiefAdvisorSoulPromptText === "string"
+      ? (context as { chiefAdvisorSoulPromptText: string }).chiefAdvisorSoulPromptText
       : null;
   const ownerUsername =
     typeof context === "object" &&
@@ -566,11 +551,7 @@ async function callOllamaAdvisor({
   const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtxOllama, isRecentlyOnboardedOllama, dataSignalsOllama);
 
   const userPayload = clampText(
-    JSON.stringify(
-      { mode, projectDescription, message: userMessage, history: history.slice(-8), businessContext: context },
-      null,
-      2,
-    ),
+    JSON.stringify({ mode, projectDescription, message: userMessage, history: history.slice(-8), businessContext: context }),
     28000,
   );
 

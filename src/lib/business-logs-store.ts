@@ -73,13 +73,15 @@ export function summarizeBusinessLogsForAdvisor(
     relatedRef: string | null;
   }>,
 ) {
-  return rows.map((row) => ({
-    title: row.title,
-    category: row.category,
-    source: row.source,
-    author: row.authorLabel,
-    relatedRef: row.relatedRef,
-    createdAt: row.createdAt.toISOString(),
-    body: row.body.length > 2000 ? row.body.slice(0, 2000) + "..." : row.body,
-  }));
+  return rows
+    .filter((row) => !row.relatedRef?.startsWith("CHAT_LOG:"))
+    .map((row) => ({
+      title: row.title,
+      category: row.category,
+      source: row.source,
+      author: row.authorLabel,
+      relatedRef: row.relatedRef,
+      createdAt: row.createdAt.toISOString(),
+      body: row.body.length > 800 ? row.body.slice(0, 800) + "..." : row.body,
+    }));
 }

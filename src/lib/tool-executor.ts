@@ -1,5 +1,7 @@
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { prisma } from "@/lib/db";
+import { extractTextFromBuffer } from "@/lib/text-extraction";
 import { listBusinessFiles } from "@/lib/business-files-store";
 import { listBusinessLogs, createBusinessLog } from "@/lib/business-logs-store";
 import { getProjectsForUser } from "@/lib/workspace-store";
@@ -57,6 +59,18 @@ async function handleReadFile(args: Record<string, unknown>, ctx: ToolExecutionC
 
   if (file.textExtract) {
     return file.textExtract.slice(0, 8000);
+  }
+
+  // Fallback: try extracting text from raw bytes (covers .docx/.pdf uploaded before extraction was wired in)
+  const ext = path.extname(file.name).toLowerCase();
+  if (ext === ".docx" || ext === ".pdf") {
+    try {
+      const bytes = await readFile(file.storagePath);
+      const extracted = await extractTextFromBuffer(file.name, bytes);
+      if (extracted) return extracted.slice(0, 8000);
+    } catch {
+      // fall through to generic read
+    }
   }
 
   try {
