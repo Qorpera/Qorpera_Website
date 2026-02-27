@@ -81,13 +81,14 @@ export type MetricsSummary = {
   weeklyAcceptanceTrend: WeeklyAcceptancePoint[];
 };
 
-export async function getMetricsForUser(userId: string, rangeDays = 90): Promise<MetricsSummary> {
+// Pass rangeDays=0 to mean "all time" (lifetime).
+export async function getMetricsForUser(userId: string, rangeDays = 365): Promise<MetricsSummary> {
+  const isLifetime = rangeDays === 0;
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-  const rangeAgo = new Date(now.getTime() - rangeDays * 24 * 60 * 60 * 1000);
-  const fourteenDaysAgo = new Date(now.getTime() - Math.min(rangeDays, 14) * 24 * 60 * 60 * 1000);
-  const thirtyDaysAgo = new Date(now.getTime() - Math.min(rangeDays, 30) * 24 * 60 * 60 * 1000);
+  const rangeAgo = isLifetime ? new Date(0) : new Date(now.getTime() - rangeDays * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = new Date(now.getTime() - Math.min(isLifetime ? 30 : rangeDays, 30) * 24 * 60 * 60 * 1000);
   const ninetyDaysAgo = rangeAgo;
 
   const [
@@ -124,7 +125,7 @@ export async function getMetricsForUser(userId: string, rangeDays = 90): Promise
       select: { toAgentTarget: true, status: true },
     }),
     prisma.delegatedTask.findMany({
-      where: { userId, createdAt: { gte: fourteenDaysAgo } },
+      where: { userId, createdAt: { gte: rangeAgo } },
       select: { createdAt: true },
     }),
     prisma.delegatedTaskToolCall.findMany({
@@ -197,8 +198,14 @@ export async function getMetricsForUser(userId: string, rangeDays = 90): Promise
     successRate: runnerTotal > 0 ? runnerSucceeded / runnerTotal : 0,
   };
 
-  // Daily activity — last N days (capped at rangeDays, max 90 for chart readability)
-  const chartDays = Math.min(rangeDays, 90);
+  // Daily activity — covers the full range (heatmap handles large spans via overflow-x)
+  // For lifetime, derive the span from the earliest delegated task or submission.
+  let chartDays = isLifetime ? 0 : rangeDays;
+  if (isLifetime) {
+    const earliest = recentDelegatedTasks.reduce<Date | null>((min, t) => (!min || t.createdAt < min ? t.createdAt : min), null)
+      ?? allSubmissions.reduce<Date | null>((min, s) => (!min || s.createdAt < min ? s.createdAt : min), null);
+    chartDays = earliest ? Math.ceil((now.getTime() - earliest.getTime()) / (24 * 60 * 60 * 1000)) + 1 : 30;
+  }
   const dateLabels: string[] = [];
   for (let i = chartDays - 1; i >= 0; i--) {
     const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);

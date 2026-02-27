@@ -15,7 +15,7 @@ export default async function MetricsPage({
 
   const resolved = (await searchParams) ?? {};
   const rangeRaw = Array.isArray(resolved.range) ? resolved.range[0] : resolved.range;
-  const rangeDays = rangeRaw === "7" ? 7 : rangeRaw === "30" ? 30 : 90;
+  const rangeDays = rangeRaw === "7" ? 7 : rangeRaw === "30" ? 30 : rangeRaw === "0" ? 0 : 365;
 
   const metrics = await getMetricsForUser(session.userId, rangeDays);
 
