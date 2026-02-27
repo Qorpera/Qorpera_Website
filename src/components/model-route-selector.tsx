@@ -153,8 +153,8 @@ export function ModelRouteSelector({
             <div className="mb-2 text-[11px] uppercase tracking-[0.12em] text-white/55">Business advisor model</div>
             <div className="mb-3 grid grid-cols-2 gap-2">
               {([
-                ["OPENAI", "OpenAI"],
-                ["OLLAMA", "Ollama"],
+                ["OPENAI", "Cloud Models"],
+                ["OLLAMA", "Local Models"],
               ] as const).map(([providerId, label]) => (
                 <button
                   key={providerId}

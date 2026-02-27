@@ -105,6 +105,11 @@ export async function POST(request: Request) {
     }
   }
 
-  const route = await setModelRoute(userId, parsed.data.target as ModelRouteTarget, provider, cleanModelName);
-  return NextResponse.json({ ok: true, route, catalog: getAvailableModelCatalog() });
+  try {
+    const route = await setModelRoute(userId, parsed.data.target as ModelRouteTarget, provider, cleanModelName);
+    return NextResponse.json({ ok: true, route, catalog: getAvailableModelCatalog() });
+  } catch (err) {
+    console.error("[models/routes] setModelRoute failed:", err);
+    return NextResponse.json({ error: "Failed to save model route. Please try again." }, { status: 500 });
+  }
 }

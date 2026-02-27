@@ -100,7 +100,7 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
       <header className="pb-5 border-b border-white/[0.07]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <div className="text-xs uppercase tracking-wider text-white/35">Company Soul</div>
+            <div className="text-xs uppercase tracking-wider text-white/35">Company Identity</div>
             <h1 className="mt-1 text-xl font-semibold tracking-tight">Teach the platform how your business works</h1>
             <p className="mt-1 text-sm text-white/45 max-w-2xl">
               This profile becomes the shared operating context for the advisor and future agent orchestration. Write it in plain language.
@@ -140,8 +140,8 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
       <div className="mx-auto max-w-2xl py-6">
         <div className="grid gap-0 md:grid-cols-2 md:gap-x-8">
           <Field
-            label="Company name"
-            description="How should the advisor and agents refer to the company?"
+            label="Organisation name"
+            description="What's your organisation's name?"
             value={form.companyName}
             onChange={(v) => patch("companyName", v)}
             multiline={false}

@@ -6,7 +6,7 @@ import type { CompanySoulProfile } from "@/lib/company-soul-store";
 
 const STEPS = [
   {
-    title: "Who you are",
+    title: "What's your organisation's name?",
     subtitle: "Start with the basics so the platform knows your company.",
     fields: ["companyName", "oneLinePitch"] as const,
   },
@@ -34,8 +34,8 @@ const STEPS = [
 
 const FIELD_META: Record<string, { label: string; description: string; multiline: boolean; placeholder: string }> = {
   companyName: {
-    label: "Company name",
-    description: "How should the advisor and agents refer to your company?",
+    label: "Organisation name",
+    description: "How should the advisor and agents refer to your organisation?",
     multiline: false,
     placeholder: "Acme Logistics",
   },
@@ -240,7 +240,7 @@ export function OnboardingWizard({ initial }: { initial: CompanySoulProfile }) {
 
       {/* Step header */}
       <div className="mb-6">
-        <div className="text-xs uppercase tracking-wider text-teal-400/80">Company Soul</div>
+        <div className="text-xs uppercase tracking-wider text-teal-400/80">Company Identity</div>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">{step.title}</h1>
         <p className="mt-1 text-sm text-white/45">{step.subtitle}</p>
       </div>
