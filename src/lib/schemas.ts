@@ -135,3 +135,27 @@ export const SubmissionReviewBody = z.object({
   correction: z.string().max(5000).optional(),
   notes: z.string().max(5000).optional(),
 });
+
+// License keys
+export const CreateLicenseKeyBody = z.object({
+  agentKind: z.enum([
+    "ASSISTANT", "SALES_REP", "CUSTOMER_SUCCESS", "MARKETING_COORDINATOR",
+    "FINANCE_ANALYST", "OPERATIONS_MANAGER", "EXECUTIVE_ASSISTANT", "RESEARCH_ANALYST",
+  ]),
+  schedule: z.enum(["DAILY", "WEEKLY", "MONTHLY"]),
+});
+
+export const RevokeLicenseKeyBody = z.object({
+  keyId: z.string().min(1),
+});
+
+export const RedeemLicenseKeyBody = z.object({
+  code: z.string().min(1).transform((s) => s.trim().toUpperCase()),
+});
+
+// Agent feedback
+export const SubmitFeedbackBody = z.object({
+  agentKind: z.string().min(1).max(80),
+  message: z.string().min(1).max(5000),
+  sourceRef: z.string().max(240).optional(),
+});

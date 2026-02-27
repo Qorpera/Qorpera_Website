@@ -154,6 +154,12 @@ enum RunnerNodeStatus {
   REVOKED
 }
 
+enum LicenseKeyStatus {
+  ACTIVE
+  REDEEMED
+  REVOKED
+}
+
 enum RunnerJobStatus {
   QUEUED
   LEASED
@@ -208,6 +214,9 @@ model User {
   skillCredentials   SkillCredential[]
   ollamaUsage        OllamaUsage[]
   agentMemories      AgentMemory[]
+  licenseKeysCreated  AgentLicenseKey[] @relation("LicenseKeyCreator")
+  licenseKeysRedeemed AgentLicenseKey[] @relation("LicenseKeyRedeemer")
+  agentFeedback       AgentFeedback[]
 }
 
 model HiredJob {
@@ -895,4 +904,37 @@ model AgentMemoryEntry {
   agentMemory AgentMemory @relation(fields: [agentMemoryId], references: [id], onDelete: Cascade)
 
   @@index([agentMemoryId, importance])
+}
+
+model AgentLicenseKey {
+  id             String           @id @default(cuid())
+  creatorUserId  String
+  agentKind      AgentKind
+  schedule       RunSchedule
+  code           String           @unique
+  status         LicenseKeyStatus @default(ACTIVE)
+  redeemedById   String?
+  redeemedAt     DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  creator        User             @relation("LicenseKeyCreator", fields: [creatorUserId], references: [id], onDelete: Cascade)
+  redeemedBy     User?            @relation("LicenseKeyRedeemer", fields: [redeemedById], references: [id], onDelete: SetNull)
+
+  @@index([creatorUserId, createdAt])
+  @@index([redeemedById])
+}
+
+model AgentFeedback {
+  id         String   @id @default(cuid())
+  userId     String
+  agentKind  String
+  message    String
+  sourceRef  String?
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

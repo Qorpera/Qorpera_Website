@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useState } from "react";
 import type { InboxItem } from "@/lib/workforce-ui";
+import { ReportIssueButton } from "@/components/report-issue-button";
 
 type InboxAction = "approve" | "edit" | "ask_agent" | "pause" | "terminate";
 
@@ -166,6 +167,7 @@ export function InboxList({ initialItems }: { initialItems: InboxItem[] }) {
               >
                 {pending === `${item.id}:ask_agent` ? "…" : "Ask agent"}
               </button>
+              <ReportIssueButton agentKind={item.owner} sourceRef={item.id} />
             </div>
           </article>
         ))}

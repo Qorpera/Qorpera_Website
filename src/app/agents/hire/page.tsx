@@ -12,6 +12,7 @@ import { AddToBasketSection } from "@/components/add-to-basket-section";
 import { getOrderForUserByCheckoutSession, getOrderForUserById } from "@/lib/agent-purchase-orders";
 import { kindLabel } from "@/lib/format";
 import { detectCurrency, countryFromAcceptLanguage, convertRecurringPrices } from "@/lib/geo-pricing";
+import { ReportIssueButton } from "@/components/report-issue-button";
 
 type SearchParams = Promise<{
   checkout?: string;
@@ -197,6 +198,7 @@ export default async function AgentsHirePage({ searchParams }: { searchParams: S
                       <Link href={`/agents/${job.agentKind}`} className="wf-btn px-3 py-2 text-sm">
                         Configure
                       </Link>
+                      <ReportIssueButton agentKind={job.agentKind} sourceRef={job.id} />
                       {isCancelling ? null : sub ? (
                         <CancelAgentButton
                           jobId={job.id}

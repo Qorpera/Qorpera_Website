@@ -14,6 +14,7 @@ interface AuditLogRow {
 const ALL_SCOPES = [
   "ADVISOR",
   "AGENT_AUTOMATION",
+  "AGENT_FEEDBACK",
   "BUSINESS_FILE",
   "BUSINESS_LOG",
   "COMPANY_SOUL",
@@ -21,6 +22,7 @@ const ALL_SCOPES = [
   "DELEGATED_TASK",
   "EVENT",
   "INBOX",
+  "LICENSE_KEY",
   "MODEL_ROUTE",
   "PROJECT",
   "RUNNER",
@@ -44,6 +46,10 @@ function scopeBadgeClass(scope: string): string {
       return "bg-violet-500/15 text-violet-300";
     case "INBOX":
       return "bg-emerald-500/15 text-emerald-300";
+    case "LICENSE_KEY":
+      return "bg-cyan-500/15 text-cyan-300";
+    case "AGENT_FEEDBACK":
+      return "bg-rose-500/15 text-rose-300";
     case "DELEGATED_TASK":
     case "SCHEDULER":
       return "bg-orange-500/15 text-orange-300";

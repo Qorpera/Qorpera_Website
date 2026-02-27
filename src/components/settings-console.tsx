@@ -6,6 +6,8 @@ import type { CloudConnectorView } from "@/lib/connectors-store";
 import { CloudConnectorWizard } from "@/components/cloud-connector-wizard";
 import { SkillsPanel } from "@/components/skills-panel";
 import { AuditLogPanel } from "@/components/audit-log-panel";
+import { LicenseKeysPanel } from "@/components/license-keys-panel";
+import { AgentFeedbackPanel } from "@/components/agent-feedback-panel";
 
 async function savePreferences(next: Partial<AppPreferences>) {
   const res = await fetch("/api/settings", {
@@ -21,7 +23,7 @@ export function SettingsConsole({ initial, connector }: { initial: AppPreference
   const [prefs, setPrefs] = useState(initial);
   const [saving, setSaving] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [section, setSection] = useState<"connectors" | "safety" | "operations" | "notifications" | "skills" | "audit">("connectors");
+  const [section, setSection] = useState<"connectors" | "safety" | "operations" | "notifications" | "skills" | "licenses" | "feedback" | "audit">("connectors");
   const [operationsTab, setOperationsTab] = useState<"providers" | "usage" | "checks">("providers");
 
   async function patch(next: Partial<AppPreferences>, key: string) {
@@ -47,6 +49,8 @@ export function SettingsConsole({ initial, connector }: { initial: AppPreference
     ["operations", "Operations"],
     ["notifications", "Notifications"],
     ["skills", "Skills"],
+    ["licenses", "Licenses"],
+    ["feedback", "Feedback"],
     ["audit", "Activity log"],
   ] as const;
 
@@ -349,6 +353,10 @@ export function SettingsConsole({ initial, connector }: { initial: AppPreference
         ) : null}
 
         {section === "skills" ? <SkillsPanel /> : null}
+
+        {section === "licenses" ? <LicenseKeysPanel /> : null}
+
+        {section === "feedback" ? <AgentFeedbackPanel /> : null}
 
         {section === "audit" ? <AuditLogPanel /> : null}
       </div>
