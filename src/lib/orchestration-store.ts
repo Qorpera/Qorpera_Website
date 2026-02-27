@@ -579,35 +579,6 @@ export async function runSchedulerTick(userId: string) {
     }
   }
 
-  // --- Recurring task templates ---
-  const recurringTasks = await prisma.recurringTask.findMany({
-    where: { userId, isActive: true },
-  });
-  const todayDow = String(new Date().getUTCDay()); // "0"=Sun … "6"=Sat
-  for (const rt of recurringTasks) {
-    if (rt.scheduleTime !== nowKey) continue;
-    const days = rt.daysOfWeek.split(",").map((s) => s.trim());
-    if (!days.includes(todayDow)) continue;
-    const cutoff = new Date(Date.now() - 30 * 60 * 1000);
-    const dup = await prisma.delegatedTask.findFirst({
-      where: { userId, toAgentTarget: rt.agentTarget, triggerSource: "SCHEDULED", createdAt: { gte: cutoff } },
-    });
-    if (dup) continue;
-    try {
-      const task = await createDelegatedTask(userId, {
-        fromAgent: "SCHEDULER",
-        toAgentTarget: rt.agentTarget as AgentTarget,
-        title: rt.title,
-        instructions: rt.instructions,
-        triggerSource: "SCHEDULED",
-      });
-      await prisma.recurringTask.update({ where: { id: rt.id }, data: { lastRunAt: new Date() } });
-      created.push(task);
-    } catch {
-      // skip if agent not available
-    }
-  }
-
   await prisma.auditLog.create({
     data: {
       userId,
