@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "@/lib/db";
 import { createHiredJobIfMissing } from "@/lib/agent-hiring";
+import { activatePlanSubscription } from "@/lib/plan-store";
 
 type StripeCheckoutSessionLike = {
   id: string;
@@ -254,6 +255,22 @@ export async function recordStripeCheckoutPayment(input: RecordPaymentInput) {
       paidAt,
     },
   });
+
+  // Handle plan subscription fulfillment
+  const purchaseMode = metadata.purchaseMode?.trim();
+  if (purchaseMode === "PLAN" && row.paymentStatus === "paid") {
+    const planSubId = metadata.planSubscriptionId?.trim();
+    if (planSubId) {
+      await activatePlanSubscription(planSubId, {
+        stripeSubscriptionId: input.session.subscription?.toString() ?? undefined,
+        stripeCustomerId: undefined,
+        checkoutSessionId: input.session.id,
+        currentPeriodStart: paidAt ?? undefined,
+      });
+    }
+    await upsertFinanceArtifacts(row.userId);
+    return row;
+  }
 
   const matchedOrder =
     order ??

@@ -170,6 +170,12 @@ enum RunnerJobStatus {
   CANCELED
 }
 
+enum PlanTier {
+  SOLO
+  SMALL_BUSINESS
+  MID_SIZE
+}
+
 model User {
   id              String    @id @default(cuid())
   email           String    @unique
@@ -217,6 +223,9 @@ model User {
   licenseKeysCreated  AgentLicenseKey[] @relation("LicenseKeyCreator")
   licenseKeysRedeemed AgentLicenseKey[] @relation("LicenseKeyRedeemer")
   agentFeedback       AgentFeedback[]
+  planSubscriptions   PlanSubscription[]
+  optimizationCycles  AgentOptimizationCycle[]
+  optimizationApplications AgentOptimizationApplication[]
 }
 
 model HiredJob {
@@ -245,6 +254,7 @@ model AgentPurchaseOrder {
   stripePaymentId  String?
   stripeSubscriptionId String?
   failureReason    String?
+  purchaseMode     String      @default("LEGACY_AGENT")
   fulfilledAt      DateTime?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
@@ -937,4 +947,95 @@ model AgentFeedback {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+model Plan {
+  id            String   @id @default(cuid())
+  tier          PlanTier
+  slug          String   @unique
+  name          String
+  headline      String   @default("")
+  monthlyCents  Int
+  agentCap      Int
+  stripePriceId String?
+  isActive      Boolean  @default(true)
+  featuresJson  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subscriptions PlanSubscription[]
+}
+
+model PlanSubscription {
+  id                   String    @id @default(cuid())
+  userId               String
+  planId               String
+  status               String    @default("PENDING")
+  stripeSubscriptionId String?   @unique
+  stripeCustomerId     String?
+  checkoutSessionId    String?   @unique
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  canceledAt           DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id])
+
+  @@index([userId, status])
+}
+
+model PlanInquiry {
+  id            String   @id @default(cuid())
+  tier          PlanTier
+  name          String
+  email         String
+  companyName   String   @default("")
+  employeeCount String   @default("")
+  message       String   @default("")
+  status        String   @default("NEW")
+  createdAt     DateTime @default(now())
+}
+
+// ── Agent Optimizer ──────────────────────────────────────────────
+
+model AgentOptimizationCycle {
+  id            String   @id @default(cuid())
+  userId        String
+  agentKind     String   // "CHIEF_ADVISOR" | "ASSISTANT" | etc.
+  status        String   @default("RUNNING") // RUNNING | COMPLETE | FAILED
+  researchJson  String?  // JSON: array of {topic, technique, source, keyInsights, applicability}
+  synthesisText String?  // AI-synthesized summary of key findings
+  scoreJson     String?  // JSON: {overall, dimensions: [{name, score, rationale}]}
+  improvementsJson String? // JSON: array of {id, dimension, priority, issue, recommendation, researchBasis, promptPatch}
+  errorMessage  String?
+  nextRunAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user         User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications AgentOptimizationApplication[]
+
+  @@index([userId, agentKind, createdAt])
+  @@index([userId, status, createdAt])
+}
+
+model AgentOptimizationApplication {
+  id             String   @id @default(cuid())
+  userId         String
+  cycleId        String
+  agentKind      String
+  improvementId  String
+  dimension      String
+  title          String
+  patchText      String
+  appliedAt      DateTime @default(now())
+
+  user  User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cycle AgentOptimizationCycle   @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  @@index([userId, agentKind, appliedAt])
+  @@index([cycleId])
 }

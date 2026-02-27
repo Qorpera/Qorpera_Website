@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { deactivatePlanSubscription, disableAllHiredJobs } from "@/lib/plan-store";
 
 type StripeSubscriptionLike = {
   id: string;
@@ -78,6 +79,16 @@ export async function upsertStripeSubscriptionFromWebhook(sub: StripeSubscriptio
       where: { userId, agentKind: kind, enabled: true },
       data: { enabled: false },
     });
+  }
+
+  // Handle plan subscription cancellation
+  const purchaseMode = metadata.purchaseMode?.trim();
+  if (row.status === "canceled" && purchaseMode === "PLAN") {
+    const planSubId = metadata.planSubscriptionId?.trim();
+    if (planSubId) {
+      await deactivatePlanSubscription(planSubId);
+    }
+    await disableAllHiredJobs(userId);
   }
 
   if (order) {

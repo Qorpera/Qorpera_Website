@@ -6,6 +6,9 @@ import { getAvailableModelCatalog, getModelRoutes } from "@/lib/model-routing-st
 import { ModelRouteSelector } from "@/components/model-route-selector";
 import { getSession } from "@/lib/auth";
 import { AgentCharacterFigure } from "@/components/agent-character-figure";
+import { getPlanStatus } from "@/lib/plan-store";
+import { PlanStatusBanner } from "@/components/plan-status-banner";
+import { AgentPlanActions } from "@/components/agent-plan-actions";
 
 import type { AgentToneColor } from "@/components/agent-character-figure";
 
@@ -27,14 +30,18 @@ export default async function AgentsPage() {
   const session = await getSession();
   if (!session) return null;
   await ensureBaseAgents();
-  const [agents, hiredJobs, routes] = await Promise.all([
+  const [agents, hiredJobs, routes, planStatus] = await Promise.all([
     prisma.agent.findMany({ orderBy: { kind: "asc" } }),
     prisma.hiredJob.findMany({ where: { userId: session.userId, enabled: true }, select: { agentKind: true }, distinct: ["agentKind"] }),
     getModelRoutes(session.userId),
+    getPlanStatus(session.userId),
   ]);
   const hiredKinds = new Set(hiredJobs.map((j) => j.agentKind));
   const visibleAgents = agents.filter((a) => hiredKinds.has(a.kind));
+  const unhiredAgents = agents.filter((a) => !hiredKinds.has(a.kind));
   const modelCatalog = getAvailableModelCatalog();
+  const hasPlan = Boolean(planStatus.plan);
+  const canAddMore = planStatus.hiredCount < planStatus.agentCap;
 
   const chiefAdvisor = {
     name: "Chief Advisor",
@@ -51,6 +58,16 @@ export default async function AgentsPage() {
 
   return (
     <div className="space-y-6">
+      {hasPlan && planStatus.plan && (
+        <PlanStatusBanner
+          planName={planStatus.plan.name}
+          hiredCount={planStatus.hiredCount}
+          agentCap={planStatus.agentCap}
+          periodEnd={planStatus.subscription?.currentPeriodEnd?.toISOString() ?? null}
+          cancelAtPeriodEnd={planStatus.subscription?.cancelAtPeriodEnd ?? false}
+        />
+      )}
+
       <header className="wf-panel rounded-3xl p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -169,18 +186,39 @@ export default async function AgentsPage() {
                   <div className="text-[10px] uppercase tracking-[0.16em] wf-muted">Workers</div>
                   <div className="mt-2 text-xl font-semibold tracking-tight">No hired agents yet</div>
                   <p className="mt-2 text-sm wf-muted">
-                    Chief Advisor is included by default. Hire workers to add execution specialists to your workforce.
+                    {hasPlan
+                      ? "You have agent slots available. Activate agents below to start building your workforce."
+                      : "Subscribe to a plan to start hiring AI agents for your workforce."}
                   </p>
                 </div>
-                <Link href="/agents/hire" className="wf-btn-primary px-4 py-2 text-sm text-center">
-                  Hire Agents
-                </Link>
+                {!hasPlan && (
+                  <Link href="/pricing" className="wf-btn-primary px-4 py-2 text-sm text-center">
+                    View Plans
+                  </Link>
+                )}
               </div>
             </div>
           ) : null}
 
         </div>
       </div>
+
+      {/* ── Add / Remove agents within plan ── */}
+      {hasPlan && unhiredAgents.length > 0 && (
+        <AgentPlanActions
+          availableAgents={unhiredAgents.map((a) => ({
+            kind: a.kind,
+            name: a.name,
+          }))}
+          hiredAgents={visibleAgents.map((a) => ({
+            kind: a.kind,
+            name: a.name,
+          }))}
+          canAddMore={canAddMore}
+          hiredCount={planStatus.hiredCount}
+          agentCap={planStatus.agentCap}
+        />
+      )}
     </div>
   );
 }

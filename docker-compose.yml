@@ -1,0 +1,139 @@
+services:
+  # ── PostgreSQL ──────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-qorpera}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in docker/.env}
+      POSTGRES_DB: ${POSTGRES_DB:-qorpera}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-qorpera}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Run migrations then exit ────────────────────────────────────
+  migrate:
+    build: .
+    command: node node_modules/prisma/build/index.js migrate deploy
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-qorpera}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-qorpera}
+      DIRECT_URL: postgresql://${POSTGRES_USER:-qorpera}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-qorpera}
+    networks:
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Next.js app server ──────────────────────────────────────────
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-qorpera}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-qorpera}
+      DIRECT_URL: postgresql://${POSTGRES_USER:-qorpera}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-qorpera}
+      APP_SECRET: ${APP_SECRET:?Set APP_SECRET in docker/.env}
+      CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:-}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://localhost}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL_OPTIONS: ${OLLAMA_MODEL_OPTIONS:-}
+      # Email (optional — pick one provider)
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      POSTMARK_SERVER_TOKEN: ${POSTMARK_SERVER_TOKEN:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      # LLM providers (optional)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_ADVISOR_MODEL: ${OPENAI_ADVISOR_MODEL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      # Stripe (optional)
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      # Misc
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+      BROWSER_AUTOMATION_URL: ${BROWSER_AUTOMATION_URL:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # ── Runner daemon ───────────────────────────────────────────────
+  runner:
+    build: .
+    command: node runner/daemon.mjs
+    restart: unless-stopped
+    environment:
+      WF_RUNNER_BASE_URL: http://app:3000
+      WF_RUNNER_TOKEN: ${WF_RUNNER_TOKEN:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      APP_SECRET: ${APP_SECRET}
+      CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - runner_workspace:/workspace
+    networks:
+      - internal
+    depends_on:
+      app:
+        condition: service_healthy
+
+  # ── Scheduler ───────────────────────────────────────────────────
+  scheduler:
+    build: .
+    command: node runner/scheduler.mjs
+    restart: unless-stopped
+    environment:
+      WF_SCHEDULER_BASE_URL: http://app:3000
+      WF_SCHEDULER_TOKEN: ${WF_SCHEDULER_TOKEN:-}
+    networks:
+      - internal
+    depends_on:
+      app:
+        condition: service_healthy
+
+  # ── Caddy reverse proxy ────────────────────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - internal
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  runner_workspace:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:
+    driver: bridge

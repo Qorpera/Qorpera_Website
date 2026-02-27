@@ -33,7 +33,12 @@ export function verifySameOrigin(request: Request): { ok: true } | { ok: false; 
     };
   }
 
-  if (headerOrigin !== requestOrigin) {
+  // Behind a reverse proxy the internal request URL may differ from the public origin.
+  const publicOrigin = process.env.NEXT_PUBLIC_APP_URL
+    ? new URL(process.env.NEXT_PUBLIC_APP_URL).origin
+    : null;
+
+  if (headerOrigin !== requestOrigin && headerOrigin !== publicOrigin) {
     return {
       ok: false,
       response: NextResponse.json({ error: "Cross-site request blocked" }, { status: 403 }),

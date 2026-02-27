@@ -7,6 +7,7 @@ function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
   if (pathname.startsWith("/api/auth/")) return true;
   if (pathname.startsWith("/api/stripe/webhook")) return true;
+  if (pathname === "/api/health") return true;
   // Runner endpoints authenticate via bearer token, not session cookie
   if (pathname.startsWith("/api/runners/heartbeat")) return true;
   if (pathname.startsWith("/api/runners/jobs/poll")) return true;
