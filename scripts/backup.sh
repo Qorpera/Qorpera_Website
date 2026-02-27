@@ -2,8 +2,8 @@
 # Daily backup: commit any changes and push to GitHub
 set -euo pipefail
 
-REPO_DIR="/home/krug3r/projects/Zygenic"
-LOG_FILE="/home/krug3r/projects/Zygenic/scripts/backup.log"
+REPO_DIR="/home/krug3r/projects/qorpera"
+LOG_FILE="/home/krug3r/projects/qorpera/scripts/backup.log"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
 cd "$REPO_DIR"
