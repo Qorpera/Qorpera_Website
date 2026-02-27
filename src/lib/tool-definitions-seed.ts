@@ -123,7 +123,7 @@ const TOOL_SEEDS: ToolSeedRow[] = [
     parametersJson: JSON.stringify({
       type: "object",
       properties: {
-        to_agent: { type: "string", description: "Target agent kind: ASSISTANT, SALES_REP, CUSTOMER_SUCCESS, MARKETING_COORDINATOR, FINANCE_ANALYST, OPERATIONS_MANAGER, EXECUTIVE_ASSISTANT, or RESEARCH_ANALYST" },
+        to_agent: { type: "string", description: "Target agent kind: ASSISTANT, SALES_REP, CUSTOMER_SUCCESS, MARKETING_COORDINATOR, FINANCE_ANALYST, OPERATIONS_MANAGER, EXECUTIVE_ASSISTANT, RESEARCH_ANALYST, or SEO_SPECIALIST" },
         title: { type: "string", description: "Task title (max 240 chars)" },
         instructions: { type: "string", description: "Detailed instructions for the agent (max 12000 chars)" },
       },
@@ -249,6 +249,227 @@ const TOOL_SEEDS: ToolSeedRow[] = [
       required: ["draft"],
     }),
   },
+  // ── HubSpot ──────────────────────────────────────────────────────────
+  {
+    name: "hubspot_search_contacts",
+    category: "external",
+    executionMode: "in_process",
+    description: "Search HubSpot CRM contacts by name or email. Returns up to 10 matching contact records with key properties. Requires HubSpot integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Search query — name fragment or email address" },
+      },
+      required: ["query"],
+    }),
+  },
+  {
+    name: "hubspot_create_contact",
+    category: "external",
+    executionMode: "in_process",
+    description: "Create a new contact in HubSpot CRM. Requires HubSpot integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        properties: {
+          type: "object",
+          description: "Contact properties as key-value pairs (e.g. {\"firstname\": \"Jane\", \"email\": \"jane@example.com\", \"company\": \"Acme\"})",
+        },
+      },
+      required: ["properties"],
+    }),
+  },
+  {
+    name: "hubspot_update_contact",
+    category: "external",
+    executionMode: "in_process",
+    description: "Update properties on an existing HubSpot contact by ID. Requires HubSpot integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        contact_id: { type: "string", description: "HubSpot contact ID" },
+        properties: { type: "object", description: "Fields to update as key-value pairs" },
+      },
+      required: ["contact_id", "properties"],
+    }),
+  },
+  {
+    name: "hubspot_list_deals",
+    category: "external",
+    executionMode: "in_process",
+    description: "List open deals from HubSpot CRM including deal name, amount, stage, and close date. Requires HubSpot integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {},
+    }),
+  },
+  {
+    name: "hubspot_create_note",
+    category: "external",
+    executionMode: "in_process",
+    description: "Create a note in HubSpot CRM, optionally associated with a contact. Requires HubSpot integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        body: { type: "string", description: "Note content (plain text)" },
+        contact_id: { type: "string", description: "Optional HubSpot contact ID to associate the note with" },
+      },
+      required: ["body"],
+    }),
+  },
+  // ── Slack ─────────────────────────────────────────────────────────────
+  {
+    name: "slack_list_channels",
+    category: "external",
+    executionMode: "in_process",
+    description: "List Slack channels in the connected workspace. Returns channel IDs and names. Requires Slack integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {},
+    }),
+  },
+  {
+    name: "slack_post_message",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Post a message to a Slack channel. Always requires human approval before sending. Requires Slack integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        channel: { type: "string", description: "Channel ID or name (e.g. C01ABC123 or #general)" },
+        text: { type: "string", description: "Message text to post" },
+      },
+      required: ["channel", "text"],
+    }),
+  },
+  // ── Google Workspace ──────────────────────────────────────────────────
+  {
+    name: "google_list_emails",
+    category: "external",
+    executionMode: "in_process",
+    description: "List recent emails from Gmail inbox. Returns sender, subject, date, and snippet for each message. Requires Google Workspace integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        max_results: { type: "number", description: "Number of emails to return (default: 10, max: 20)" },
+      },
+    }),
+  },
+  {
+    name: "google_send_email",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Send an email via Gmail. Always requires human approval before sending. Requires Google Workspace integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        to: { type: "string", description: "Recipient email address" },
+        subject: { type: "string", description: "Email subject line" },
+        body: { type: "string", description: "Email body (plain text)" },
+      },
+      required: ["to", "subject", "body"],
+    }),
+  },
+  {
+    name: "google_list_calendar_events",
+    category: "external",
+    executionMode: "in_process",
+    description: "List upcoming Google Calendar events. Returns event summaries, start/end times, and attendees. Requires Google Workspace integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        days_ahead: { type: "number", description: "Number of days ahead to fetch events for (default: 7, max: 30)" },
+      },
+    }),
+  },
+  {
+    name: "google_create_calendar_event",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a Google Calendar event. Always requires human approval. Requires Google Workspace integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        summary: { type: "string", description: "Event title" },
+        start_datetime: { type: "string", description: "Start time in ISO 8601 format (e.g. 2026-03-01T10:00:00-07:00)" },
+        end_datetime: { type: "string", description: "End time in ISO 8601 format" },
+        description: { type: "string", description: "Optional event description" },
+        attendees: { type: "array", items: { type: "string" }, description: "Optional list of attendee email addresses" },
+      },
+      required: ["summary", "start_datetime", "end_datetime"],
+    }),
+  },
+  {
+    name: "google_list_drive_files",
+    category: "external",
+    executionMode: "in_process",
+    description: "List files in Google Drive. Optionally filter by search query. Returns file IDs, names, and MIME types. Requires Google Workspace integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Optional full-text search query to filter files" },
+      },
+    }),
+  },
+  {
+    name: "google_read_drive_file",
+    category: "external",
+    executionMode: "in_process",
+    description: "Read the text content of a Google Drive file by ID. Google Docs/Sheets/Slides are exported as plain text. Requires Google Workspace integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        file_id: { type: "string", description: "Google Drive file ID" },
+        mime_type: { type: "string", description: "Optional MIME type hint (used to detect Google Docs exports)" },
+      },
+      required: ["file_id"],
+    }),
+  },
+  // ── Linear ────────────────────────────────────────────────────────────
+  {
+    name: "linear_list_issues",
+    category: "external",
+    executionMode: "in_process",
+    description: "List issues from Linear. Optionally filter by team. Returns title, state, priority, and assignee. Requires Linear integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        team_id: { type: "string", description: "Optional Linear team ID to filter issues" },
+        first: { type: "number", description: "Number of issues to return (default: 20, max: 50)" },
+      },
+    }),
+  },
+  {
+    name: "linear_create_issue",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a new issue in Linear. Always requires human approval. Priority: 0=none, 1=urgent, 2=high, 3=medium, 4=low. Requires Linear integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        team_id: { type: "string", description: "Linear team ID to create the issue in" },
+        title: { type: "string", description: "Issue title" },
+        description: { type: "string", description: "Optional issue description (Markdown supported)" },
+        priority: { type: "number", description: "Priority: 0=none, 1=urgent, 2=high, 3=medium, 4=low" },
+        assignee_id: { type: "string", description: "Optional Linear user ID to assign the issue to" },
+      },
+      required: ["team_id", "title"],
+    }),
+  },
+  {
+    name: "linear_update_issue",
+    category: "external",
+    executionMode: "in_process",
+    description: "Update an existing Linear issue by ID. Pass any fields to change in the input object. Requires Linear integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        issue_id: { type: "string", description: "Linear issue ID" },
+        input: { type: "object", description: "Fields to update (e.g. {\"title\": \"New title\", \"stateId\": \"...\"})" },
+      },
+      required: ["issue_id", "input"],
+    }),
+  },
 ];
 
 const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
@@ -257,11 +478,22 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "list_inbox_items", "web_fetch", "run_command", "write_file",
     "delegate_task", "send_email", "call_webhook", "create_business_log",
     "figma_get_design", "figma_get_image", "web_search", "extract_content",
+    // All 16 integration tools
+    "hubspot_search_contacts", "hubspot_create_contact", "hubspot_update_contact",
+    "hubspot_list_deals", "hubspot_create_note",
+    "slack_list_channels", "slack_post_message",
+    "google_list_emails", "google_send_email", "google_list_calendar_events",
+    "google_create_calendar_event", "google_list_drive_files", "google_read_drive_file",
+    "linear_list_issues", "linear_create_issue", "linear_update_issue",
   ],
   MARKETING_COORDINATOR: [
     "search_business_logs", "list_files", "read_file", "web_fetch",
     "delegate_task", "create_business_log", "send_email", "list_inbox_items",
     "figma_get_design", "figma_get_image",
+    // Google all 6 + Slack
+    "google_list_emails", "google_send_email", "google_list_calendar_events",
+    "google_create_calendar_event", "google_list_drive_files", "google_read_drive_file",
+    "slack_list_channels", "slack_post_message",
   ],
   ASSISTANT: [
     "read_file", "list_files", "search_business_logs", "list_inbox_items",
@@ -271,10 +503,18 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
   SALES_REP: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
     "web_fetch", "send_email", "call_webhook", "delegate_task", "list_inbox_items",
+    // HubSpot all 5 + Slack + Linear list/update
+    "hubspot_search_contacts", "hubspot_create_contact", "hubspot_update_contact",
+    "hubspot_list_deals", "hubspot_create_note",
+    "slack_list_channels", "slack_post_message",
+    "linear_list_issues", "linear_update_issue",
   ],
   CUSTOMER_SUCCESS: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
     "send_email", "list_inbox_items", "delegate_task", "call_webhook",
+    // HubSpot search/update/note + Slack
+    "hubspot_search_contacts", "hubspot_update_contact", "hubspot_create_note",
+    "slack_list_channels", "slack_post_message",
   ],
   FINANCE_ANALYST: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
@@ -283,13 +523,25 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
   OPERATIONS_MANAGER: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
     "web_fetch", "send_email", "call_webhook", "delegate_task", "list_inbox_items",
+    // Linear all 3 + Slack
+    "linear_list_issues", "linear_create_issue", "linear_update_issue",
+    "slack_list_channels", "slack_post_message",
   ],
   EXECUTIVE_ASSISTANT: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
     "list_inbox_items", "send_email", "get_project_details",
+    // Google Gmail + Calendar + Slack list
+    "google_list_emails", "google_send_email",
+    "google_list_calendar_events", "google_create_calendar_event",
+    "slack_list_channels",
   ],
   RESEARCH_ANALYST: [
     "web_search", "extract_content", "quality_review",
+    "search_business_logs", "create_business_log",
+    "list_files", "read_file", "delegate_task", "list_inbox_items",
+  ],
+  SEO_SPECIALIST: [
+    "web_search", "extract_content", "web_fetch", "quality_review",
     "search_business_logs", "create_business_log",
     "list_files", "read_file", "delegate_task", "list_inbox_items",
   ],

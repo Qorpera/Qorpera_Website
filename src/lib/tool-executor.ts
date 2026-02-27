@@ -210,7 +210,7 @@ async function handleDelegateTask(args: Record<string, unknown>, ctx: ToolExecut
   if (!toAgent || !title || !instructions) {
     return "Error: to_agent, title, and instructions are all required";
   }
-  if (!["ASSISTANT", "CHIEF_ADVISOR", "SALES_REP", "CUSTOMER_SUCCESS", "MARKETING_COORDINATOR", "FINANCE_ANALYST", "OPERATIONS_MANAGER", "EXECUTIVE_ASSISTANT", "RESEARCH_ANALYST"].includes(toAgent)) {
+  if (!["ASSISTANT", "CHIEF_ADVISOR", "SALES_REP", "CUSTOMER_SUCCESS", "MARKETING_COORDINATOR", "FINANCE_ANALYST", "OPERATIONS_MANAGER", "EXECUTIVE_ASSISTANT", "RESEARCH_ANALYST", "SEO_SPECIALIST"].includes(toAgent)) {
     return `Error: Invalid agent target "${toAgent}". Use ASSISTANT or another valid agent kind.`;
   }
 
@@ -628,6 +628,241 @@ async function handleWriteFile(args: Record<string, unknown>, ctx: ToolExecution
   }
 }
 
+// --- Integration tool handlers ---
+
+async function getIntegrationToken(userId: string, provider: string): Promise<string | null> {
+  const { getAccessToken } = await import("@/lib/integrations/token-store");
+  return getAccessToken(userId, provider);
+}
+
+function integrationNotConnected(provider: string): string {
+  const labels: Record<string, string> = {
+    hubspot: "HubSpot",
+    slack: "Slack",
+    google: "Google Workspace",
+    linear: "Linear",
+  };
+  return `Error: ${labels[provider] ?? provider} not connected. Go to Settings → Integrations to connect.`;
+}
+
+// -- HubSpot --
+
+async function handleHubspotSearchContacts(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  try {
+    const { searchContacts } = await import("@/lib/integrations/hubspot");
+    const data = await searchContacts(token, String(args.query ?? ""));
+    const results = (data as Record<string, unknown>).results as unknown[] | undefined;
+    return JSON.stringify(results?.slice(0, 10) ?? [], null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleHubspotCreateContact(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  try {
+    const properties = (typeof args.properties === "object" && args.properties !== null
+      ? args.properties
+      : {}) as Record<string, string>;
+    const { createContact } = await import("@/lib/integrations/hubspot");
+    const result = await createContact(token, properties);
+    return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleHubspotUpdateContact(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  const contactId = String(args.contact_id ?? "");
+  if (!contactId) return "Error: contact_id is required";
+  try {
+    const properties = (typeof args.properties === "object" && args.properties !== null
+      ? args.properties
+      : {}) as Record<string, string>;
+    const { updateContact } = await import("@/lib/integrations/hubspot");
+    const result = await updateContact(token, contactId, properties);
+    return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleHubspotListDeals(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  void args;
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  try {
+    const { listDeals } = await import("@/lib/integrations/hubspot");
+    const data = await listDeals(token);
+    const results = (data as Record<string, unknown>).results as unknown[] | undefined;
+    return JSON.stringify(results?.slice(0, 20) ?? [], null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleHubspotCreateNote(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  const body = String(args.body ?? "");
+  if (!body) return "Error: body is required";
+  try {
+    const { createNote } = await import("@/lib/integrations/hubspot");
+    const result = await createNote(token, body, args.contact_id ? String(args.contact_id) : undefined);
+    return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+// -- Slack --
+
+async function handleSlackListChannels(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  void args;
+  const token = await getIntegrationToken(ctx.userId, "slack");
+  if (!token) return integrationNotConnected("slack");
+  try {
+    const { listChannels } = await import("@/lib/integrations/slack");
+    const data = await listChannels(token);
+    type SlackChannel = { id: string; name: string; is_private?: boolean; num_members?: number };
+    const channels = (data as Record<string, unknown>).channels as SlackChannel[] | undefined;
+    return JSON.stringify(
+      channels?.slice(0, 50).map((c) => ({ id: c.id, name: c.name, is_private: c.is_private, members: c.num_members })) ?? [],
+      null, 2,
+    );
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleSlackPostMessage(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const channel = String(args.channel ?? "");
+  const text = String(args.text ?? "");
+  if (!channel || !text) return "Error: channel and text are required";
+  return `Slack message queued for approval.\nChannel: ${channel}\nMessage: ${text.slice(0, 300)}`;
+}
+
+// -- Google --
+
+async function handleGoogleListEmails(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "google");
+  if (!token) return integrationNotConnected("google");
+  const maxResults = Math.min(Number(args.max_results) || 10, 20);
+  try {
+    const { listEmails } = await import("@/lib/integrations/google");
+    const data = await listEmails(token, maxResults);
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleGoogleSendEmail(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const to = String(args.to ?? "");
+  const subject = String(args.subject ?? "");
+  const body = String(args.body ?? "");
+  if (!to || !subject || !body) return "Error: to, subject, and body are required";
+  return `Gmail send queued for approval.\nTo: ${to}\nSubject: ${subject}\nBody preview: ${body.slice(0, 300)}`;
+}
+
+async function handleGoogleListCalendarEvents(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "google");
+  if (!token) return integrationNotConnected("google");
+  const daysAhead = Math.min(Number(args.days_ahead) || 7, 30);
+  try {
+    const { listCalendarEvents } = await import("@/lib/integrations/google");
+    const data = await listCalendarEvents(token, daysAhead);
+    type CalEvent = { id: string; summary?: string; start?: Record<string, string>; end?: Record<string, string> };
+    const items = (data as Record<string, unknown>).items as CalEvent[] | undefined;
+    return JSON.stringify(items?.slice(0, 20) ?? [], null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleGoogleCreateCalendarEvent(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const summary = String(args.summary ?? "");
+  const startDateTime = String(args.start_datetime ?? "");
+  const endDateTime = String(args.end_datetime ?? "");
+  if (!summary || !startDateTime || !endDateTime) return "Error: summary, start_datetime, and end_datetime are required";
+  return `Calendar event creation queued for approval.\nTitle: ${summary}\nStart: ${startDateTime}\nEnd: ${endDateTime}`;
+}
+
+async function handleGoogleListDriveFiles(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "google");
+  if (!token) return integrationNotConnected("google");
+  try {
+    const { listDriveFiles } = await import("@/lib/integrations/google");
+    const data = await listDriveFiles(token, args.query ? String(args.query) : undefined);
+    type DriveFile = { id: string; name: string; mimeType: string; modifiedTime?: string; size?: string };
+    const files = (data as Record<string, unknown>).files as DriveFile[] | undefined;
+    return JSON.stringify(files?.slice(0, 20) ?? [], null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleGoogleReadDriveFile(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "google");
+  if (!token) return integrationNotConnected("google");
+  const fileId = String(args.file_id ?? "");
+  if (!fileId) return "Error: file_id is required";
+  try {
+    const { getDriveFile } = await import("@/lib/integrations/google");
+    const result = await getDriveFile(token, fileId, args.mime_type ? String(args.mime_type) : undefined);
+    return result.content.slice(0, 8000);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+// -- Linear --
+
+async function handleLinearListIssues(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "linear");
+  if (!token) return integrationNotConnected("linear");
+  try {
+    const { listIssues } = await import("@/lib/integrations/linear");
+    const data = await listIssues(
+      token,
+      args.team_id ? String(args.team_id) : undefined,
+      Math.min(Number(args.first) || 20, 50),
+    );
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleLinearCreateIssue(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const teamId = String(args.team_id ?? "");
+  const title = String(args.title ?? "");
+  if (!teamId || !title) return "Error: team_id and title are required";
+  return `Linear issue creation queued for approval.\nTeam: ${teamId}\nTitle: ${title}\nDescription: ${String(args.description ?? "").slice(0, 300)}`;
+}
+
+async function handleLinearUpdateIssue(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "linear");
+  if (!token) return integrationNotConnected("linear");
+  const issueId = String(args.issue_id ?? "");
+  if (!issueId) return "Error: issue_id is required";
+  try {
+    const { updateIssue } = await import("@/lib/integrations/linear");
+    const input = (typeof args.input === "object" && args.input !== null
+      ? args.input
+      : {}) as Record<string, unknown>;
+    const result = await updateIssue(token, issueId, input);
+    return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
 // --- Dispatch ---
 
 const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {
@@ -646,6 +881,26 @@ const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: T
   web_search: handleWebSearch,
   extract_content: handleExtractContent,
   quality_review: handleQualityReview,
+  // HubSpot
+  hubspot_search_contacts: handleHubspotSearchContacts,
+  hubspot_create_contact: handleHubspotCreateContact,
+  hubspot_update_contact: handleHubspotUpdateContact,
+  hubspot_list_deals: handleHubspotListDeals,
+  hubspot_create_note: handleHubspotCreateNote,
+  // Slack
+  slack_list_channels: handleSlackListChannels,
+  slack_post_message: handleSlackPostMessage,
+  // Google
+  google_list_emails: handleGoogleListEmails,
+  google_send_email: handleGoogleSendEmail,
+  google_list_calendar_events: handleGoogleListCalendarEvents,
+  google_create_calendar_event: handleGoogleCreateCalendarEvent,
+  google_list_drive_files: handleGoogleListDriveFiles,
+  google_read_drive_file: handleGoogleReadDriveFile,
+  // Linear
+  linear_list_issues: handleLinearListIssues,
+  linear_create_issue: handleLinearCreateIssue,
+  linear_update_issue: handleLinearUpdateIssue,
 };
 
 const RUNNER_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {
