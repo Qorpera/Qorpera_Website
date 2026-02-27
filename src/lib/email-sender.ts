@@ -12,6 +12,7 @@ export type EmailPayload = {
   to: string;
   subject: string;
   body: string;
+  html?: string;
   from?: string;
 };
 
@@ -23,7 +24,7 @@ async function sendViaResend(apiKey: string, payload: EmailPayload, from: string
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: payload.from ?? from, to: [payload.to], subject: payload.subject, text: payload.body }),
+    body: JSON.stringify({ from: payload.from ?? from, to: [payload.to], subject: payload.subject, text: payload.body, ...(payload.html ? { html: payload.html } : {}) }),
   });
 
   if (!res.ok) {
@@ -46,7 +47,10 @@ async function sendViaSendGrid(apiKey: string, payload: EmailPayload, from: stri
       personalizations: [{ to: [{ email: payload.to }] }],
       from: fromName ? { email: fromEmail, name: fromName } : { email: fromEmail },
       subject: payload.subject,
-      content: [{ type: "text/plain", value: payload.body }],
+      content: [
+        { type: "text/plain", value: payload.body },
+        ...(payload.html ? [{ type: "text/html", value: payload.html }] : []),
+      ],
     }),
   });
 
@@ -61,7 +65,7 @@ async function sendViaPostmark(apiKey: string, payload: EmailPayload, from: stri
   const res = await fetch("https://api.postmarkapp.com/email", {
     method: "POST",
     headers: { "X-Postmark-Server-Token": apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ From: payload.from ?? from, To: payload.to, Subject: payload.subject, TextBody: payload.body }),
+    body: JSON.stringify({ From: payload.from ?? from, To: payload.to, Subject: payload.subject, TextBody: payload.body, ...(payload.html ? { HtmlBody: payload.html } : {}) }),
   });
 
   if (!res.ok) {

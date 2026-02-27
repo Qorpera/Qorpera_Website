@@ -10,6 +10,7 @@ import { runAgenticLoop, type AgenticStreamEvent } from "@/lib/agentic-loop";
 import { getEnabledSkillContents } from "@/lib/skills-store";
 import { getAppPreferences } from "@/lib/settings-store";
 import { getAgentMemoryIndex, ingestTaskCompletion } from "@/lib/agent-memory-store";
+import { notifyApprovalNeeded, notifySubmissionReady, notifyTaskCompleted, notifyTaskFailed } from "@/lib/notifications";
 
 export type AgentTarget =
   | "CHIEF_ADVISOR"
@@ -1223,6 +1224,17 @@ export async function executeDelegatedTask(userId: string, taskId: string, onEve
     ingestTaskCompletion(userId, row.toAgentTarget, digest).catch(() => {});
   }
 
+  const agentDisplayName =
+    row.toAgentTarget === "ASSISTANT" ? "Mara" :
+    row.toAgentTarget.replaceAll("_", " ");
+  if (needsReview && approvalRequired) {
+    notifyApprovalNeeded(userId, { taskTitle: row.title, agentName: agentDisplayName, taskId: row.id }).catch(() => {});
+  } else if (needsReview) {
+    notifySubmissionReady(userId, { taskTitle: row.title, agentName: agentDisplayName, taskId: row.id }).catch(() => {});
+  } else {
+    notifyTaskCompleted(userId, { taskTitle: row.title, agentName: agentDisplayName }).catch(() => {});
+  }
+
   onEvent?.({ type: "task_done", status: finalStatus });
 
   return toTaskView(updated);
@@ -1244,6 +1256,10 @@ export async function runDelegatedTaskQueue(userId: string, limit = 3) {
         where: { id: task.id },
         data: { status: DelegatedTaskStatus.FAILED },
       }).catch(() => null);
+      notifyTaskFailed(userId, {
+        taskTitle: task.title,
+        agentName: task.toAgentTarget === "ASSISTANT" ? "Mara" : task.toAgentTarget.replaceAll("_", " "),
+      }).catch(() => {});
     }
   }
   return { processed };

@@ -10,6 +10,10 @@ export type AppPreferences = {
   highlightApprovals: boolean;
   connectorChecks: "hourly" | "daily" | "manual";
   maxAgentOutputTokens: number;
+  notifyApprovalNeeded: boolean;
+  notifySubmissionReady: boolean;
+  notifyTaskCompleted: boolean;
+  notifyTaskFailed: boolean;
 };
 
 export const DEFAULT_PREFERENCES: AppPreferences = {
@@ -21,6 +25,10 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   highlightApprovals: true,
   connectorChecks: "daily",
   maxAgentOutputTokens: 32768,
+  notifyApprovalNeeded: true,
+  notifySubmissionReady: true,
+  notifyTaskCompleted: true,
+  notifyTaskFailed: true,
 };
 
 function fromDb(row: {
@@ -32,6 +40,10 @@ function fromDb(row: {
   highlightApprovals: boolean;
   connectorChecks: ConnectorCheckCadence;
   maxAgentOutputTokens: number | null;
+  notifyApprovalNeeded?: boolean | null;
+  notifySubmissionReady?: boolean | null;
+  notifyTaskCompleted?: boolean | null;
+  notifyTaskFailed?: boolean | null;
 }): AppPreferences {
   return {
     defaultAutonomy: row.defaultAutonomy,
@@ -42,6 +54,10 @@ function fromDb(row: {
     highlightApprovals: row.highlightApprovals,
     connectorChecks: row.connectorChecks.toLowerCase() as AppPreferences["connectorChecks"],
     maxAgentOutputTokens: row.maxAgentOutputTokens ?? DEFAULT_PREFERENCES.maxAgentOutputTokens,
+    notifyApprovalNeeded: row.notifyApprovalNeeded ?? true,
+    notifySubmissionReady: row.notifySubmissionReady ?? true,
+    notifyTaskCompleted: row.notifyTaskCompleted ?? true,
+    notifyTaskFailed: row.notifyTaskFailed ?? true,
   };
 }
 
@@ -55,6 +71,10 @@ function toDb(next: Partial<AppPreferences>) {
     highlightApprovals?: boolean;
     connectorChecks?: ConnectorCheckCadence;
     maxAgentOutputTokens?: number;
+    notifyApprovalNeeded?: boolean;
+    notifySubmissionReady?: boolean;
+    notifyTaskCompleted?: boolean;
+    notifyTaskFailed?: boolean;
   } = {};
 
   if (next.defaultAutonomy) data.defaultAutonomy = next.defaultAutonomy as DefaultAutonomy;
@@ -65,6 +85,10 @@ function toDb(next: Partial<AppPreferences>) {
   if (typeof next.highlightApprovals === "boolean") data.highlightApprovals = next.highlightApprovals;
   if (next.connectorChecks) data.connectorChecks = next.connectorChecks.toUpperCase() as ConnectorCheckCadence;
   if (typeof next.maxAgentOutputTokens === "number") data.maxAgentOutputTokens = Math.max(1024, Math.min(32768, next.maxAgentOutputTokens));
+  if (typeof next.notifyApprovalNeeded === "boolean") data.notifyApprovalNeeded = next.notifyApprovalNeeded;
+  if (typeof next.notifySubmissionReady === "boolean") data.notifySubmissionReady = next.notifySubmissionReady;
+  if (typeof next.notifyTaskCompleted === "boolean") data.notifyTaskCompleted = next.notifyTaskCompleted;
+  if (typeof next.notifyTaskFailed === "boolean") data.notifyTaskFailed = next.notifyTaskFailed;
 
   return data;
 }
