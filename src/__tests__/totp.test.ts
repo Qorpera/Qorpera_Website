@@ -20,7 +20,7 @@ describe("generateTotpSecret", () => {
 describe("verifyTotpCode", () => {
   it("returns true for a valid current code", () => {
     const secret = generateTotpSecret();
-    const token = generateSync({ secret, label: "test", digits: 6, period: 30, algorithm: "sha1" }) as string;
+    const token = generateSync({ secret, digits: 6, period: 30, algorithm: "sha1" }) as string;
     expect(verifyTotpCode(token, secret)).toBe(true);
   });
 
@@ -32,7 +32,7 @@ describe("verifyTotpCode", () => {
   it("returns false for a code from a different secret", () => {
     const secret1 = generateTotpSecret();
     const secret2 = generateTotpSecret();
-    const token = generateSync({ secret: secret1, label: "test", digits: 6, period: 30, algorithm: "sha1" }) as string;
+    const token = generateSync({ secret: secret1, digits: 6, period: 30, algorithm: "sha1" }) as string;
     expect(verifyTotpCode(token, secret2)).toBe(false);
   });
 

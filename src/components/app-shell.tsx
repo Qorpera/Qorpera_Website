@@ -252,7 +252,10 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
               {!tourUser?.onboardedAt ? (
                 <Link
                   href="/onboarding"
-                  className="shrink-0 rounded-xl bg-purple-600 px-5 py-2 text-sm font-bold tracking-wide text-white shadow-[0_0_24px_rgba(147,51,234,0.45)] transition hover:bg-purple-500 hover:shadow-[0_0_32px_rgba(147,51,234,0.6)]"
+                  className="shrink-0 rounded-xl bg-purple-600 px-5 py-2 text-sm font-bold tracking-wide text-white hover:bg-purple-500"
+                  style={{
+                    animation: "onboard-glow 2.4s ease-in-out infinite, onboard-nudge 6s ease-in-out infinite",
+                  }}
                 >
                   ONBOARD
                 </Link>
