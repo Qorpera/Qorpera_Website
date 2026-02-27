@@ -80,6 +80,6 @@ export function summarizeBusinessLogsForAdvisor(
     author: row.authorLabel,
     relatedRef: row.relatedRef,
     createdAt: row.createdAt.toISOString(),
-    summary: row.body.split(/\r?\n/).map((s) => s.trim()).filter(Boolean).slice(0, 4),
+    body: row.body.length > 2000 ? row.body.slice(0, 2000) + "..." : row.body,
   }));
 }

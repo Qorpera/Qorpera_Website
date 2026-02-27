@@ -163,6 +163,6 @@ export function summarizeBusinessFilesForAdvisor(
     author: row.authorLabel,
     relatedRef: row.relatedRef,
     createdAt: row.createdAt.toISOString(),
-    textExtractPreview: row.textExtract ? row.textExtract.slice(0, 1200) : null,
+    textExtract: row.textExtract ? (row.textExtract.length > 3000 ? row.textExtract.slice(0, 3000) + "..." : row.textExtract) : null,
   }));
 }

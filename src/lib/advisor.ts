@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getAppPreferences } from "@/lib/settings-store";
 import { getInboxItems } from "@/lib/inbox-store";
-import { ensureWorkspaceSeeded, getProjectsForUser, getRunsForUser, getTemplates } from "@/lib/workspace-store";
+import { getProjectsForUser, getRunsForUser, getTemplates } from "@/lib/workspace-store";
 import { UI_AGENTS } from "@/lib/workforce-ui";
 import {
   checkManagedGuardrails,
@@ -43,6 +43,16 @@ type ChatTurn = {
 
 function clampText(text: string, max = 5000) {
   return text.length > max ? `${text.slice(0, max)}...` : text;
+}
+
+function extractDataSignals(context: unknown): { hasCompanySoul: boolean; hiredAgentCount: number; projectCount: number } {
+  if (typeof context !== "object" || !context) return { hasCompanySoul: false, hiredAgentCount: 0, projectCount: 0 };
+  const ctx = context as Record<string, unknown>;
+  return {
+    hasCompanySoul: Boolean(ctx.hasCompanySoul),
+    hiredAgentCount: Array.isArray(ctx.hiredAgentKinds) ? ctx.hiredAgentKinds.length : 0,
+    projectCount: typeof ctx.projectCount === "number" ? ctx.projectCount : 0,
+  };
 }
 
 function extractMaxTokens(context: unknown): number {
@@ -133,13 +143,31 @@ async function buildRunnerContext(userId: string) {
   };
 }
 
-function advisorSystemPrompt(ownerUsername: string, chiefAdvisorSoulPrompt?: string | null, runnerContext?: { onlineRunnerCount: number; pendingApprovalCount: number } | null, recentlyOnboarded?: boolean) {
+function advisorSystemPrompt(
+  ownerUsername: string,
+  chiefAdvisorSoulPrompt?: string | null,
+  runnerContext?: { onlineRunnerCount: number; pendingApprovalCount: number } | null,
+  recentlyOnboarded?: boolean,
+  dataSignals?: { hasCompanySoul: boolean; hiredAgentCount: number; projectCount: number },
+) {
   const runnerLines = runnerContext && runnerContext.onlineRunnerCount > 0
     ? ["", "RUNNER_CAPABILITIES", "When a runner is online you can ask to execute local commands or read/write files — these go through the runner approval queue."]
     : [];
-  const onboardingLines = recentlyOnboarded
-    ? ["", "ONBOARDING_CONTEXT", "This user just completed setup. Be welcoming. Suggest a first project, hiring agents for their busiest workflow, or refining their Company Soul profile."]
+
+  const signals = dataSignals ?? { hasCompanySoul: false, hiredAgentCount: 0, projectCount: 0 };
+  const isEmptyWorkspace = !signals.hasCompanySoul || (signals.hiredAgentCount === 0 && signals.projectCount === 0);
+
+  const onboardingLines = recentlyOnboarded || isEmptyWorkspace
+    ? [
+        "",
+        "ONBOARDING_CONTEXT",
+        ...(recentlyOnboarded ? ["This user just completed setup. Be welcoming."] : []),
+        ...(!signals.hasCompanySoul ? ["Company Soul is empty or incomplete — ask the user to fill it in before making business-specific recommendations."] : []),
+        ...(signals.hiredAgentCount === 0 ? ["No agents have been hired yet. Suggest hiring agents for their busiest workflow."] : []),
+        ...(signals.projectCount === 0 ? ["No projects exist yet. Suggest creating a first project or using a template."] : []),
+      ]
     : [];
+
   return [
     "ROLE_IDENTITY",
     "You are Zygenic Business Advisor: the operator-level AI advisor for this business owner.",
@@ -161,11 +189,26 @@ function advisorSystemPrompt(ownerUsername: string, chiefAdvisorSoulPrompt?: str
     "If a critical assumption is missing, state it explicitly and make a safe default assumption.",
     "Do not give generic brainstorming lists when a prioritized recommendation is possible.",
     "",
+    "GROUNDING RULES (CRITICAL — violations erode trust)",
+    "Your knowledge of this business comes ONLY from the data fields in the businessContext JSON below.",
+    "Do NOT invent, fabricate, or hallucinate any information. Specifically:",
+    "- Do NOT invent recent activity, active workflows, anomalies, pending actions, or statistics that are not in the context data.",
+    "- Do NOT describe agents as running, active, or operational unless there is evidence in 'runs' or 'recentSubmissions'.",
+    "- Do NOT fabricate file contents. If a file's textExtract is null or truncated, say so — do not guess what it contains.",
+    "- Do NOT make up timestamps, counts, or metrics. Only quote numbers that appear in the context.",
+    "If Company Soul is empty or incomplete, say so directly — do not infer business details.",
+    "If no agents are hired (agents list is empty), say so — do not describe agents as available.",
+    "If businessLogs and businessFiles arrays are empty, the business has no recorded operational history yet.",
+    "Never conflate project templates (available options) with active projects (user-created work).",
+    "When you don't know something, say \"I don't have that information yet\" rather than guessing.",
+    "When the user asks you to read or summarize a file or log, use the actual body/textExtract content provided in the context. If the content is truncated, say so.",
+    "",
     "DELEGATION",
     "You can delegate work to hired agents. When the user asks you to DO something (write, draft, research, analyze, plan, review, etc.), delegate it to the right agent.",
     "You may delegate to multiple agents in one response if the request spans domains.",
     "Only delegate when the user clearly wants work done — not for simple questions or advice.",
     "Write clear, specific instructions for the agent. Include all relevant context from the conversation.",
+    "Only delegate to agents that appear in the agents list in the context. If no agents are hired, you cannot delegate.",
     "",
     "AGENT ROUTING TABLE — choose the best match:",
     "- ASSISTANT: General triage, research, drafting, data gathering. Delegates to specialists when needed. Use when no domain agent fits or for multi-step tasks that start with research.",
@@ -191,8 +234,7 @@ function advisorSystemPrompt(ownerUsername: string, chiefAdvisorSoulPrompt?: str
 }
 
 export async function buildAdvisorContext(userId: string) {
-  await ensureWorkspaceSeeded(userId);
-  const [projects, templates, runs, inboxItems, prefs, agents, submissions, companySoul, agentSoulBlueprints, chiefAdvisorSoul, businessLogs, businessFiles, owner, runnerContext] = await Promise.all([
+  const [projects, templates, runs, inboxItems, prefs, agents, submissions, companySoul, agentSoulBlueprints, chiefAdvisorSoul, businessLogs, businessFiles, owner, runnerContext, hiredJobs] = await Promise.all([
     getProjectsForUser(userId),
     getTemplates(),
     getRunsForUser(userId),
@@ -207,6 +249,7 @@ export async function buildAdvisorContext(userId: string) {
     listBusinessFiles(userId, 30),
     prisma.user.findUnique({ where: { id: userId }, select: { email: true, username: true, onboardedAt: true } }),
     buildRunnerContext(userId).catch(() => null),
+    prisma.hiredJob.findMany({ where: { userId, enabled: true }, select: { agentKind: true }, distinct: ["agentKind"] }),
   ]);
 
   // Check if the user was onboarded within the last 24 hours
@@ -221,8 +264,20 @@ export async function buildAdvisorContext(userId: string) {
     drafts: inboxItems.filter((i) => i.type === "draft").length,
   };
 
+  // Only include agents that the user has actually hired
+  const hiredKinds = new Set(hiredJobs.map((j) => j.agentKind));
+  const hiredAgents = UI_AGENTS.filter((a) => hiredKinds.has(a.kind));
+
+  const soulData = companySoulForAdvisor(companySoul);
+  const hasCompanySoul = Boolean(soulData.companyName || soulData.mission);
+
   return {
     owner: { username: ownerUsername },
+    hasCompanySoul,
+    hiredAgentKinds: Array.from(hiredKinds),
+    projectCount: projects.length,
+    businessLogCount: businessLogs.length,
+    businessFileCount: businessFiles.length,
     projects: projects.map((p) => ({
       name: p.name,
       goal: p.goal,
@@ -234,7 +289,8 @@ export async function buildAdvisorContext(userId: string) {
     runs,
     inboxSummary,
     preferences: prefs,
-    agents: UI_AGENTS.map((a) => ({
+    agents: hiredAgents.map((a) => ({
+      kind: a.kind,
       name: agents.find((db) => db.kind === a.kind)?.name ?? a.name,
       username: agents.find((db) => db.kind === a.kind)?.username ?? a.username,
       role: a.role,
@@ -246,7 +302,7 @@ export async function buildAdvisorContext(userId: string) {
       status: s.status,
       agentKind: s.agentKind,
     })),
-    companySoul: companySoulForAdvisor(companySoul),
+    companySoul: soulData,
     businessLogs: summarizeBusinessLogsForAdvisor(businessLogs),
     businessFiles: summarizeBusinessFilesForAdvisor(businessFiles),
     chiefAdvisorSoul: chiefAdvisorSoul
@@ -288,24 +344,24 @@ function heuristicAdvisorReply({
   const mentionsContent = /(content|blog|draft|publish|campaign)/.test(text);
 
   let recommendedTemplate = "weekly-kpi-report";
-  let suggestedAgents = ["Analyst", "Ops Reviewer"];
+  let suggestedAgents = ["FINANCE_ANALYST", "OPERATIONS_MANAGER"];
   let focus = ["Clear approval gates for external actions", "Define success metric for the first 2 weeks"];
 
   if (mentionsSupport) {
     recommendedTemplate = "customer-support-triage";
-    suggestedAgents = ["Support Rep", "QA Reviewer", "Escalation Coordinator"];
+    suggestedAgents = ["CUSTOMER_SUCCESS", "ASSISTANT", "EXECUTIVE_ASSISTANT"];
     focus = ["Reduce backlog by urgency", "Keep outbound messages approval-gated", "Measure first-response time and CSAT"];
   } else if (mentionsSales) {
     recommendedTemplate = "outbound-sales-research";
-    suggestedAgents = ["Researcher", "Prospector", "Sales Ops"];
+    suggestedAgents = ["SALES_REP", "ASSISTANT", "OPERATIONS_MANAGER"];
     focus = ["Avoid automatic sends at first", "Define ICP and scoring rules", "Audit enrichment quality daily"];
   } else if (mentionsFinance) {
     recommendedTemplate = "contract-review-redlines";
-    suggestedAgents = ["Legal Analyst", "Redline Drafter", "Approver"];
+    suggestedAgents = ["FINANCE_ANALYST", "ASSISTANT", "OPERATIONS_MANAGER"];
     focus = ["No irreversible external actions", "Escalate low-confidence clauses", "Track turnaround time"];
   } else if (mentionsContent) {
     recommendedTemplate = "content-pipeline";
-    suggestedAgents = ["Strategist", "Writer", "Editor"];
+    suggestedAgents = ["MARKETING_COORDINATOR", "ASSISTANT", "EXECUTIVE_ASSISTANT"];
     focus = ["Human approval before publish", "Enforce source attribution", "Keep workflow stages explicit"];
   }
 
@@ -380,7 +436,8 @@ async function callOpenAIAdvisor({
     "recentlyOnboarded" in context
       ? Boolean((context as { recentlyOnboarded?: boolean }).recentlyOnboarded)
       : false;
-  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx, isRecentlyOnboarded);
+  const dataSignals = extractDataSignals(context);
+  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx, isRecentlyOnboarded, dataSignals);
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -505,7 +562,8 @@ async function callOllamaAdvisor({
     "recentlyOnboarded" in context
       ? Boolean((context as { recentlyOnboarded?: boolean }).recentlyOnboarded)
       : false;
-  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtxOllama, isRecentlyOnboardedOllama);
+  const dataSignalsOllama = extractDataSignals(context);
+  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtxOllama, isRecentlyOnboardedOllama, dataSignalsOllama);
 
   const userPayload = clampText(
     JSON.stringify(
@@ -513,7 +571,7 @@ async function callOllamaAdvisor({
       null,
       2,
     ),
-    18000,
+    28000,
   );
 
   type OllamaTokenFields = { eval_count?: number; prompt_eval_count?: number };
