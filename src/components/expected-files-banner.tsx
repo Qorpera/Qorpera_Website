@@ -26,12 +26,15 @@ export function ExpectedFilesBanner({
   const [dismissed, setDismissed] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [ignored, setIgnored] = useState<Set<string>>(new Set());
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  const hasCriticalMissing = statuses.some((s) => !s.satisfied && s.entry.impact === "critical");
+  const visibleStatuses = statuses.filter((s) => !ignored.has(s.entry.id));
+  const hasCriticalMissing = visibleStatuses.some((s) => !s.satisfied && s.entry.impact === "critical");
   if (dismissed || !hasCriticalMissing) return null;
 
-  const satisfiedCount = statuses.filter((s) => s.satisfied).length;
+  const satisfiedCount = visibleStatuses.filter((s) => s.satisfied).length;
 
   async function uploadForEntry(entryId: string, fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
@@ -72,7 +75,7 @@ export function ExpectedFilesBanner({
     <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-medium text-amber-300">Missing business files</h3>
+          <h3 className="text-sm font-medium text-amber-300">Expected Business Files</h3>
           <p className="mt-0.5 text-xs text-white/40">
             Agents work better with business context. Upload key files to improve their output.
           </p>
@@ -90,13 +93,14 @@ export function ExpectedFilesBanner({
       </div>
 
       <div className="mt-3 text-xs text-white/35">
-        {satisfiedCount} of {statuses.length} file types uploaded
+        {satisfiedCount} of {visibleStatuses.length} file types uploaded
       </div>
 
       <div className="mt-3 space-y-1.5">
-        {statuses.map((status) => {
+        {visibleStatuses.map((status) => {
           const { entry } = status;
           const isUploading = uploading === entry.id;
+          const isConfirming = confirming === entry.id;
 
           return (
             <div
@@ -117,15 +121,49 @@ export function ExpectedFilesBanner({
                 </span>
               </div>
               {!status.satisfied && (
-                <label className={`shrink-0 cursor-pointer rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[10px] text-amber-300 transition hover:bg-amber-500/20 ${isUploading ? "opacity-50 pointer-events-none" : ""}`}>
-                  {isUploading ? "..." : "Upload"}
-                  <input
-                    ref={(el) => { fileInputRefs.current[entry.id] = el; }}
-                    type="file"
-                    className="hidden"
-                    onChange={(e) => void uploadForEntry(entry.id, e.target.files)}
-                  />
-                </label>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {isConfirming ? (
+                    <span className="flex items-center gap-1.5 text-[10px]">
+                      <span className="text-white/40">Are you sure?</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIgnored((prev) => new Set(prev).add(entry.id));
+                          setConfirming(null);
+                        }}
+                        className="rounded-md border border-rose-500/30 bg-rose-500/10 px-1.5 py-0.5 text-rose-300 transition hover:bg-rose-500/20"
+                      >
+                        Yes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirming(null)}
+                        className="rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-white/50 transition hover:bg-white/[0.06]"
+                      >
+                        No
+                      </button>
+                    </span>
+                  ) : (
+                    <>
+                      <label className={`cursor-pointer rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[10px] text-amber-300 transition hover:bg-amber-500/20 ${isUploading ? "opacity-50 pointer-events-none" : ""}`}>
+                        {isUploading ? "..." : "Upload"}
+                        <input
+                          ref={(el) => { fileInputRefs.current[entry.id] = el; }}
+                          type="file"
+                          className="hidden"
+                          onChange={(e) => void uploadForEntry(entry.id, e.target.files)}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setConfirming(entry.id)}
+                        className="rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 text-[10px] text-white/35 transition hover:bg-white/[0.06] hover:text-white/50"
+                      >
+                        Ignore
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
             </div>
           );
