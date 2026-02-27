@@ -29,6 +29,11 @@ export async function POST(request: Request) {
   const raw = await request.json().catch(() => ({}));
   const parsed = CompanySoulBody.safeParse(raw);
   if (!parsed.success) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-  const companySoul = await setCompanySoul(userId, parsed.data);
-  return NextResponse.json({ ok: true, companySoul });
+  try {
+    const companySoul = await setCompanySoul(userId, parsed.data);
+    return NextResponse.json({ ok: true, companySoul });
+  } catch (e: unknown) {
+    console.error("[company-soul] save failed:", e);
+    return NextResponse.json({ error: "Failed to save" }, { status: 500 });
+  }
 }

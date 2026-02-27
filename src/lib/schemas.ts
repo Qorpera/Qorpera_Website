@@ -69,11 +69,17 @@ export const CompanySoulBody = z.object({
   mission: z.string().max(2000).optional(),
   idealCustomers: z.string().max(2000).optional(),
   coreOffers: z.string().max(2000).optional(),
+  revenueModel: z.string().max(2000).optional(),
   strategicGoals: z.string().max(2000).optional(),
+  constraints: z.string().max(2000).optional(),
+  brandVoice: z.string().max(2000).optional(),
   departments: z.string().max(2000).optional(),
+  operatingCadence: z.string().max(2000).optional(),
   approvalRules: z.string().max(2000).optional(),
   toolsAndSystems: z.string().max(2000).optional(),
   keyMetrics: z.string().max(2000).optional(),
+  glossary: z.string().max(2000).optional(),
+  notesForAgents: z.string().max(4000).optional(),
 });
 
 // Connectors
