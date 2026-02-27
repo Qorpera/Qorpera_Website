@@ -247,8 +247,8 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
               <Link href="/" className="flex items-center gap-3">
-                <div className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--border)] bg-white/5 text-sm font-semibold">
-                  WH
+                <div className="grid h-9 w-9 place-items-center rounded-xl border border-teal-500/40 bg-teal-500/10 text-base font-bold text-teal-400">
+                  Z
                 </div>
                 <div>
                   <div className="text-base font-semibold tracking-tight">Zygenic</div>
