@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { getSession } from "@/lib/auth";
 import { AppNav, AppNavVerticalGrouped, type NavGroup } from "@/components/app-nav";
 import { getInboxOpenApprovalCount } from "@/lib/inbox-store";
@@ -55,6 +56,8 @@ function applyNavBadges(groups: NavGroup[], badges: Map<string, { badge: string;
 }
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = (await headers()).get("x-pathname") ?? "/";
+  const isAdvisorChat = pathname === "/";
   const session = await getSession();
   let navItems = PRIMARY_NAV;
   let navGroups = NAV_GROUPS as NavGroup[];
@@ -242,13 +245,15 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
           <main className="min-h-0 min-w-0 overflow-y-auto p-4 sm:p-6">
             <div className="mb-1 flex items-center justify-between gap-4">
-              <ModelRouteSelector
-                target="ADVISOR"
-                initial={routes.ADVISOR}
-                catalog={modelCatalog}
-                chatTrigger
-                showRuntimeWarnings
-              />
+              {isAdvisorChat && (
+                <ModelRouteSelector
+                  target="ADVISOR"
+                  initial={routes.ADVISOR}
+                  catalog={modelCatalog}
+                  chatTrigger
+                  showRuntimeWarnings
+                />
+              )}
               {!tourUser?.onboardedAt ? (
                 <Link
                   href="/onboarding"
