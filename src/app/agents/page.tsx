@@ -58,9 +58,6 @@ export default async function AgentsPage() {
             <p className="mt-1 text-sm wf-muted">Your workforce roster. Tap a card to open the agent profile.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href="/office" className="wf-btn-primary px-4 py-2 text-sm">
-              Visit Office
-            </Link>
           </div>
         </div>
       </header>
