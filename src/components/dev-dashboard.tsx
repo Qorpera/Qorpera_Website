@@ -19,11 +19,24 @@ type SerializedUserRow = Omit<AdminUserRow, "createdAt" | "lastSessionAt" | "sub
   } | null;
 };
 
-type SerializedManualLicense = Omit<ManualLicense, "createdAt"> & { createdAt: string };
+// kept for type compat with dev page — not used in UI
+type SerializedManualLicense = Omit<ManualLicense, "createdAt"> & { createdAt: string }; // eslint-disable-line @typescript-eslint/no-unused-vars
+
+type PlanLicenseKeyRow = {
+  id: string;
+  tier: string;
+  code: string;
+  status: string;
+  redeemedBy: { email: string } | null;
+  redeemedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+};
 
 type Props = {
   users: SerializedUserRow[];
-  manualLicenses: SerializedManualLicense[];
+  manualLicenses: unknown[]; // legacy — kept for page compat
+  planLicenseKeys: PlanLicenseKeyRow[];
   stats: DevStats;
   flags: { global: FeatureFlagRow[]; overrides: FeatureFlagRow[] };
 };
@@ -37,7 +50,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "stats", label: "Stats" },
 ];
 
-export function DevDashboard({ users, manualLicenses, stats, flags }: Props) {
+export function DevDashboard({ users, planLicenseKeys, stats, flags }: Props) {
   const [tab, setTab] = useState<Tab>("customers");
 
   return (
@@ -82,7 +95,7 @@ export function DevDashboard({ users, manualLicenses, stats, flags }: Props) {
       {/* Tab panels */}
       <div>
         {tab === "customers" && <DevCustomersTab users={users} />}
-        {tab === "licenses" && <DevLicensesTab manualLicenses={manualLicenses} />}
+        {tab === "licenses" && <DevLicensesTab planLicenseKeys={planLicenseKeys} />}
         {tab === "flags" && (
           <DevFlagsTab
             global={flags.global.map((f) => ({ ...f, updatedAt: new Date(f.updatedAt) }))}

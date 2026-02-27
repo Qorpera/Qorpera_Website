@@ -10,6 +10,9 @@ import { listBusinessFiles } from "@/lib/business-files-store";
 import { listAdvisorSessions } from "@/lib/advisor-sessions-store";
 import { isValidUsername, normalizeUsernameInput } from "@/lib/usernames";
 import { kindLabel } from "@/lib/format";
+import { getPlanStatus } from "@/lib/plan-store";
+import { PLAN_CATALOG } from "@/lib/plan-catalog";
+import { RedeemLicenseKeyForm } from "@/components/redeem-license-key-form";
 
 export default async function ProfilePage({
   searchParams,
@@ -20,6 +23,7 @@ export default async function ProfilePage({
     tab?: string;
     pwChanged?: string;
     pwError?: string;
+    [key: string]: string | undefined;
   }>;
 }) {
   const session = await getSession();
@@ -73,7 +77,7 @@ export default async function ProfilePage({
     redirect("/profile?pwChanged=1");
   }
 
-  const [soul, reviewCount, businessFiles, sessions, hiredJobs, recentOrders, subscriptions] = await Promise.all([
+  const [soul, reviewCount, businessFiles, sessions, hiredJobs, recentOrders, subscriptions, planStatus] = await Promise.all([
     getCompanySoul(session.userId),
     getInboxOpenApprovalCount(session.userId),
     listBusinessFiles(session.userId, 200),
@@ -89,12 +93,13 @@ export default async function ProfilePage({
       orderBy: { updatedAt: "desc" },
       take: 20,
     }),
+    getPlanStatus(session.userId),
   ]);
   const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true, username: true, createdAt: true, totpEnabled: true } });
   const email = user?.email ?? "Unknown account";
   const username = user?.username ?? "";
   const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : null;
-  const activeTab = resolvedSearchParams.tab === "billing" || resolvedSearchParams.tab === "agents" ? resolvedSearchParams.tab : "overview";
+  const activeTab = resolvedSearchParams.tab === "billing" || resolvedSearchParams.tab === "agents" || resolvedSearchParams.tab === "plans" ? resolvedSearchParams.tab : "overview";
 
   const soulFields = [
     soul.companyName, soul.oneLinePitch, soul.mission, soul.idealCustomers, soul.coreOffers,
@@ -125,6 +130,7 @@ export default async function ProfilePage({
         <nav className="flex">
           {([
             ["/profile", "Overview", "overview"],
+            ["/profile?tab=plans", "Plans", "plans"],
             ["/profile?tab=billing", "Billing", "billing"],
             ["/profile?tab=agents", "Agents", "agents"],
           ] as const).map(([href, label, tab]) => (
@@ -258,6 +264,77 @@ export default async function ProfilePage({
             </form>
             <p className="mt-2 text-xs text-white/30">Minimum 8 characters.</p>
           </section>
+        </div>
+      ) : null}
+
+      {/* Plans tab */}
+      {activeTab === "plans" ? (
+        <div className="space-y-6 pt-6">
+          {/* Current plan */}
+          {planStatus.plan ? (
+            <div className="rounded-xl border border-teal-500/25 bg-teal-500/8 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-xs font-medium uppercase tracking-wider text-teal-400/60 mb-1">Active Plan</div>
+                  <div className="text-lg font-semibold text-white/90">{planStatus.plan.name}</div>
+                  <div className="mt-1 text-sm text-white/50">
+                    {planStatus.hiredCount} of {planStatus.agentCap} agent slots used
+                  </div>
+                  {planStatus.subscription?.currentPeriodEnd && (
+                    <div className="mt-1 text-xs text-white/35">
+                      {planStatus.subscription.cancelAtPeriodEnd ? "Cancels" : "Renews"}{" "}
+                      {new Date(planStatus.subscription.currentPeriodEnd).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    </div>
+                  )}
+                </div>
+                <Link href="/agents" className="shrink-0 rounded-lg border border-teal-500/30 bg-teal-500/15 px-4 py-2 text-sm font-medium text-teal-300 transition hover:bg-teal-500/25">
+                  Manage Agents
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 text-center">
+              <div className="text-sm font-medium text-white/60 mb-1">No active plan</div>
+              <p className="text-xs text-white/35 mb-4">Subscribe to unlock AI agents for your workspace.</p>
+              <Link href="/pricing" className="inline-block rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-teal-500">
+                View Plans
+              </Link>
+            </div>
+          )}
+
+          {/* Plan comparison */}
+          <div>
+            <div className="text-xs uppercase tracking-wider text-white/35 mb-4">Available Plans</div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {PLAN_CATALOG.map((plan) => {
+                const isCurrent = planStatus.plan?.name === plan.name;
+                return (
+                  <div
+                    key={plan.slug}
+                    className={`rounded-xl border p-4 ${isCurrent ? "border-teal-500/40 bg-teal-500/8" : "border-white/8 bg-white/[0.02]"}`}
+                  >
+                    {isCurrent && (
+                      <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-teal-400">Current</div>
+                    )}
+                    <div className="text-sm font-semibold text-white/80">{plan.name}</div>
+                    <div className="mt-0.5 text-lg font-bold text-white/90">{plan.priceDisplay}<span className="text-xs font-normal text-white/35">{plan.priceNote}</span></div>
+                    <div className="mt-2 text-xs text-white/40">{plan.agentCap} agents</div>
+                    {!isCurrent && (
+                      <Link
+                        href={plan.ctaMode === "checkout" ? "/pricing" : "/pricing"}
+                        className="mt-3 block rounded-md border border-white/12 px-3 py-1.5 text-center text-xs font-medium text-white/55 transition hover:border-white/20 hover:text-white/75"
+                      >
+                        {plan.ctaText}
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* License key redemption */}
+          <RedeemLicenseKeyForm />
         </div>
       ) : null}
 

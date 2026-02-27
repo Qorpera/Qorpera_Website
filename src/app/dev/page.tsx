@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getAllUsersWithStats, getManualLicenses, getDevStats } from "@/lib/admin-store";
 import { listFeatureFlags } from "@/lib/feature-flags-store";
+import { listPlanLicenseKeys } from "@/lib/plan-license-keys-store";
 import { DevDashboard } from "@/components/dev-dashboard";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +15,10 @@ export default async function DevPage() {
     notFound();
   }
 
-  const [users, manualLicenses, stats, flags] = await Promise.all([
+  const [users, manualLicenses, planLicenseKeys, stats, flags] = await Promise.all([
     getAllUsersWithStats(),
     getManualLicenses(),
+    listPlanLicenseKeys(session.userId),
     getDevStats(),
     listFeatureFlags(),
   ]);
@@ -38,6 +40,16 @@ export default async function DevPage() {
       manualLicenses={manualLicenses.map((l) => ({
         ...l,
         createdAt: l.createdAt.toISOString(),
+      }))}
+      planLicenseKeys={planLicenseKeys.map((k) => ({
+        id: k.id,
+        tier: k.tier,
+        code: k.code,
+        status: k.status,
+        redeemedBy: k.redeemedBy,
+        redeemedAt: k.redeemedAt?.toISOString() ?? null,
+        revokedAt: k.revokedAt?.toISOString() ?? null,
+        createdAt: k.createdAt.toISOString(),
       }))}
       stats={stats}
       flags={flags}
