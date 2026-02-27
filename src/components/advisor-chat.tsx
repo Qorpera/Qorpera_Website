@@ -248,8 +248,12 @@ export function AdvisorChat({
         throw new Error(payload.error || "Advisor request failed");
       }
       if (payload.sessionId) {
+        const isNewSession = !activeSessionId;
         setActiveSessionId(payload.sessionId);
-        if (mode === "home") router.replace(`/?session=${payload.sessionId}`, { scroll: false });
+        if (mode === "home") {
+          router.replace(`/?session=${payload.sessionId}`, { scroll: false });
+          if (isNewSession) router.refresh();
+        }
       }
 
       // Build task cards from delegated tasks
@@ -452,7 +456,7 @@ export function AdvisorChat({
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={onComposerKeyDown}
                 placeholder={mode === "home" ? "Ask what the business should focus on this week..." : "Ask how to orchestrate this project and which agents to hire..."}
-                className={`h-20 w-full resize-none ${frameless ? "bg-transparent" : "rounded-2xl border border-[var(--border)] bg-white/90"} p-2 text-[1.02rem] leading-7 outline-none`}
+                className={`h-20 w-full resize-none bg-transparent ${frameless ? "" : "rounded-2xl border border-[var(--border)]"} p-2 text-[1.02rem] leading-7 outline-none`}
               />
               <div className="mt-1 flex items-center justify-end gap-2 px-2 pb-1">
                 <button
