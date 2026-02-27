@@ -516,13 +516,13 @@ export function CloudConnectorWizard({ initial }: { initial: CloudConnectorView[
               {current.lastTestStatus ? (
                 <div className="mt-1 flex items-center justify-between gap-2">
                   <span className="wf-muted">Last test</span>
-                  <span className={`font-medium text-xs ${current.lastTestStatus === "ok" ? "text-emerald-300" : "text-rose-300"}`}>
-                    {current.lastTestStatus === "ok" ? "Passed" : "Failed"}
+                  <span className={`font-medium text-xs ${current.lastTestStatus === "PASSED" ? "text-emerald-300" : "text-rose-300"}`}>
+                    {current.lastTestStatus === "PASSED" ? "Passed" : "Failed"}
                     {current.lastTestedAt ? ` · ${new Date(current.lastTestedAt).toLocaleString()}` : ""}
                   </span>
                 </div>
               ) : null}
-              {current.lastTestMessage && current.lastTestStatus !== "ok" ? (
+              {current.lastTestMessage && current.lastTestStatus !== "PASSED" ? (
                 <div className="mt-1 text-xs text-rose-300/80">{current.lastTestMessage}</div>
               ) : null}
               {current.hasStoredKey ? (
@@ -541,8 +541,8 @@ export function CloudConnectorWizard({ initial }: { initial: CloudConnectorView[
         </div>
       ) : null}
 
-      {status ? <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{status}</div> : null}
-      {error ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</div> : null}
+      {status ? <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">{status}</div> : null}
+      {error ? <div className="mt-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</div> : null}
     </section>
   );
 }
