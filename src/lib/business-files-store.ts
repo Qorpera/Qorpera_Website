@@ -1,8 +1,9 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import { BusinessFileCategory, BusinessLogSource } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { eventBus } from "@/lib/event-bus";
+import { extractTextFromBuffer } from "@/lib/text-extraction";
 
 const STORAGE_ROOT = path.join(process.cwd(), ".data", "business-files");
 const MAX_STORED_FILE_BYTES = 15 * 1024 * 1024;
@@ -90,10 +91,7 @@ export async function createBusinessFileFromUpload(input: {
   const absPath = path.join(folder, stamped);
   await writeFile(absPath, input.bytes);
 
-  let textExtract: string | null = null;
-  if (extIsText(input.fileName, input.mimeType ?? null)) {
-    textExtract = Buffer.from(input.bytes).toString("utf8").slice(0, 20000);
-  }
+  const textExtract = await extractTextFromBuffer(input.fileName, input.bytes);
 
   const category =
     input.category && input.category in BusinessFileCategory
@@ -141,6 +139,29 @@ export async function createBusinessFileFromUpload(input: {
   return row;
 }
 
+export async function deleteBusinessFile(userId: string, fileId: string) {
+  const row = await prisma.businessFile.findFirst({ where: { id: fileId, userId } });
+  if (!row) throw new Error("File not found");
+
+  try {
+    await unlink(row.storagePath);
+  } catch {
+    // file already gone from disk — fine
+  }
+
+  await prisma.businessFile.delete({ where: { id: fileId } });
+
+  await prisma.auditLog.create({
+    data: {
+      userId,
+      scope: "BUSINESS_FILE",
+      entityId: row.id,
+      action: "DELETE",
+      summary: `Deleted business file: ${row.name}`,
+    },
+  });
+}
+
 export function summarizeBusinessFilesForAdvisor(
   rows: Array<{
     name: string;
@@ -163,6 +184,6 @@ export function summarizeBusinessFilesForAdvisor(
     author: row.authorLabel,
     relatedRef: row.relatedRef,
     createdAt: row.createdAt.toISOString(),
-    textExtract: row.textExtract ? (row.textExtract.length > 3000 ? row.textExtract.slice(0, 3000) + "..." : row.textExtract) : null,
+    textExtract: row.textExtract ? (row.textExtract.length > 1500 ? row.textExtract.slice(0, 1500) + "..." : row.textExtract) : null,
   }));
 }

@@ -46,6 +46,8 @@ export function BusinessLogsPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"files" | "notes" | "chat">("files");
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const chatLogs = logs.filter((log) => (log.relatedRef ?? "").startsWith("CHAT_LOG:"));
   const noteLogs = logs.filter((log) => !(log.relatedRef ?? "").startsWith("CHAT_LOG:"));
 
@@ -66,6 +68,23 @@ export function BusinessLogsPanel({
       setError(e instanceof Error ? e.message : "Failed to import files");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function deleteFile(fileId: string) {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/business-logs/files/${fileId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error || "Delete failed");
+      }
+      setFiles((curr) => curr.filter((f) => f.id !== fileId));
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to delete file");
+    } finally {
+      setDeleting(false);
+      setConfirmingDelete(null);
     }
   }
 
@@ -162,18 +181,19 @@ export function BusinessLogsPanel({
         </div>
 
         <div className="rounded-2xl border border-[var(--border)] overflow-hidden">
-          <div className="grid grid-cols-[1.3fr_120px_120px_140px] gap-2 border-b border-[var(--border)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-xs uppercase tracking-[0.14em] wf-muted">
+          <div className="grid grid-cols-[1.3fr_120px_120px_140px_40px] gap-2 border-b border-[var(--border)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-xs uppercase tracking-[0.14em] wf-muted">
             <div>Name</div>
             <div>Category</div>
             <div>Source</div>
             <div>Updated</div>
+            <div></div>
           </div>
           <div className="max-h-[420px] overflow-y-auto">
             {files.length === 0 ? (
               <div className="px-4 py-4 text-sm wf-muted">No files uploaded yet.</div>
             ) : (
               files.map((file) => (
-                <div key={file.id} className="grid grid-cols-[1.3fr_120px_120px_140px] gap-2 border-b border-[rgba(255,255,255,0.04)] px-4 py-3 text-sm">
+                <div key={file.id} className="grid grid-cols-[1.3fr_120px_120px_140px_40px] gap-2 border-b border-[rgba(255,255,255,0.04)] px-4 py-3 text-sm">
                   <div className="min-w-0">
                     <a
                       href={`/api/business-logs/files/${file.id}`}
@@ -192,6 +212,38 @@ export function BusinessLogsPanel({
                   <div className="truncate">{String(file.source ?? "").toLowerCase()}</div>
                   <div className="truncate text-xs wf-muted">
                     {file.updatedAt ? new Date(String(file.updatedAt)).toLocaleDateString() : file.createdAt ? new Date(String(file.createdAt)).toLocaleDateString() : ""}
+                  </div>
+                  <div className="flex items-center justify-center">
+                    {confirmingDelete === file.id ? (
+                      <span className="flex items-center gap-1 text-[10px]">
+                        <button
+                          type="button"
+                          disabled={deleting}
+                          onClick={() => void deleteFile(file.id)}
+                          className="rounded-md border border-rose-500/30 bg-rose-500/10 px-1.5 py-0.5 text-rose-300 transition hover:bg-rose-500/20 disabled:opacity-50"
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingDelete(null)}
+                          className="rounded-md border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-white/50 transition hover:bg-white/[0.06]"
+                        >
+                          No
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingDelete(file.id)}
+                        className="rounded p-1 text-white/35 transition hover:bg-rose-500/15 hover:text-rose-300"
+                        title="Delete file"
+                      >
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                          <path d="M7.5 3.5h5m-7 2h9m-1 0-.7 9.1a1.5 1.5 0 0 1-1.49 1.39H8.69A1.5 1.5 0 0 1 7.2 14.6L6.5 5.5m2.25 2.5v5m3-5v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
               ))
