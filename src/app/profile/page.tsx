@@ -13,6 +13,7 @@ import { kindLabel } from "@/lib/format";
 import { getPlanStatus } from "@/lib/plan-store";
 import { PLAN_CATALOG } from "@/lib/plan-catalog";
 import { RedeemLicenseKeyForm } from "@/components/redeem-license-key-form";
+import { CancelPlanButton } from "@/components/cancel-plan-button";
 
 export default async function ProfilePage({
   searchParams,
@@ -286,6 +287,7 @@ export default async function ProfilePage({
                       {new Date(planStatus.subscription.currentPeriodEnd).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                     </div>
                   )}
+                  {!planStatus.subscription?.cancelAtPeriodEnd && <CancelPlanButton />}
                 </div>
                 <Link href="/agents" className="shrink-0 rounded-lg border border-teal-500/30 bg-teal-500/15 px-4 py-2 text-sm font-medium text-teal-300 transition hover:bg-teal-500/25">
                   Manage Agents
