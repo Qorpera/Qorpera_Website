@@ -739,6 +739,9 @@ function integrationNotConnected(provider: string): string {
     slack: "Slack",
     google: "Google Workspace",
     linear: "Linear",
+    jira: "Jira",
+    notion: "Notion",
+    github: "GitHub",
   };
   return `Error: ${labels[provider] ?? provider} not connected. Go to Settings → Integrations to connect.`;
 }
@@ -1411,6 +1414,598 @@ async function handleStripeListInvoices(args: Record<string, unknown>, ctx: Tool
   }
 }
 
+async function handleStripeGetCustomer(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "STRIPE_SECRET_KEY");
+  if (!apiKey) return "Error: STRIPE_SECRET_KEY not configured. Add it in Settings → Skills.";
+  const customerId = String(args.customer_id ?? "");
+  if (!customerId) return "Error: customer_id is required";
+  try {
+    const { getCustomer } = await import("@/lib/integrations/stripe-finance");
+    const data = await getCustomer(apiKey, customerId);
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleStripeCreateCustomer(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "STRIPE_SECRET_KEY");
+  if (!apiKey) return "Error: STRIPE_SECRET_KEY not configured. Add it in Settings → Skills.";
+  try {
+    const { createCustomer } = await import("@/lib/integrations/stripe-finance");
+    const data = await createCustomer(apiKey, {
+      email: args.email ? String(args.email) : undefined,
+      name: args.name ? String(args.name) : undefined,
+      description: args.description ? String(args.description) : undefined,
+    });
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleStripeGetInvoice(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "STRIPE_SECRET_KEY");
+  if (!apiKey) return "Error: STRIPE_SECRET_KEY not configured. Add it in Settings → Skills.";
+  const invoiceId = String(args.invoice_id ?? "");
+  if (!invoiceId) return "Error: invoice_id is required";
+  try {
+    const { getInvoice } = await import("@/lib/integrations/stripe-finance");
+    const data = await getInvoice(apiKey, invoiceId);
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleStripeCreateInvoice(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "STRIPE_SECRET_KEY");
+  if (!apiKey) return "Error: STRIPE_SECRET_KEY not configured. Add it in Settings → Skills.";
+  const customerId = String(args.customer_id ?? "");
+  if (!customerId) return "Error: customer_id is required";
+  try {
+    const { createInvoice } = await import("@/lib/integrations/stripe-finance");
+    const data = await createInvoice(apiKey, customerId, args.description ? String(args.description) : undefined);
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleStripeGetSubscription(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "STRIPE_SECRET_KEY");
+  if (!apiKey) return "Error: STRIPE_SECRET_KEY not configured. Add it in Settings → Skills.";
+  const subscriptionId = String(args.subscription_id ?? "");
+  if (!subscriptionId) return "Error: subscription_id is required";
+  try {
+    const { getSubscription } = await import("@/lib/integrations/stripe-finance");
+    const data = await getSubscription(apiKey, subscriptionId);
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleStripeListCharges(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "STRIPE_SECRET_KEY");
+  if (!apiKey) return "Error: STRIPE_SECRET_KEY not configured. Add it in Settings → Skills.";
+  try {
+    const { listCharges } = await import("@/lib/integrations/stripe-finance");
+    const limit = Math.min(Number(args.limit) || 20, 100);
+    const data = await listCharges(apiKey, limit);
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleStripeGetBalanceTransactions(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "STRIPE_SECRET_KEY");
+  if (!apiKey) return "Error: STRIPE_SECRET_KEY not configured. Add it in Settings → Skills.";
+  try {
+    const { getBalanceTransactions } = await import("@/lib/integrations/stripe-finance");
+    const limit = Math.min(Number(args.limit) || 20, 100);
+    const data = await getBalanceTransactions(apiKey, limit);
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleStripeListProducts(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "STRIPE_SECRET_KEY");
+  if (!apiKey) return "Error: STRIPE_SECRET_KEY not configured. Add it in Settings → Skills.";
+  try {
+    const { listProducts } = await import("@/lib/integrations/stripe-finance");
+    const limit = Math.min(Number(args.limit) || 20, 100);
+    const data = await listProducts(apiKey, limit);
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleStripeListPrices(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "STRIPE_SECRET_KEY");
+  if (!apiKey) return "Error: STRIPE_SECRET_KEY not configured. Add it in Settings → Skills.";
+  try {
+    const { listPrices } = await import("@/lib/integrations/stripe-finance");
+    const limit = Math.min(Number(args.limit) || 20, 100);
+    const data = await listPrices(apiKey, limit);
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+// --- Expanded HubSpot ---
+
+async function handleHubspotCreateDeal(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  try {
+    const properties = (typeof args.properties === "object" && args.properties !== null ? args.properties : {}) as Record<string, string>;
+    const { createDeal } = await import("@/lib/integrations/hubspot");
+    return JSON.stringify(await createDeal(token, properties), null, 2);
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleHubspotUpdateDeal(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  const dealId = String(args.deal_id ?? "");
+  if (!dealId) return "Error: deal_id is required";
+  try {
+    const properties = (typeof args.properties === "object" && args.properties !== null ? args.properties : {}) as Record<string, string>;
+    const { updateDeal } = await import("@/lib/integrations/hubspot");
+    return JSON.stringify(await updateDeal(token, dealId, properties), null, 2);
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleHubspotGetDeal(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  const dealId = String(args.deal_id ?? "");
+  if (!dealId) return "Error: deal_id is required";
+  try {
+    const { getDeal } = await import("@/lib/integrations/hubspot");
+    return JSON.stringify(await getDeal(token, dealId), null, 2);
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleHubspotListPipelineStages(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  try {
+    const { listPipelineStages } = await import("@/lib/integrations/hubspot");
+    return JSON.stringify(await listPipelineStages(token, args.pipeline_id ? String(args.pipeline_id) : "default"), null, 2);
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleHubspotCreateCompany(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  try {
+    const properties = (typeof args.properties === "object" && args.properties !== null ? args.properties : {}) as Record<string, string>;
+    const { createCompany } = await import("@/lib/integrations/hubspot");
+    return JSON.stringify(await createCompany(token, properties), null, 2);
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleHubspotSearchCompanies(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  try {
+    const { searchCompanies } = await import("@/lib/integrations/hubspot");
+    const data = await searchCompanies(token, String(args.query ?? ""));
+    const results = (data as Record<string, unknown>).results as unknown[] | undefined;
+    return JSON.stringify(results?.slice(0, 20) ?? [], null, 2);
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleHubspotListActivities(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  const contactId = String(args.contact_id ?? "");
+  if (!contactId) return "Error: contact_id is required";
+  try {
+    const { listActivities } = await import("@/lib/integrations/hubspot");
+    return JSON.stringify(await listActivities(token, contactId), null, 2);
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleHubspotCreateEngagement(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  const contactId = String(args.contact_id ?? "");
+  const type = String(args.type ?? "NOTE").toUpperCase() as "NOTE" | "EMAIL" | "CALL" | "MEETING" | "TASK";
+  const body = String(args.body ?? "");
+  if (!contactId || !body) return "Error: contact_id and body are required";
+  try {
+    const { createEngagement } = await import("@/lib/integrations/hubspot");
+    return JSON.stringify(await createEngagement(token, type, contactId, body), null, 2);
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleHubspotListContactLists(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  void args;
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  try {
+    const { listContactLists } = await import("@/lib/integrations/hubspot");
+    return JSON.stringify(await listContactLists(token), null, 2);
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleHubspotGetCustomProperties(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "hubspot");
+  if (!token) return integrationNotConnected("hubspot");
+  const objectType = (args.object_type === "deals" || args.object_type === "companies") ? args.object_type : "contacts";
+  try {
+    const { getCustomProperties } = await import("@/lib/integrations/hubspot");
+    return JSON.stringify(await getCustomProperties(token, objectType as "contacts" | "deals" | "companies"), null, 2).slice(0, 8000);
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+// --- Expanded Slack ---
+
+async function handleSlackAddReaction(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "slack");
+  if (!token) return integrationNotConnected("slack");
+  const channel = String(args.channel ?? ""), timestamp = String(args.timestamp ?? ""), name = String(args.name ?? "");
+  if (!channel || !timestamp || !name) return "Error: channel, timestamp, and name are required";
+  try { const { addReaction } = await import("@/lib/integrations/slack"); await addReaction(token, channel, timestamp, name); return `Reaction :${name}: added.`; }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleSlackReplyToThread(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "slack");
+  if (!token) return integrationNotConnected("slack");
+  const channel = String(args.channel ?? ""), threadTs = String(args.thread_ts ?? ""), text = String(args.text ?? "");
+  if (!channel || !threadTs || !text) return "Error: channel, thread_ts, and text are required";
+  try { const { replyToThread } = await import("@/lib/integrations/slack"); await replyToThread(token, channel, threadTs, text); return `Reply sent to thread in ${channel}.`; }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleSlackCreateChannel(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "slack");
+  if (!token) return integrationNotConnected("slack");
+  const name = String(args.name ?? "");
+  if (!name) return "Error: name is required";
+  try { const { createChannel } = await import("@/lib/integrations/slack"); const data = await createChannel(token, name, args.is_private === true);
+    const ch = (data as Record<string, unknown>).channel as { id?: string; name?: string } | undefined;
+    return JSON.stringify({ id: ch?.id, name: ch?.name }, null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleSlackInviteToChannel(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "slack");
+  if (!token) return integrationNotConnected("slack");
+  const channel = String(args.channel ?? ""), users = String(args.users ?? "");
+  if (!channel || !users) return "Error: channel and users are required";
+  try { const { inviteToChannel } = await import("@/lib/integrations/slack"); await inviteToChannel(token, channel, users); return `Users invited to ${channel}.`; }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleSlackLookupUser(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "slack");
+  if (!token) return integrationNotConnected("slack");
+  const email = String(args.email ?? "");
+  if (!email) return "Error: email is required";
+  try { const { lookupUser } = await import("@/lib/integrations/slack"); const data = await lookupUser(token, email);
+    return JSON.stringify((data as Record<string, unknown>).user ?? {}, null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleSlackListUsers(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  void args;
+  const token = await getIntegrationToken(ctx.userId, "slack");
+  if (!token) return integrationNotConnected("slack");
+  try { const { listUsers } = await import("@/lib/integrations/slack"); const data = await listUsers(token);
+    type SlackUser = { id: string; name: string; real_name?: string; is_bot?: boolean };
+    const members = (data as Record<string, unknown>).members as SlackUser[] | undefined;
+    return JSON.stringify(members?.filter((m) => !m.is_bot).slice(0, 50).map((m) => ({ id: m.id, name: m.name, realName: m.real_name })) ?? [], null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleSlackScheduleMessage(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "slack");
+  if (!token) return integrationNotConnected("slack");
+  const channel = String(args.channel ?? ""), text = String(args.text ?? ""), postAt = Number(args.post_at ?? 0);
+  if (!channel || !text || !postAt) return "Error: channel, text, and post_at (Unix timestamp) are required";
+  try { const { scheduleMessage } = await import("@/lib/integrations/slack"); return JSON.stringify(await scheduleMessage(token, channel, text, postAt), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleSlackSetChannelTopic(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "slack");
+  if (!token) return integrationNotConnected("slack");
+  const channel = String(args.channel ?? ""), topic = String(args.topic ?? "");
+  if (!channel || !topic) return "Error: channel and topic are required";
+  try { const { setChannelTopic } = await import("@/lib/integrations/slack"); await setChannelTopic(token, channel, topic); return `Channel topic updated.`; }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+// --- Expanded Linear ---
+
+async function handleLinearListProjects(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  void args; const token = await getIntegrationToken(ctx.userId, "linear"); if (!token) return integrationNotConnected("linear");
+  try { const { listProjects } = await import("@/lib/integrations/linear"); return JSON.stringify(await listProjects(token), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleLinearCreateProject(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "linear"); if (!token) return integrationNotConnected("linear");
+  const teamIds = Array.isArray(args.team_ids) ? (args.team_ids as string[]) : [String(args.team_id ?? "")];
+  const name = String(args.name ?? "");
+  if (!name || !teamIds[0]) return "Error: name and team_ids are required";
+  try { const { createProject } = await import("@/lib/integrations/linear"); return JSON.stringify(await createProject(token, teamIds, name, args.description ? String(args.description) : undefined), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleLinearListLabels(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  void args; const token = await getIntegrationToken(ctx.userId, "linear"); if (!token) return integrationNotConnected("linear");
+  try { const { listLabels } = await import("@/lib/integrations/linear"); return JSON.stringify(await listLabels(token), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleLinearCreateComment(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "linear"); if (!token) return integrationNotConnected("linear");
+  const issueId = String(args.issue_id ?? ""), body = String(args.body ?? "");
+  if (!issueId || !body) return "Error: issue_id and body are required";
+  try { const { createComment } = await import("@/lib/integrations/linear"); return JSON.stringify(await createComment(token, issueId, body), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleLinearListCycles(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "linear"); if (!token) return integrationNotConnected("linear");
+  const teamId = String(args.team_id ?? ""); if (!teamId) return "Error: team_id is required";
+  try { const { listCycles } = await import("@/lib/integrations/linear"); return JSON.stringify(await listCycles(token, teamId), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleLinearGetRoadmap(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  void args; const token = await getIntegrationToken(ctx.userId, "linear"); if (!token) return integrationNotConnected("linear");
+  try { const { getRoadmap } = await import("@/lib/integrations/linear"); return JSON.stringify(await getRoadmap(token), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleLinearUpdateProject(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "linear"); if (!token) return integrationNotConnected("linear");
+  const projectId = String(args.project_id ?? ""); if (!projectId) return "Error: project_id is required";
+  try { const input = (typeof args.input === "object" && args.input !== null ? args.input : {}) as Record<string, unknown>;
+    const { updateProject } = await import("@/lib/integrations/linear"); return JSON.stringify(await updateProject(token, projectId, input), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleLinearGetIssueHistory(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "linear"); if (!token) return integrationNotConnected("linear");
+  const issueId = String(args.issue_id ?? ""); if (!issueId) return "Error: issue_id is required";
+  try { const { getIssueHistory } = await import("@/lib/integrations/linear"); return JSON.stringify(await getIssueHistory(token, issueId), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+// --- Expanded Notion ---
+
+async function handleNotionQueryDatabase(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "notion"); if (!token) return integrationNotConnected("notion");
+  const databaseId = String(args.database_id ?? ""); if (!databaseId) return "Error: database_id is required";
+  try { const { queryDatabase } = await import("@/lib/integrations/notion");
+    const filter = (typeof args.filter === "object" && args.filter !== null) ? args.filter as Record<string, unknown> : undefined;
+    return JSON.stringify(await queryDatabase(token, databaseId, filter, undefined, Number(args.limit) || 20), null, 2).slice(0, 12000); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleNotionCreateDatabaseEntry(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "notion"); if (!token) return integrationNotConnected("notion");
+  const databaseId = String(args.database_id ?? ""); if (!databaseId) return "Error: database_id is required";
+  try { const properties = (typeof args.properties === "object" && args.properties !== null ? args.properties : {}) as Record<string, unknown>;
+    const { createDatabaseEntry } = await import("@/lib/integrations/notion"); return JSON.stringify(await createDatabaseEntry(token, databaseId, properties), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleNotionUpdatePage(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "notion"); if (!token) return integrationNotConnected("notion");
+  const pageId = String(args.page_id ?? ""); if (!pageId) return "Error: page_id is required";
+  try { const properties = (typeof args.properties === "object" && args.properties !== null ? args.properties : {}) as Record<string, unknown>;
+    const { updatePage } = await import("@/lib/integrations/notion"); return JSON.stringify(await updatePage(token, pageId, properties), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleNotionDeletePage(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "notion"); if (!token) return integrationNotConnected("notion");
+  const pageId = String(args.page_id ?? ""); if (!pageId) return "Error: page_id is required";
+  try { const { deletePage } = await import("@/lib/integrations/notion"); await deletePage(token, pageId); return `Page ${pageId} archived.`; }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleNotionListDatabases(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  void args; const token = await getIntegrationToken(ctx.userId, "notion"); if (!token) return integrationNotConnected("notion");
+  try { const { listDatabases } = await import("@/lib/integrations/notion"); return JSON.stringify(await listDatabases(token), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+// --- Expanded GitHub ---
+
+async function handleGithubCreatePR(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "github"); if (!token) return integrationNotConnected("github");
+  const repo = String(args.repo ?? ""), title = String(args.title ?? ""), head = String(args.head ?? ""), base = String(args.base ?? "");
+  if (!repo || !title || !head || !base) return "Error: repo, title, head, and base are required";
+  try { const { createPullRequest } = await import("@/lib/integrations/github");
+    const pr = await createPullRequest(token, repo, { title, head, base, body: args.body ? String(args.body) : undefined, draft: args.draft === true });
+    return JSON.stringify({ number: pr.number, title: pr.title, url: pr.html_url }, null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleGithubMergePR(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "github"); if (!token) return integrationNotConnected("github");
+  const repo = String(args.repo ?? ""), pullNumber = Number(args.pull_number ?? 0);
+  if (!repo || !pullNumber) return "Error: repo and pull_number are required";
+  try { const mergeMethod = (args.merge_method === "squash" || args.merge_method === "rebase") ? args.merge_method : "merge";
+    const { mergePullRequest } = await import("@/lib/integrations/github"); await mergePullRequest(token, repo, pullNumber, mergeMethod); return `PR #${pullNumber} merged.`; }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleGithubListWorkflowRuns(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "github"); if (!token) return integrationNotConnected("github");
+  const repo = String(args.repo ?? ""); if (!repo) return "Error: repo is required";
+  try { const { listWorkflowRuns } = await import("@/lib/integrations/github");
+    const data = await listWorkflowRuns(token, repo, Math.min(Number(args.limit) || 10, 20));
+    return JSON.stringify(data.workflow_runs.map((r) => ({ id: r.id, name: r.name, status: r.status, conclusion: r.conclusion, createdAt: r.created_at })), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleGithubTriggerWorkflow(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "github"); if (!token) return integrationNotConnected("github");
+  const repo = String(args.repo ?? ""), workflowId = String(args.workflow_id ?? ""), ref = String(args.ref ?? "main");
+  if (!repo || !workflowId) return "Error: repo and workflow_id are required";
+  try { const inputs = (typeof args.inputs === "object" && args.inputs !== null ? args.inputs : undefined) as Record<string, string> | undefined;
+    const { triggerWorkflow } = await import("@/lib/integrations/github"); await triggerWorkflow(token, repo, workflowId, ref, inputs); return `Workflow ${workflowId} triggered on ${ref}.`; }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleGithubAddLabel(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "github"); if (!token) return integrationNotConnected("github");
+  const repo = String(args.repo ?? ""), issueNumber = Number(args.issue_number ?? 0);
+  const labels = Array.isArray(args.labels) ? (args.labels as string[]) : [];
+  if (!repo || !issueNumber || !labels.length) return "Error: repo, issue_number, and labels are required";
+  try { const { addLabel } = await import("@/lib/integrations/github"); await addLabel(token, repo, issueNumber, labels); return `Labels added to #${issueNumber}: ${labels.join(", ")}`; }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleGithubUpdateIssue(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "github"); if (!token) return integrationNotConnected("github");
+  const repo = String(args.repo ?? ""), issueNumber = Number(args.issue_number ?? 0);
+  if (!repo || !issueNumber) return "Error: repo and issue_number are required";
+  try { const data: Record<string, unknown> = {};
+    if (args.title) data.title = String(args.title); if (args.body) data.body = String(args.body); if (args.state) data.state = String(args.state);
+    const { updateIssue } = await import("@/lib/integrations/github"); await updateIssue(token, repo, issueNumber, data as Parameters<typeof updateIssue>[3]); return `Issue #${issueNumber} updated.`; }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleGithubCreateComment(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "github"); if (!token) return integrationNotConnected("github");
+  const repo = String(args.repo ?? ""), issueNumber = Number(args.issue_number ?? 0), body = String(args.body ?? "");
+  if (!repo || !issueNumber || !body) return "Error: repo, issue_number, and body are required";
+  try { const { createComment } = await import("@/lib/integrations/github"); const result = await createComment(token, repo, issueNumber, body);
+    return JSON.stringify({ id: result.id, url: result.html_url }, null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleGithubListBranches(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "github"); if (!token) return integrationNotConnected("github");
+  const repo = String(args.repo ?? ""); if (!repo) return "Error: repo is required";
+  try { const { listBranches } = await import("@/lib/integrations/github"); const branches = await listBranches(token, repo);
+    return JSON.stringify(branches.map((b) => ({ name: b.name, protected: b.protected, sha: b.commit.sha })), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleGithubGetCommit(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "github"); if (!token) return integrationNotConnected("github");
+  const repo = String(args.repo ?? ""), ref = String(args.ref ?? "");
+  if (!repo || !ref) return "Error: repo and ref are required";
+  try { const { getCommit } = await import("@/lib/integrations/github"); const c = await getCommit(token, repo, ref);
+    return JSON.stringify({ sha: c.sha, message: c.commit.message, author: c.commit.author.name, date: c.commit.author.date, stats: c.stats }, null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleGithubCompareCommits(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "github"); if (!token) return integrationNotConnected("github");
+  const repo = String(args.repo ?? ""), base = String(args.base ?? ""), head = String(args.head ?? "");
+  if (!repo || !base || !head) return "Error: repo, base, and head are required";
+  try { const { compareCommits } = await import("@/lib/integrations/github"); const data = await compareCommits(token, repo, base, head);
+    return JSON.stringify({ status: data.status, aheadBy: data.ahead_by, behindBy: data.behind_by, totalCommits: data.total_commits,
+      commits: data.commits.slice(0, 20).map((c) => ({ sha: c.sha.slice(0, 7), message: c.commit.message })),
+      files: data.files.slice(0, 30).map((f) => ({ file: f.filename, status: f.status, additions: f.additions, deletions: f.deletions })) }, null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+// --- Jira ---
+
+async function getJiraContext(userId: string): Promise<{ token: string; cloudId: string } | null> {
+  const token = await getIntegrationToken(userId, "jira");
+  if (!token) return null;
+  const conn = await (await import("@/lib/integrations/token-store")).getConnection(userId, "jira");
+  const meta = conn?.metadataJson ? (JSON.parse(conn.metadataJson) as Record<string, string>) : {};
+  if (!meta.cloud_id) return null;
+  return { token, cloudId: meta.cloud_id };
+}
+
+async function handleJiraListProjects(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  void args; const jira = await getJiraContext(ctx.userId); if (!jira) return integrationNotConnected("jira");
+  try { const { listProjects } = await import("@/lib/integrations/jira"); return JSON.stringify(await listProjects(jira.token, jira.cloudId), null, 2).slice(0, 8000); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleJiraListIssues(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const jira = await getJiraContext(ctx.userId); if (!jira) return integrationNotConnected("jira");
+  try { const { listIssues } = await import("@/lib/integrations/jira");
+    return JSON.stringify(await listIssues(jira.token, jira.cloudId, String(args.jql ?? "order by updated DESC"), Number(args.limit) || 20), null, 2).slice(0, 8000); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleJiraGetIssue(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const jira = await getJiraContext(ctx.userId); if (!jira) return integrationNotConnected("jira");
+  const key = String(args.issue_key ?? ""); if (!key) return "Error: issue_key is required";
+  try { const { getIssue } = await import("@/lib/integrations/jira"); return JSON.stringify(await getIssue(jira.token, jira.cloudId, key), null, 2).slice(0, 8000); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleJiraCreateIssue(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const jira = await getJiraContext(ctx.userId); if (!jira) return integrationNotConnected("jira");
+  const projectKey = String(args.project_key ?? ""), summary = String(args.summary ?? ""), issueType = String(args.issue_type ?? "Task");
+  if (!projectKey || !summary) return "Error: project_key and summary are required";
+  try { const { createIssue } = await import("@/lib/integrations/jira");
+    return JSON.stringify(await createIssue(jira.token, jira.cloudId, projectKey, summary, issueType, args.description ? String(args.description) : undefined), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleJiraUpdateIssue(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const jira = await getJiraContext(ctx.userId); if (!jira) return integrationNotConnected("jira");
+  const key = String(args.issue_key ?? ""); if (!key) return "Error: issue_key is required";
+  try { const fields = (typeof args.fields === "object" && args.fields !== null ? args.fields : {}) as Record<string, unknown>;
+    const { updateIssue } = await import("@/lib/integrations/jira"); await updateIssue(jira.token, jira.cloudId, key, fields); return `Issue ${key} updated.`; }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleJiraAddComment(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const jira = await getJiraContext(ctx.userId); if (!jira) return integrationNotConnected("jira");
+  const key = String(args.issue_key ?? ""), body = String(args.body ?? "");
+  if (!key || !body) return "Error: issue_key and body are required";
+  try { const { addComment } = await import("@/lib/integrations/jira"); return JSON.stringify(await addComment(jira.token, jira.cloudId, key, body), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleJiraTransitionIssue(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const jira = await getJiraContext(ctx.userId); if (!jira) return integrationNotConnected("jira");
+  const key = String(args.issue_key ?? ""), transitionId = String(args.transition_id ?? "");
+  if (!key || !transitionId) return "Error: issue_key and transition_id are required";
+  try { const { transitionIssue } = await import("@/lib/integrations/jira"); await transitionIssue(jira.token, jira.cloudId, key, transitionId); return `Issue ${key} transitioned.`; }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleJiraListTransitions(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const jira = await getJiraContext(ctx.userId); if (!jira) return integrationNotConnected("jira");
+  const key = String(args.issue_key ?? ""); if (!key) return "Error: issue_key is required";
+  try { const { listTransitions } = await import("@/lib/integrations/jira"); return JSON.stringify(await listTransitions(jira.token, jira.cloudId, key), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleJiraAssignIssue(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const jira = await getJiraContext(ctx.userId); if (!jira) return integrationNotConnected("jira");
+  const key = String(args.issue_key ?? ""), accountId = String(args.account_id ?? "");
+  if (!key || !accountId) return "Error: issue_key and account_id are required";
+  try { const { assignIssue } = await import("@/lib/integrations/jira"); await assignIssue(jira.token, jira.cloudId, key, accountId); return `Issue ${key} assigned.`; }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleJiraSearchUsers(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const jira = await getJiraContext(ctx.userId); if (!jira) return integrationNotConnected("jira");
+  const query = String(args.query ?? ""); if (!query) return "Error: query is required";
+  try { const { searchUsers } = await import("@/lib/integrations/jira"); return JSON.stringify(await searchUsers(jira.token, jira.cloudId, query), null, 2); }
+  catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
 // --- Google Docs / Sheets write ---
 
 async function handleGoogleCreateDoc(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
@@ -1812,6 +2407,166 @@ async function handleSemanticSearchFiles(args: Record<string, unknown>, ctx: Too
   return lines.join("\n").trim();
 }
 
+// --- Channel messaging (Phase 2B) ---
+
+async function handleChannelSendMessage(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const channelType = String(args.channel_type ?? "SLACK").toUpperCase() as import("@/lib/channels/types").ChannelTypeName;
+  const contactId = String(args.contact_id ?? "");
+  const content = String(args.content ?? "");
+  if (!content) return "Error: content is required";
+  try {
+    const { getAdapter } = await import("@/lib/channels/channel-registry");
+    const { findOrCreateConversation, recordOutboundMessage } = await import("@/lib/channels/conversation-store");
+    const adapter = getAdapter(channelType);
+    if (!adapter) return `Error: Channel ${channelType} is not configured`;
+    const conversation = await findOrCreateConversation(ctx.userId, channelType, { externalContactId: contactId });
+    const result = await adapter.send(ctx.userId, {
+      channelType,
+      conversationId: conversation.id,
+      recipientId: contactId,
+      contentText: content,
+    });
+    if (!result.ok) return `Error sending message: ${result.error ?? "unknown"}`;
+    await recordOutboundMessage(conversation.id, { senderLabel: "agent", contentText: content, externalId: result.externalId ?? undefined });
+    return `Message sent via ${channelType} to ${contactId}. External ID: ${result.externalId ?? "n/a"}`;
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleChannelReply(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const conversationId = String(args.conversation_id ?? "");
+  const content = String(args.content ?? "");
+  if (!conversationId || !content) return "Error: conversation_id and content are required";
+  try {
+    const { recordOutboundMessage } = await import("@/lib/channels/conversation-store");
+    const { getAdapter } = await import("@/lib/channels/channel-registry");
+    const conversation = await import("@/lib/db").then(m => m.prisma.channelConversation.findUnique({ where: { id: conversationId } }));
+    if (!conversation || conversation.userId !== ctx.userId) return "Error: conversation not found";
+    const chType = conversation.channelType as import("@/lib/channels/types").ChannelTypeName;
+    const adapter = getAdapter(chType);
+    if (!adapter) return `Error: Channel ${chType} is not configured`;
+    const result = await adapter.send(ctx.userId, {
+      channelType: chType,
+      conversationId,
+      recipientId: conversation.externalContactId ?? "",
+      contentText: content,
+      threadId: conversation.externalThreadId ?? undefined,
+    });
+    if (!result.ok) return `Error: ${result.error ?? "unknown"}`;
+    await recordOutboundMessage(conversationId, { senderLabel: "agent", contentText: content, externalId: result.externalId ?? undefined });
+    return `Reply sent via ${chType}`;
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleChannelListConversations(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const channelType = args.channel_type ? String(args.channel_type).toUpperCase() : undefined;
+  const limit = Math.min(Number(args.limit ?? 10), 20);
+  try {
+    const { getActiveConversations } = await import("@/lib/channels/conversation-store");
+    const conversations = await getActiveConversations(ctx.userId, {
+      channelType: channelType as import("@/lib/channels/types").ChannelTypeName | undefined,
+      limit,
+    });
+    if (conversations.length === 0) return "No active conversations found.";
+    const lines = conversations.map((c) => {
+      const lastMsg = c.messages[0];
+      return `[${c.channelType}] ${c.externalContactId ?? c.externalThreadId ?? c.id} — agent: ${c.agentTarget ?? "unassigned"} — last: ${lastMsg?.contentText?.slice(0, 100) ?? "no messages"}`;
+    });
+    return `Active conversations (${conversations.length}):\n${lines.join("\n")}`;
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+// --- Agent-to-agent communication (Phase 3B) ---
+
+async function handleSendAgentMessage(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const taskGroupId = String(args.task_group_id ?? "");
+  const toAgent = String(args.to_agent ?? "");
+  const content = String(args.content ?? "");
+  const messageType = String(args.message_type ?? "INFO").toUpperCase();
+  if (!taskGroupId || !toAgent || !content) return "Error: task_group_id, to_agent, and content are required";
+  try {
+    const { sendAgentMessage } = await import("@/lib/task-group-store");
+    // Determine the current agent from context (the delegated task's toAgentTarget)
+    const task = await import("@/lib/db").then(m => m.prisma.delegatedTask.findUnique({ where: { id: ctx.delegatedTaskId }, select: { toAgentTarget: true } }));
+    const fromAgent = task?.toAgentTarget ?? "UNKNOWN";
+    await sendAgentMessage({ taskGroupId, fromAgent, toAgent, messageType, content: content.slice(0, 10000) });
+    return `Message sent to ${toAgent} (type: ${messageType})`;
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleReadAgentMessages(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const taskGroupId = String(args.task_group_id ?? "");
+  const limit = Math.min(Number(args.limit ?? 10), 20);
+  if (!taskGroupId) return "Error: task_group_id is required";
+  try {
+    const { getMessagesForAgent } = await import("@/lib/task-group-store");
+    const task = await import("@/lib/db").then(m => m.prisma.delegatedTask.findUnique({ where: { id: ctx.delegatedTaskId }, select: { toAgentTarget: true } }));
+    const agentKind = task?.toAgentTarget ?? "UNKNOWN";
+    const messages = await getMessagesForAgent(taskGroupId, agentKind, limit);
+    if (messages.length === 0) return "No messages in this task group.";
+    return messages.reverse().map((m) =>
+      `[${m.createdAt.toISOString().slice(0, 16)}] ${m.fromAgent}→${m.toAgent} (${m.messageType}): ${m.content.slice(0, 500)}`
+    ).join("\n");
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleWriteWorkspace(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const taskGroupId = String(args.task_group_id ?? "");
+  const key = String(args.key ?? "");
+  const value = String(args.value ?? "");
+  if (!taskGroupId || !key || !value) return "Error: task_group_id, key, and value are required";
+  try {
+    const { writeWorkspace } = await import("@/lib/task-group-store");
+    const task = await import("@/lib/db").then(m => m.prisma.delegatedTask.findUnique({ where: { id: ctx.delegatedTaskId }, select: { toAgentTarget: true } }));
+    const entry = await writeWorkspace(taskGroupId, key, value.slice(0, 20000), task?.toAgentTarget ?? "UNKNOWN");
+    return `Workspace entry "${key}" written (version ${entry.version})`;
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleReadWorkspace(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const taskGroupId = String(args.task_group_id ?? "");
+  const key = args.key ? String(args.key) : null;
+  if (!taskGroupId) return "Error: task_group_id is required";
+  try {
+    if (key) {
+      const { readWorkspace } = await import("@/lib/task-group-store");
+      const entry = await readWorkspace(taskGroupId, key);
+      if (!entry) return `No workspace entry found for key "${key}"`;
+      return `[${key}] (by ${entry.writtenBy}, v${entry.version}): ${entry.value.slice(0, 4000)}`;
+    }
+    const { getWorkspaceSnapshot } = await import("@/lib/task-group-store");
+    const snapshot = await getWorkspaceSnapshot(taskGroupId);
+    const keys = Object.keys(snapshot);
+    if (keys.length === 0) return "Workspace is empty.";
+    return keys.map((k) => `[${k}] (by ${snapshot[k].writtenBy}, v${snapshot[k].version}): ${snapshot[k].value.slice(0, 500)}`).join("\n");
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
+async function handleRequestAgentHelp(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const toAgent = String(args.to_agent ?? "");
+  const title = String(args.title ?? "");
+  const instructions = String(args.instructions ?? "");
+  if (!toAgent || !title || !instructions) return "Error: to_agent, title, and instructions are required";
+  try {
+    const { createTaskGroup, sendAgentMessage, linkTaskToGroup } = await import("@/lib/task-group-store");
+    const { createDelegatedTask: createTask } = await import("@/lib/orchestration-store");
+    // Create or use existing group
+    const group = await createTaskGroup(ctx.userId, `Help request: ${title.slice(0, 200)}`, ctx.delegatedTaskId);
+    await linkTaskToGroup(ctx.delegatedTaskId, group.id);
+    const task = await import("@/lib/db").then(m => m.prisma.delegatedTask.findUnique({ where: { id: ctx.delegatedTaskId }, select: { toAgentTarget: true } }));
+    const fromAgent = task?.toAgentTarget ?? "UNKNOWN";
+    await sendAgentMessage({ taskGroupId: group.id, fromAgent, toAgent, messageType: "REQUEST", content: instructions.slice(0, 8000) });
+    const helpTask = await createTask(ctx.userId, {
+      fromAgent,
+      toAgentTarget: toAgent as import("@/lib/orchestration-store").AgentTarget,
+      title: title.slice(0, 240),
+      instructions: instructions.slice(0, 12000),
+      triggerSource: "AGENT_REQUEST",
+    });
+    await linkTaskToGroup(helpTask.id, group.id);
+    return `Help request sent to ${toAgent}. Task group: ${group.id}, task: ${helpTask.id}`;
+  } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
+}
+
 // --- Dispatch ---
 
 const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {
@@ -1887,6 +2642,72 @@ const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: T
   stripe_list_customers: handleStripeListCustomers,
   stripe_list_subscriptions: handleStripeListSubscriptions,
   stripe_list_invoices: handleStripeListInvoices,
+  stripe_get_customer: handleStripeGetCustomer,
+  stripe_create_customer: handleStripeCreateCustomer,
+  stripe_get_invoice: handleStripeGetInvoice,
+  stripe_create_invoice: handleStripeCreateInvoice,
+  stripe_get_subscription: handleStripeGetSubscription,
+  stripe_list_charges: handleStripeListCharges,
+  stripe_get_balance_transactions: handleStripeGetBalanceTransactions,
+  stripe_list_products: handleStripeListProducts,
+  stripe_list_prices: handleStripeListPrices,
+  // HubSpot expanded
+  hubspot_create_deal: handleHubspotCreateDeal,
+  hubspot_update_deal: handleHubspotUpdateDeal,
+  hubspot_get_deal: handleHubspotGetDeal,
+  hubspot_list_pipeline_stages: handleHubspotListPipelineStages,
+  hubspot_create_company: handleHubspotCreateCompany,
+  hubspot_search_companies: handleHubspotSearchCompanies,
+  hubspot_list_activities: handleHubspotListActivities,
+  hubspot_create_engagement: handleHubspotCreateEngagement,
+  hubspot_list_contact_lists: handleHubspotListContactLists,
+  hubspot_get_custom_properties: handleHubspotGetCustomProperties,
+  // Slack expanded
+  slack_add_reaction: handleSlackAddReaction,
+  slack_reply_to_thread: handleSlackReplyToThread,
+  slack_create_channel: handleSlackCreateChannel,
+  slack_invite_to_channel: handleSlackInviteToChannel,
+  slack_lookup_user: handleSlackLookupUser,
+  slack_list_users: handleSlackListUsers,
+  slack_schedule_message: handleSlackScheduleMessage,
+  slack_set_channel_topic: handleSlackSetChannelTopic,
+  // Linear expanded
+  linear_list_projects: handleLinearListProjects,
+  linear_create_project: handleLinearCreateProject,
+  linear_list_labels: handleLinearListLabels,
+  linear_create_comment: handleLinearCreateComment,
+  linear_list_cycles: handleLinearListCycles,
+  linear_get_roadmap: handleLinearGetRoadmap,
+  linear_update_project: handleLinearUpdateProject,
+  linear_get_issue_history: handleLinearGetIssueHistory,
+  // Notion expanded
+  notion_query_database: handleNotionQueryDatabase,
+  notion_create_database_entry: handleNotionCreateDatabaseEntry,
+  notion_update_page: handleNotionUpdatePage,
+  notion_delete_page: handleNotionDeletePage,
+  notion_list_databases: handleNotionListDatabases,
+  // GitHub expanded
+  github_create_pr: handleGithubCreatePR,
+  github_merge_pr: handleGithubMergePR,
+  github_list_workflow_runs: handleGithubListWorkflowRuns,
+  github_trigger_workflow: handleGithubTriggerWorkflow,
+  github_add_label: handleGithubAddLabel,
+  github_update_issue: handleGithubUpdateIssue,
+  github_create_comment: handleGithubCreateComment,
+  github_list_branches: handleGithubListBranches,
+  github_get_commit: handleGithubGetCommit,
+  github_compare_commits: handleGithubCompareCommits,
+  // Jira
+  jira_list_projects: handleJiraListProjects,
+  jira_list_issues: handleJiraListIssues,
+  jira_get_issue: handleJiraGetIssue,
+  jira_create_issue: handleJiraCreateIssue,
+  jira_update_issue: handleJiraUpdateIssue,
+  jira_add_comment: handleJiraAddComment,
+  jira_transition_issue: handleJiraTransitionIssue,
+  jira_list_transitions: handleJiraListTransitions,
+  jira_assign_issue: handleJiraAssignIssue,
+  jira_search_users: handleJiraSearchUsers,
   // Google Docs / Sheets write
   google_create_doc: handleGoogleCreateDoc,
   google_append_doc: handleGoogleAppendDoc,
@@ -1902,6 +2723,16 @@ const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: T
   agent_performance: handleAgentPerformance,
   // Semantic RAG search over business files
   semantic_search_files: handleSemanticSearchFiles,
+  // Channel messaging (Phase 2B)
+  channel_send_message: handleChannelSendMessage,
+  channel_reply: handleChannelReply,
+  channel_list_conversations: handleChannelListConversations,
+  // Agent-to-agent communication (Phase 3B)
+  send_agent_message: handleSendAgentMessage,
+  read_agent_messages: handleReadAgentMessages,
+  write_workspace: handleWriteWorkspace,
+  read_workspace: handleReadWorkspace,
+  request_agent_help: handleRequestAgentHelp,
 };
 
 const RUNNER_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {
