@@ -61,6 +61,8 @@ export type DelegatedTaskView = {
   dueLabel: string | null;
   projectRef: string | null;
   inputFromTaskId: string | null;
+  chainDepth: number;
+  webhookEventId: string | null;
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
@@ -358,6 +360,8 @@ function toTaskView(row: {
   dueLabel: string | null;
   projectRef: string | null;
   inputFromTaskId: string | null;
+  chainDepth: number;
+  webhookEventId: string | null;
   createdAt: Date;
   updatedAt: Date;
   completedAt: Date | null;
@@ -384,6 +388,8 @@ function toTaskView(row: {
     dueLabel: row.dueLabel,
     projectRef: row.projectRef,
     inputFromTaskId: row.inputFromTaskId,
+    chainDepth: row.chainDepth,
+    webhookEventId: row.webhookEventId,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     completedAt: row.completedAt?.toISOString() ?? null,
@@ -515,6 +521,8 @@ export async function createDelegatedTask(
     projectRef?: string | null;
     scheduledFor?: Date | null;
     inputFromTaskId?: string | null;
+    chainDepth?: number;
+    webhookEventId?: string | null;
   },
 ) {
   const title = input.title.trim().slice(0, 240);
@@ -543,6 +551,8 @@ export async function createDelegatedTask(
       projectRef: input.projectRef?.slice(0, 240) ?? null,
       scheduledFor: input.scheduledFor ?? null,
       inputFromTaskId: input.inputFromTaskId ?? null,
+      chainDepth: input.chainDepth ?? 0,
+      webhookEventId: input.webhookEventId ?? null,
       status: DelegatedTaskStatus.QUEUED,
     },
   });
@@ -671,6 +681,27 @@ export async function runSchedulerTick(userId: string) {
     return [] as DelegatedTaskView[];
   });
   created.push(...heartbeatCreated);
+
+  // Process queued webhook events — fire-and-forget, doesn't delay response
+  void (async () => {
+    try {
+      const { processWebhookEvents } = await import("@/lib/event-orchestrator");
+      const count = await processWebhookEvents(userId, 5);
+      if (count > 0) {
+        await prisma.auditLog.create({
+          data: {
+            userId,
+            scope: "SCHEDULER",
+            entityId: "event-orchestrator",
+            action: "PROCESS_EVENTS",
+            summary: `Processed ${count} webhook event(s)`,
+          },
+        });
+      }
+    } catch (e) {
+      console.error("[scheduler] event orchestrator error:", e);
+    }
+  })();
 
   return { utcTime: nowKey, created };
 }

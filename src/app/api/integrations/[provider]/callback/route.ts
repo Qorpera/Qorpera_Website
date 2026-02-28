@@ -307,6 +307,46 @@ export async function GET(
     }
 
     await saveConnection(userId, provider, tokens);
+
+    // Auto-register Calendly webhook subscription after connecting
+    if (provider === "calendly" && tokens.metadata?.user_uri) {
+      void (async () => {
+        try {
+          const signingKey = crypto.randomBytes(32).toString("hex");
+          const { getUserOrganization, registerWebhookSubscription } = await import(
+            "@/lib/integrations/calendly"
+          );
+          const userUri = tokens.metadata!.user_uri;
+          const orgUri = await getUserOrganization(tokens.accessToken, userUri).catch(() => "");
+          const { subscriptionUri } = await registerWebhookSubscription(
+            tokens.accessToken,
+            process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+            userUri,
+            orgUri,
+            signingKey,
+          );
+          const existing = await prisma.integrationConnection.findUnique({
+            where: { userId_provider: { userId, provider: "calendly" } },
+            select: { metadataJson: true },
+          });
+          const meta = existing?.metadataJson
+            ? (JSON.parse(existing.metadataJson) as Record<string, string>)
+            : {};
+          await prisma.integrationConnection.update({
+            where: { userId_provider: { userId, provider: "calendly" } },
+            data: {
+              metadataJson: JSON.stringify({
+                ...meta,
+                webhook_signing_key: signingKey,
+                webhook_subscription_uri: subscriptionUri,
+              }),
+            },
+          });
+        } catch (e) {
+          console.error("[calendly] webhook registration failed:", e);
+        }
+      })();
+    }
   } catch {
     return errorRedirect("exchange_failed");
   }

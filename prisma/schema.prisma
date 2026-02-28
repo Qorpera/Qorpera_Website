@@ -230,6 +230,7 @@ model User {
   optimizationCycles       AgentOptimizationCycle[]
   optimizationApplications AgentOptimizationApplication[]
   integrationConnections   IntegrationConnection[]
+  webhookEvents            WebhookEvent[]
 }
 
 model HiredJob {
@@ -706,6 +707,8 @@ model DelegatedTask {
   inputFromTaskId  String?
   attempts         Int               @default(0)
   maxAttempts      Int               @default(3)
+  chainDepth       Int               @default(0)
+  webhookEventId   String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   completedAt      DateTime?
@@ -1132,4 +1135,23 @@ model AgentOptimizationApplication {
 
   @@index([userId, agentKind, appliedAt])
   @@index([cycleId])
+}
+
+// ── Webhook Events (inbound provider events) ─────────────────────
+
+model WebhookEvent {
+  id           String    @id @default(cuid())
+  userId       String
+  provider     String
+  eventType    String
+  payload      String    // raw JSON, max 65535 chars stored
+  status       String    @default("PENDING") // PENDING|PROCESSING|PROCESSED|FAILED|SKIPPED
+  errorMessage String?
+  processedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, createdAt])
+  @@index([userId, provider, createdAt])
 }

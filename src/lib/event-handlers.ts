@@ -49,7 +49,7 @@ export function registerEventHandlers(): void {
     }
   });
 
-  // DELEGATED_TASK_COMPLETED -> log completion + Slack notification
+  // DELEGATED_TASK_COMPLETED -> log completion + Slack notification + continuation
   eventBus.on("DELEGATED_TASK_COMPLETED", async (event) => {
     try {
       await prisma.auditLog.create({
@@ -72,6 +72,28 @@ export function registerEventHandlers(): void {
       });
     } catch {
       // Non-critical Slack notification
+    }
+
+    // Evaluate whether a follow-up task should be created (chain continuation)
+    if (event.status === "DONE") {
+      try {
+        const row = await prisma.delegatedTask.findUnique({
+          where: { id: event.taskId },
+          select: { completionDigest: true, chainDepth: true, title: true, toAgentTarget: true },
+        });
+        if (row && (row.chainDepth ?? 0) < 3) {
+          const { evaluateTaskContinuation } = await import("@/lib/event-orchestrator");
+          void evaluateTaskContinuation(event.userId, {
+            id: event.taskId,
+            title: row.title,
+            toAgentTarget: row.toAgentTarget,
+            completionDigest: row.completionDigest,
+            chainDepth: row.chainDepth ?? 0,
+          }).catch(() => {});
+        }
+      } catch {
+        // Non-critical continuation evaluation
+      }
     }
   });
 

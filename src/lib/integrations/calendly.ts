@@ -74,3 +74,48 @@ export async function createSchedulingLink(
     }),
   });
 }
+
+export async function getUserOrganization(token: string, userUri: string): Promise<string> {
+  const uuid = userUri.split("/").pop() ?? "";
+  const data = await calendlyFetch(token, `${CALENDLY_BASE}/users/${uuid}`);
+  const resource = data.resource as Record<string, unknown> | undefined;
+  return (resource?.current_organization as string | undefined) ?? "";
+}
+
+export async function registerWebhookSubscription(
+  token: string,
+  appUrl: string,
+  userUri: string,
+  organizationUri: string,
+  signingKey: string,
+): Promise<{ subscriptionUri: string }> {
+  const data = await calendlyFetch(token, `${CALENDLY_BASE}/webhook_subscriptions`, {
+    method: "POST",
+    body: JSON.stringify({
+      url: `${appUrl}/api/webhooks/provider/calendly`,
+      events: ["invitee.created", "invitee.canceled"],
+      organization: organizationUri,
+      user: userUri,
+      scope: "user",
+      signing_key: signingKey,
+    }),
+  });
+  const resource = data.resource as Record<string, unknown> | undefined;
+  const uri = (resource?.uri as string | undefined) ?? "";
+  return { subscriptionUri: uri };
+}
+
+export async function deleteWebhookSubscription(
+  token: string,
+  subscriptionUri: string,
+): Promise<void> {
+  try {
+    const uuid = subscriptionUri.split("/").pop() ?? "";
+    if (!uuid) return;
+    await calendlyFetch(token, `${CALENDLY_BASE}/webhook_subscriptions/${uuid}`, {
+      method: "DELETE",
+    });
+  } catch {
+    // Non-fatal on disconnect
+  }
+}
