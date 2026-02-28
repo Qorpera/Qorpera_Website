@@ -217,10 +217,163 @@ export async function executePendingActions(actions: PendingAction[], userId?: s
       case "linear_create_issue":
         results.push(await executeLinearCreateIssue(args, userId));
         break;
+      case "github_create_issue":
+        results.push(await executeGithubCreateIssue(args, userId));
+        break;
+      case "notion_create_page":
+        results.push(await executeNotionCreatePage(args, userId));
+        break;
+      case "notion_append_block":
+        results.push(await executeNotionAppendBlock(args, userId));
+        break;
+      case "google_create_doc":
+        results.push(await executeGoogleCreateDoc(args, userId));
+        break;
+      case "google_append_doc":
+        results.push(await executeGoogleAppendDoc(args, userId));
+        break;
+      case "google_create_sheet":
+        results.push(await executeGoogleCreateSheet(args, userId));
+        break;
+      case "google_append_sheet_rows":
+        results.push(await executeGoogleAppendSheetRows(args, userId));
+        break;
       default:
         results.push({ toolName: action.toolName, ok: false, output: `No executor registered for tool "${action.toolName}"` });
     }
   }
 
   return results;
+}
+
+async function executeGithubCreateIssue(args: Record<string, unknown>, userId?: string): Promise<ActionExecutionResult> {
+  if (!userId) return { toolName: "github_create_issue", ok: false, output: "No userId" };
+  const token = await getAccessToken(userId, "github");
+  if (!token) return { toolName: "github_create_issue", ok: false, output: "GitHub not connected. Connect it in Settings → Integrations." };
+
+  const repo = String(args.repo ?? "").trim();
+  const title = String(args.title ?? "").trim();
+  if (!repo || !title) return { toolName: "github_create_issue", ok: false, output: "Missing required fields: repo, title" };
+
+  try {
+    const { createIssue } = await import("@/lib/integrations/github");
+    const labels = Array.isArray(args.labels) ? (args.labels as string[]) : undefined;
+    const assignees = Array.isArray(args.assignees) ? (args.assignees as string[]) : undefined;
+    const issue = await createIssue(token, repo, { title, body: args.body ? String(args.body) : undefined, labels, assignees });
+    return { toolName: "github_create_issue", ok: true, output: `GitHub issue #${issue.number} created: "${issue.title}" — ${issue.html_url}` };
+  } catch (e) {
+    return { toolName: "github_create_issue", ok: false, output: `GitHub error: ${e instanceof Error ? e.message : "unknown"}` };
+  }
+}
+
+async function executeNotionCreatePage(args: Record<string, unknown>, userId?: string): Promise<ActionExecutionResult> {
+  if (!userId) return { toolName: "notion_create_page", ok: false, output: "No userId" };
+  const token = await getAccessToken(userId, "notion");
+  if (!token) return { toolName: "notion_create_page", ok: false, output: "Notion not connected. Connect it in Settings → Integrations." };
+
+  const title = String(args.title ?? "").trim();
+  if (!title) return { toolName: "notion_create_page", ok: false, output: "Missing required field: title" };
+
+  try {
+    const { createPage } = await import("@/lib/integrations/notion");
+    const result = await createPage(token, {
+      parentPageId: args.parent_page_id ? String(args.parent_page_id) : undefined,
+      parentDatabaseId: args.parent_database_id ? String(args.parent_database_id) : undefined,
+      title,
+      content: args.content ? String(args.content) : undefined,
+    });
+    return { toolName: "notion_create_page", ok: true, output: `Notion page created: "${title}" — ${result.url ?? result.id}` };
+  } catch (e) {
+    return { toolName: "notion_create_page", ok: false, output: `Notion error: ${e instanceof Error ? e.message : "unknown"}` };
+  }
+}
+
+async function executeNotionAppendBlock(args: Record<string, unknown>, userId?: string): Promise<ActionExecutionResult> {
+  if (!userId) return { toolName: "notion_append_block", ok: false, output: "No userId" };
+  const token = await getAccessToken(userId, "notion");
+  if (!token) return { toolName: "notion_append_block", ok: false, output: "Notion not connected. Connect it in Settings → Integrations." };
+
+  const pageId = String(args.page_id ?? "").trim();
+  const content = String(args.content ?? "").trim();
+  if (!pageId || !content) return { toolName: "notion_append_block", ok: false, output: "Missing required fields: page_id, content" };
+
+  try {
+    const { appendBlocks } = await import("@/lib/integrations/notion");
+    const result = await appendBlocks(token, pageId, content);
+    return { toolName: "notion_append_block", ok: true, output: `Appended ${result.blocksAdded} blocks to Notion page ${pageId}` };
+  } catch (e) {
+    return { toolName: "notion_append_block", ok: false, output: `Notion error: ${e instanceof Error ? e.message : "unknown"}` };
+  }
+}
+
+async function executeGoogleCreateDoc(args: Record<string, unknown>, userId?: string): Promise<ActionExecutionResult> {
+  if (!userId) return { toolName: "google_create_doc", ok: false, output: "No userId" };
+  const token = await getAccessToken(userId, "google");
+  if (!token) return { toolName: "google_create_doc", ok: false, output: "Google account not connected. Connect it in Settings → Integrations." };
+
+  const title = String(args.title ?? "").trim();
+  if (!title) return { toolName: "google_create_doc", ok: false, output: "Missing required field: title" };
+
+  try {
+    const { createGoogleDoc } = await import("@/lib/integrations/google");
+    const result = await createGoogleDoc(token, title, args.content ? String(args.content) : undefined);
+    return { toolName: "google_create_doc", ok: true, output: `Google Doc created: "${result.title}" — ${result.url}` };
+  } catch (e) {
+    return { toolName: "google_create_doc", ok: false, output: `Google Docs error: ${e instanceof Error ? e.message : "unknown"}` };
+  }
+}
+
+async function executeGoogleAppendDoc(args: Record<string, unknown>, userId?: string): Promise<ActionExecutionResult> {
+  if (!userId) return { toolName: "google_append_doc", ok: false, output: "No userId" };
+  const token = await getAccessToken(userId, "google");
+  if (!token) return { toolName: "google_append_doc", ok: false, output: "Google account not connected. Connect it in Settings → Integrations." };
+
+  const documentId = String(args.document_id ?? "").trim();
+  const content = String(args.content ?? "").trim();
+  if (!documentId || !content) return { toolName: "google_append_doc", ok: false, output: "Missing required fields: document_id, content" };
+
+  try {
+    const { appendToGoogleDoc } = await import("@/lib/integrations/google");
+    const result = await appendToGoogleDoc(token, documentId, content);
+    return { toolName: "google_append_doc", ok: true, output: `Appended content to Google Doc "${result.title}"` };
+  } catch (e) {
+    return { toolName: "google_append_doc", ok: false, output: `Google Docs error: ${e instanceof Error ? e.message : "unknown"}` };
+  }
+}
+
+async function executeGoogleCreateSheet(args: Record<string, unknown>, userId?: string): Promise<ActionExecutionResult> {
+  if (!userId) return { toolName: "google_create_sheet", ok: false, output: "No userId" };
+  const token = await getAccessToken(userId, "google");
+  if (!token) return { toolName: "google_create_sheet", ok: false, output: "Google account not connected. Connect it in Settings → Integrations." };
+
+  const title = String(args.title ?? "").trim();
+  if (!title) return { toolName: "google_create_sheet", ok: false, output: "Missing required field: title" };
+  const headers = Array.isArray(args.headers) ? (args.headers as string[]) : undefined;
+
+  try {
+    const { createGoogleSheet } = await import("@/lib/integrations/google");
+    const result = await createGoogleSheet(token, title, headers);
+    return { toolName: "google_create_sheet", ok: true, output: `Google Sheet created: "${result.title}" — ${result.url}` };
+  } catch (e) {
+    return { toolName: "google_create_sheet", ok: false, output: `Google Sheets error: ${e instanceof Error ? e.message : "unknown"}` };
+  }
+}
+
+async function executeGoogleAppendSheetRows(args: Record<string, unknown>, userId?: string): Promise<ActionExecutionResult> {
+  if (!userId) return { toolName: "google_append_sheet_rows", ok: false, output: "No userId" };
+  const token = await getAccessToken(userId, "google");
+  if (!token) return { toolName: "google_append_sheet_rows", ok: false, output: "Google account not connected. Connect it in Settings → Integrations." };
+
+  const spreadsheetId = String(args.spreadsheet_id ?? "").trim();
+  const sheetName = String(args.sheet_name ?? "Sheet1");
+  const rows = args.rows as string[][] | undefined;
+  if (!spreadsheetId || !rows?.length) return { toolName: "google_append_sheet_rows", ok: false, output: "Missing required fields: spreadsheet_id, rows" };
+
+  try {
+    const { appendRowsToSheet } = await import("@/lib/integrations/google");
+    const result = await appendRowsToSheet(token, spreadsheetId, sheetName, rows);
+    return { toolName: "google_append_sheet_rows", ok: true, output: `Appended ${result.rowsAdded} rows to sheet "${sheetName}"` };
+  } catch (e) {
+    return { toolName: "google_append_sheet_rows", ok: false, output: `Google Sheets error: ${e instanceof Error ? e.message : "unknown"}` };
+  }
 }

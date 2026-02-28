@@ -1021,7 +1021,7 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
   MARKETING_COORDINATOR: [
     "search_business_logs", "list_files", "read_file", "web_fetch",
     "delegate_task", "create_business_log", "send_email", "list_inbox_items",
-    "figma_get_design", "figma_get_image", "schedule_followup",
+    "figma_get_design", "figma_get_image", "schedule_followup", "generate_pdf",
     // Google full suite
     "google_list_emails", "google_read_email", "google_send_email", "google_list_calendar_events",
     "google_create_calendar_event", "google_list_drive_files", "google_read_drive_file",
@@ -1068,7 +1068,7 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
   ],
   FINANCE_ANALYST: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
-    "list_inbox_items", "get_project_details", "sql_query",
+    "list_inbox_items", "get_project_details", "sql_query", "generate_pdf",
     "google_list_drive_files", "google_read_drive_file",
     "google_create_doc", "google_append_doc", "google_create_sheet", "google_append_sheet_rows",
     // QuickBooks
@@ -1084,7 +1084,7 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
   OPERATIONS_MANAGER: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
     "web_fetch", "send_email", "call_webhook", "delegate_task", "list_inbox_items",
-    "schedule_followup", "sql_query",
+    "schedule_followup", "sql_query", "generate_pdf", "agent_performance",
     // Linear all 3 + Slack
     "linear_list_issues", "linear_create_issue", "linear_update_issue",
     "slack_list_channels", "slack_post_message",
@@ -1099,7 +1099,7 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
   ],
   EXECUTIVE_ASSISTANT: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
-    "list_inbox_items", "send_email", "get_project_details", "schedule_followup",
+    "list_inbox_items", "send_email", "get_project_details", "schedule_followup", "generate_pdf", "agent_performance",
     // Google Gmail + Calendar + Docs
     "google_list_emails", "google_read_email", "google_send_email",
     "google_list_calendar_events", "google_create_calendar_event",
@@ -1119,7 +1119,7 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "web_search", "extract_content", "quality_review",
     "search_business_logs", "create_business_log",
     "list_files", "read_file", "delegate_task", "list_inbox_items",
-    "sql_query",
+    "sql_query", "generate_pdf",
     "notion_search", "notion_read_page", "notion_create_page",
     "google_list_drive_files", "google_read_drive_file",
     "google_create_doc", "google_append_doc",

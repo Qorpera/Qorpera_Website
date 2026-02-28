@@ -1659,11 +1659,7 @@ async function handleAgentPerformance(args: Record<string, unknown>, ctx: ToolEx
       select: { toolName: true, latencyMs: true, status: true, delegatedTask: { select: { toAgentTarget: true } } },
     }),
     prisma.submission.findMany({
-      where: {
-        userId: ctx.userId,
-        createdAt: { gte: since },
-        ...(agentKind ? { agentKind } : {}),
-      },
+      where: { userId: ctx.userId, createdAt: { gte: since } },
       select: { agentKind: true, status: true },
     }),
   ]);

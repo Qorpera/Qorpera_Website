@@ -63,6 +63,20 @@ const PROVIDERS: ProviderConfig[] = [
     icon: "X",
     metadataLabel: (m) => m.tenant_name ?? "",
   },
+  {
+    key: "github",
+    label: "GitHub",
+    description: "List repositories, view and create issues, and track pull requests.",
+    icon: "GH",
+    metadataLabel: (m) => m.login ? `@${m.login}` : "",
+  },
+  {
+    key: "notion",
+    label: "Notion",
+    description: "Search pages, read content, create new pages, and append notes to your workspace.",
+    icon: "N",
+    metadataLabel: (m) => m.workspace_name ?? "",
+  },
 ];
 
 type Props = {
