@@ -50,12 +50,29 @@ export async function listPlanLicenseKeys(creatorUserId: string) {
 export async function redeemPlanLicenseKey(userId: string, code: string) {
   const normalised = code.trim().toUpperCase();
 
+  // Atomic claim: only redeem if still ACTIVE — prevents double-redemption race
+  const claimed = await prisma.planLicenseKey.updateMany({
+    where: { code: normalised, status: "ACTIVE" },
+    data: { status: "REDEEMED", redeemedById: userId, redeemedAt: new Date() },
+  });
+
+  if (claimed.count === 0) {
+    // Distinguish between not-found, already-redeemed, and revoked
+    const existing = await prisma.planLicenseKey.findUnique({
+      where: { code: normalised },
+      select: { status: true },
+    });
+    if (!existing) throw new Error("Invalid license key");
+    if (existing.status === "REDEEMED") throw new Error("This key has already been redeemed");
+    if (existing.status === "REVOKED") throw new Error("This key has been revoked");
+    throw new Error("Invalid license key");
+  }
+
+  // Re-fetch the claimed key for tier info
   const key = await prisma.planLicenseKey.findUnique({
     where: { code: normalised },
   });
-  if (!key) throw new Error("Invalid license key");
-  if (key.status === "REDEEMED") throw new Error("This key has already been redeemed");
-  if (key.status === "REVOKED") throw new Error("This key has been revoked");
+  if (!key) throw new Error("License key not found after claim");
 
   // Look up the Plan record for this tier
   const plan = await prisma.plan.findFirst({
@@ -70,12 +87,6 @@ export async function redeemPlanLicenseKey(userId: string, code: string) {
   if (existingSub) {
     await deactivatePlanSubscription(existingSub.id);
   }
-
-  // Mark key as redeemed
-  const updated = await prisma.planLicenseKey.update({
-    where: { id: key.id },
-    data: { status: "REDEEMED", redeemedById: userId, redeemedAt: new Date() },
-  });
 
   // Create active plan subscription
   const subscription = await prisma.planSubscription.create({
@@ -98,7 +109,7 @@ export async function redeemPlanLicenseKey(userId: string, code: string) {
     },
   });
 
-  return { key: updated, subscription };
+  return { key, subscription };
 }
 
 export async function revokePlanLicenseKey(creatorUserId: string, keyId: string) {

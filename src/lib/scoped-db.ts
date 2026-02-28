@@ -56,8 +56,11 @@ export function scopedPrisma(userId: string) {
           return query(args);
         },
         async findUnique({ model, args, query }) {
-          // findUnique requires exact where clause, so we just run it and verify userId after
-          return query(args);
+          const result = await query(args);
+          if (result && SCOPED_MODELS.has(model) && (result as Record<string, unknown>).userId !== userId) {
+            return null;
+          }
+          return result;
         },
         async create({ model, args, query }) {
           if (SCOPED_MODELS.has(model) && args.data && typeof args.data === "object" && !Array.isArray(args.data)) {
@@ -66,9 +69,15 @@ export function scopedPrisma(userId: string) {
           return query(args);
         },
         async update({ model, args, query }) {
+          if (SCOPED_MODELS.has(model)) {
+            args.where = { ...args.where, userId };
+          }
           return query(args);
         },
         async delete({ model, args, query }) {
+          if (SCOPED_MODELS.has(model)) {
+            args.where = { ...args.where, userId };
+          }
           return query(args);
         },
         async updateMany({ model, args, query }) {

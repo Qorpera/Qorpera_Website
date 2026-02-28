@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { AgentAutomationConfigView, AgentTarget } from "@/lib/orchestration-store";
 
 const FALLBACK_INTEGRATION_OPTIONS = [
@@ -322,7 +322,6 @@ function WebhookSection({ target }: { target: AgentTarget }) {
   } | null>(null);
   const [newSecret, setNewSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [fetched, setFetched] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
   const fetchWebhook = useCallback(async () => {
@@ -334,12 +333,11 @@ function WebhookSection({ target }: { target: AgentTarget }) {
         setWebhook({ ...match, webhookUrl: `/api/webhooks/ingest/${match.agentTarget}` });
       }
     } catch { /* ignore */ }
-    setFetched(true);
   }, [target]);
 
-  if (!fetched) {
+  useEffect(() => {
     fetchWebhook();
-  }
+  }, [fetchWebhook]);
 
   async function generateWebhook() {
     setLoading(true);
