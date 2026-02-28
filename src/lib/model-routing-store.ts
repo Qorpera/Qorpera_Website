@@ -86,7 +86,8 @@ export type AgentKindRouteKey =
   | "FINANCE_ANALYST"
   | "OPERATIONS_MANAGER"
   | "EXECUTIVE_ASSISTANT"
-  | "RESEARCH_ANALYST";
+  | "RESEARCH_ANALYST"
+  | "SEO_SPECIALIST";
 
 const AGENT_KIND_TO_TARGET: Record<AgentKindRouteKey, ModelRouteTarget> = {
   CHIEF_ADVISOR: "ADVISOR",
@@ -98,6 +99,7 @@ const AGENT_KIND_TO_TARGET: Record<AgentKindRouteKey, ModelRouteTarget> = {
   OPERATIONS_MANAGER: "ASSISTANT",
   EXECUTIVE_ASSISTANT: "ASSISTANT",
   RESEARCH_ANALYST: "ASSISTANT",
+  SEO_SPECIALIST: "ASSISTANT",
 };
 
 export async function getModelRouteForAgentKind(

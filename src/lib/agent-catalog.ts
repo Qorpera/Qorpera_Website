@@ -9,7 +9,8 @@ export type HireAgentKind =
   | "FINANCE_ANALYST"
   | "OPERATIONS_MANAGER"
   | "EXECUTIVE_ASSISTANT"
-  | "RESEARCH_ANALYST";
+  | "RESEARCH_ANALYST"
+  | "SEO_SPECIALIST";
 
 export type HireSchedule = "DAILY" | "WEEKLY" | "MONTHLY";
 
@@ -86,6 +87,14 @@ export const AGENT_HIRE_CATALOG: AgentHireCatalogItem[] = [
     summary: "A research team that searches the web, cross-validates findings, and produces structured reports — with cloud-model quality checks before anything is finalized.",
     recurringCents: { DAILY: 2000, WEEKLY: 12000, MONTHLY: 38000 },
     recurringPrices: { DAILY: "20 kr/day", WEEKLY: "120 kr/wk", MONTHLY: "380 kr/mo" },
+  },
+  {
+    kind: "SEO_SPECIALIST",
+    title: "SEO Team",
+    subtitle: "Audits + keyword research + content briefs",
+    summary: "An SEO team that audits pages, researches keywords, monitors rankings, and produces optimized content briefs — everything reviewed before publishing.",
+    recurringCents: { DAILY: 1800, WEEKLY: 11000, MONTHLY: 35000 },
+    recurringPrices: { DAILY: "18 kr/day", WEEKLY: "110 kr/wk", MONTHLY: "350 kr/mo" },
   },
 ];
 
