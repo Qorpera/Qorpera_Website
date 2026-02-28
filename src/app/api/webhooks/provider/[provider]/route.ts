@@ -231,6 +231,8 @@ export async function POST(
     const sigHeader = req.headers.get("x-hubspot-signature-v3") ?? "";
     const timestampHeader = req.headers.get("x-hubspot-request-timestamp") ?? "";
     const clientSecret = process.env.HUBSPOT_CLIENT_SECRET ?? "";
+    // If provider sent a signature but we have no secret to verify it — reject
+    if (sigHeader && !clientSecret) return NextResponse.json({ ok: true, skipped: true });
     if (sigHeader && clientSecret) {
       if (!verifyHubspotSignature(rawBody, sigHeader, clientSecret, req.method, req.url, timestampHeader)) {
         return NextResponse.json({ ok: true, skipped: true });
@@ -240,6 +242,7 @@ export async function POST(
     const signature = req.headers.get("x-slack-signature") ?? "";
     const timestamp = req.headers.get("x-slack-request-timestamp") ?? "";
     const signingSecret = process.env.SLACK_SIGNING_SECRET ?? "";
+    if (signature && !signingSecret) return NextResponse.json({ ok: true, skipped: true });
     if (signature && signingSecret) {
       if (!verifySlackSignature(rawBody, signature, timestamp, signingSecret)) {
         return NextResponse.json({ ok: true, skipped: true });
@@ -248,6 +251,7 @@ export async function POST(
   } else if (provider === "github") {
     const sigHeader = req.headers.get("x-hub-signature-256") ?? "";
     const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET ?? "";
+    if (sigHeader && !webhookSecret) return NextResponse.json({ ok: true, skipped: true });
     if (sigHeader && webhookSecret) {
       if (!verifyGithubSignature(rawBody, sigHeader, webhookSecret)) {
         return NextResponse.json({ ok: true, skipped: true });
@@ -256,6 +260,7 @@ export async function POST(
   } else if (provider === "linear") {
     const sigHeader = req.headers.get("linear-signature") ?? "";
     const webhookSecret = process.env.LINEAR_WEBHOOK_SECRET ?? "";
+    if (sigHeader && !webhookSecret) return NextResponse.json({ ok: true, skipped: true });
     if (sigHeader && webhookSecret) {
       if (!verifyLinearSignature(rawBody, sigHeader, webhookSecret)) {
         return NextResponse.json({ ok: true, skipped: true });

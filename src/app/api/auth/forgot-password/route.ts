@@ -1,17 +1,23 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email-sender";
 import { verifySameOrigin } from "@/lib/request-security";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const Body = z.object({ email: z.string().email() });
 
 const RESET_TTL_MS = 1000 * 60 * 60; // 1 hour
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const sameOrigin = verifySameOrigin(req);
   if (!sameOrigin.ok) return sameOrigin.response;
+
+  // Rate-limit by IP: 5 requests per 15 minutes
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = await checkRateLimit(`forgot:${ip}`, "auth");
+  if (!rl.allowed) return rl.response!;
 
   const json = await req.json().catch(() => null);
   const parsed = Body.safeParse(json);
