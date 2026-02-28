@@ -1,48 +1,43 @@
 /**
  * Next.js instrumentation hook — runs once at server startup before any requests.
- * Validates that required environment variables are present in production.
+ * Hard-fails on truly fatal missing vars; warns on others so misconfiguration
+ * is visible in logs without taking down the whole server.
  */
 export async function register() {
   if (process.env.NODE_ENV !== "production") return;
 
-  const required: string[] = [
-    "DATABASE_URL",
-    "APP_SECRET",
-    "CREDENTIAL_ENCRYPTION_KEY",
-    "NEXT_PUBLIC_APP_URL",
-  ];
+  // ── Hard requirements (crash if missing) ──────────────────────────
+  if (!process.env.DATABASE_URL) {
+    throw new Error("[qorpera] DATABASE_URL is required");
+  }
 
-  // At least one email provider must be configured
+  const appSecret = process.env.APP_SECRET || process.env.CREDENTIAL_ENCRYPTION_KEY;
+  if (!appSecret || appSecret.trim().length < 16) {
+    throw new Error("[qorpera] APP_SECRET (or CREDENTIAL_ENCRYPTION_KEY) must be set (≥16 chars)");
+  }
+
+  // ── Soft warnings (log but don't crash) ───────────────────────────
+  const warn = (msg: string) => process.stderr.write(`[qorpera] WARN ${msg}\n`);
+
+  if (!process.env.NEXT_PUBLIC_APP_URL) {
+    warn("NEXT_PUBLIC_APP_URL is not set — OAuth redirects and email links may be wrong");
+  }
+
+  if (!process.env.CREDENTIAL_ENCRYPTION_KEY) {
+    warn("CREDENTIAL_ENCRYPTION_KEY is not set — falling back to APP_SECRET for encryption");
+  } else if (process.env.CREDENTIAL_ENCRYPTION_KEY.length !== 32) {
+    warn(`CREDENTIAL_ENCRYPTION_KEY should be exactly 32 chars (got ${process.env.CREDENTIAL_ENCRYPTION_KEY.length})`);
+  }
+
   const hasEmail =
     process.env.RESEND_API_KEY ||
     process.env.SENDGRID_API_KEY ||
     process.env.POSTMARK_SERVER_TOKEN;
-
-  const missing = required.filter((k) => !process.env[k]);
-
-  if (missing.length > 0) {
-    throw new Error(
-      `[qorpera] Missing required environment variables: ${missing.join(", ")}`,
-    );
-  }
-
   if (!hasEmail) {
-    throw new Error(
-      "[qorpera] At least one email provider must be configured: RESEND_API_KEY, SENDGRID_API_KEY, or POSTMARK_SERVER_TOKEN",
-    );
+    warn("No email provider configured (RESEND_API_KEY / SENDGRID_API_KEY / POSTMARK_SERVER_TOKEN) — transactional emails will fail");
   }
 
-  const encKey = process.env.CREDENTIAL_ENCRYPTION_KEY!;
-  if (encKey.length !== 32) {
-    throw new Error(
-      `[qorpera] CREDENTIAL_ENCRYPTION_KEY must be exactly 32 characters (got ${encKey.length})`,
-    );
-  }
-
-  const appSecret = process.env.APP_SECRET!;
-  if (appSecret.length < 32) {
-    throw new Error(
-      `[qorpera] APP_SECRET must be at least 32 characters (got ${appSecret.length})`,
-    );
+  if (!process.env.STRIPE_SECRET_KEY) {
+    warn("STRIPE_SECRET_KEY is not set — payment flows will be unavailable");
   }
 }
