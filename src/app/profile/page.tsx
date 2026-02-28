@@ -14,6 +14,7 @@ import { getPlanStatus } from "@/lib/plan-store";
 import { PLAN_CATALOG } from "@/lib/plan-catalog";
 import { RedeemLicenseKeyForm } from "@/components/redeem-license-key-form";
 import { CancelPlanButton } from "@/components/cancel-plan-button";
+import { DeleteAccountButton } from "@/components/delete-account-button";
 
 export default async function ProfilePage({
   searchParams,
@@ -254,6 +255,15 @@ export default async function ProfilePage({
               </div>
             </form>
             <p className="mt-2 text-xs text-white/30">Minimum 8 characters.</p>
+          </section>
+
+          {/* Danger zone */}
+          <section className="py-6 border-t border-rose-500/20">
+            <div className="text-xs uppercase tracking-wider text-rose-400/70 mb-1">Danger zone</div>
+            <p className="text-sm text-white/40 mb-4">
+              Permanently delete your account and all associated data. This cannot be undone.
+            </p>
+            <DeleteAccountButton />
           </section>
         </div>
       ) : null}
