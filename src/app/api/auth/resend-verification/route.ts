@@ -31,13 +31,22 @@ export async function POST(req: Request) {
   const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const verifyUrl = `${origin}/api/auth/verify-email?token=${token}&email=${encodeURIComponent(user.email)}`;
 
-  await sendEmail({
-    to: user.email,
-    subject: "Verify your Qorpera email",
-    body: `Welcome to Qorpera!\n\nClick here to verify your email:\n${verifyUrl}\n\nThis link expires in 24 hours.`,
-  }, userId).catch((err: unknown) => {
+  let result;
+  try {
+    result = await sendEmail({
+      to: user.email,
+      subject: "Verify your Qorpera email",
+      body: `Welcome to Qorpera!\n\nClick here to verify your email:\n${verifyUrl}\n\nThis link expires in 24 hours.`,
+    }, userId);
+  } catch (err: unknown) {
     console.error("[resend-verification] Failed to send email", { userId, err: String(err) });
-  });
+    return NextResponse.json({ ok: false, error: "Failed to send email" }, { status: 500 });
+  }
+
+  if (!result.ok) {
+    console.error("[resend-verification] Email send failed", { userId, provider: result.provider, error: result.error });
+    return NextResponse.json({ ok: false, error: result.error }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
