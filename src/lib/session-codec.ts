@@ -5,7 +5,7 @@
 
 const SESSION_VERSION = "v2";
 const SESSION_VERSION_LEGACY = "v1";
-const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
+const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 function base64url(input: Uint8Array): string {
   // Use Buffer in Node, TextEncoder-based approach for Edge

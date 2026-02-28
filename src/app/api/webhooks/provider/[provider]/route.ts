@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rate-limit";
 import {
   verifyCalendlySignature,
   verifyHubspotSignature,
@@ -166,6 +167,11 @@ export async function POST(
   if (!isValidProvider(provider)) {
     return NextResponse.json({ ok: true, skipped: true });
   }
+
+  // Rate-limit per provider + IP to prevent webhook flooding
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = await checkRateLimit(`webhook:${provider}:${ip}`, "webhook");
+  if (!rl.allowed) return rl.response!;
 
   const rawBody = await req.text().catch(() => "");
 

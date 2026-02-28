@@ -51,7 +51,9 @@ export async function POST(req: Request) {
     to: email,
     subject: "Verify your Qorpera email",
     body: `Welcome to Qorpera!\n\nClick here to verify your email:\n${verifyUrl}\n\nThis link expires in 24 hours.`,
-  }, user.id).catch(() => {});
+  }, user.id).catch((err: unknown) => {
+    console.error("[signup] Failed to send verification email", { email, err: String(err) });
+  });
 
   return NextResponse.json({ ok: true });
 }

@@ -44,7 +44,9 @@ export async function POST(req: NextRequest) {
     to: user.email,
     subject: "Reset your qorpera password",
     body: `You requested a password reset.\n\nClick here to reset your password:\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email.`,
-  }, user.id).catch(() => {});
+  }, user.id).catch((err: unknown) => {
+    console.error("[forgot-password] Failed to send reset email", { err: String(err) });
+  });
 
   return ok;
 }

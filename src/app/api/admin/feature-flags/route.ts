@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { verifySameOrigin } from "@/lib/request-security";
 import { z } from "zod";
 import { setFeatureFlag, deleteFeatureFlagOverride } from "@/lib/feature-flags-store";
 
@@ -19,6 +20,8 @@ const DeleteOverrideBody = z.object({
 });
 
 export async function POST(req: Request) {
+  const sameOrigin = verifySameOrigin(req);
+  if (!sameOrigin.ok) return sameOrigin.response;
   const session = await getSession();
   if (!session || !isOwner(session.userId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -35,6 +38,8 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const sameOrigin = verifySameOrigin(req);
+  if (!sameOrigin.ok) return sameOrigin.response;
   const session = await getSession();
   if (!session || !isOwner(session.userId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

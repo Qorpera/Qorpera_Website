@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 
-type Preset = "auth" | "signup" | "chat";
+type Preset = "auth" | "signup" | "chat" | "webhook";
 
 // [maxRequests, windowSeconds]
 const PRESETS: Record<Preset, [number, number]> = {
-  auth:   [5,  15 * 60],
-  signup: [3,  60 * 60],
-  chat:   [30, 60],
+  auth:    [5,   15 * 60],
+  signup:  [3,   60 * 60],
+  chat:    [30,  60],
+  webhook: [120, 60],      // 120 events/min per provider+IP
 };
 
 /**
