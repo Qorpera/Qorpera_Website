@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const isProd = process.env.NODE_ENV === "production";
+
+// In dev, Next.js HMR requires 'unsafe-eval' and 'unsafe-inline'.
+// In production, strip 'unsafe-eval' — inline scripts are still needed for
+// Next.js hydration chunks but eval is not.
+const scriptSrc = isProd
+  ? "script-src 'self' 'unsafe-inline' https://js.stripe.com"
+  : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com";
+
 const nextConfig: NextConfig = {
   output: "standalone",
   async headers() {
@@ -20,8 +29,7 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Next.js inline scripts + eval needed for HMR in dev; restrict in prod
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+              scriptSrc,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self'",

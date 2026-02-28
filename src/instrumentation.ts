@@ -40,4 +40,8 @@ export async function register() {
   if (!process.env.STRIPE_SECRET_KEY) {
     warn("STRIPE_SECRET_KEY is not set — payment flows will be unavailable");
   }
+
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    warn("UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN not set — rate limiting is disabled");
+  }
 }
