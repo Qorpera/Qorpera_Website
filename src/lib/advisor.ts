@@ -13,6 +13,7 @@ import { getChiefAdvisorSoulPackForUser } from "@/lib/agent-soul";
 import { getModelRoute } from "@/lib/model-routing-store";
 import { listBusinessLogs } from "@/lib/business-logs-store";
 import { listBusinessFiles, backfillMissingExtracts } from "@/lib/business-files-store";
+import { semanticSearchFiles, SemanticSearchResult } from "@/lib/embedding-store";
 import { getPreferredUsername } from "@/lib/usernames";
 import { listRunnersForUser } from "@/lib/runner-control-plane";
 import { getPlanStatus } from "@/lib/plan-store";
@@ -153,6 +154,7 @@ function buildSmartPayload(
     projectDescription?: string;
     history: ChatTurn[];
     charLimit: number;
+    semanticResults?: SemanticSearchResult[];
   },
 ): string {
   const terms = extractSearchTerms(userMessage);
@@ -194,24 +196,50 @@ function buildSmartPayload(
   }
 
   // --- Score & sort files ---
-  const scoredFiles = files.map((file) => ({
-    file,
-    score: scoreRelevance(`${file.name} ${file.textExtract ?? ""}`, terms),
-  }));
+  // Build a semantic similarity map keyed by fileId (similarity > 0.3 threshold)
+  const semanticMap = new Map<string, number>();
+  if (opts.semanticResults && opts.semanticResults.length > 0) {
+    for (const r of opts.semanticResults) {
+      if (r.similarity > 0.3) semanticMap.set(r.fileId, r.similarity);
+    }
+  }
+
+  // Look up fileId from context (businessFiles array may include id field)
+  type FileSummaryWithId = FileSummary & { id?: string };
+  const filesWithId = files as FileSummaryWithId[];
+
+  const scoredFiles = filesWithId.map((file) => {
+    const semanticSim = file.id ? (semanticMap.get(file.id) ?? null) : null;
+    const keywordScore = scoreRelevance(`${file.name} ${file.textExtract ?? ""}`, terms);
+    return {
+      file,
+      // Semantic wins when available; otherwise fall back to keyword
+      score: semanticSim !== null ? semanticSim * 10 : keywordScore,
+      isSemantic: semanticSim !== null,
+    };
+  });
   scoredFiles.sort((a, b) => b.score - a.score || new Date(b.file.createdAt).getTime() - new Date(a.file.createdAt).getTime());
 
   const smartFiles: unknown[] = [];
   let relevantFileCount = 0;
-  for (const { file, score } of scoredFiles) {
-    if (score > 0) {
+  for (const { file, score, isSemantic } of scoredFiles) {
+    // A file is "relevant" if it has a keyword hit OR a semantic match above threshold
+    const isRelevant = isSemantic || score > 0;
+    if (isRelevant) {
       relevantFileCount++;
+      // For semantic hits, inject the best-matching chunk as the excerpt
+      const semanticExcerpt = isSemantic && file.id
+        ? (opts.semanticResults?.find((r) => r.fileId === file.id)?.excerpt ?? null)
+        : null;
       smartFiles.push({
         ...file,
-        textExtract: file.textExtract
-          ? file.textExtract.length > 6000
-            ? file.textExtract.slice(0, 6000) + "…"
-            : file.textExtract
-          : null,
+        textExtract: semanticExcerpt
+          ? semanticExcerpt
+          : file.textExtract
+            ? file.textExtract.length > 6000
+              ? file.textExtract.slice(0, 6000) + "…"
+              : file.textExtract
+            : null,
       });
     } else if (smartFiles.length < relevantFileCount + 20) {
       smartFiles.push({

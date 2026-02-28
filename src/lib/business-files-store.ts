@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { eventBus } from "@/lib/event-bus";
 import { extractTextFromBuffer } from "@/lib/text-extraction";
 import { isStorageConfigured, isCloudKey, uploadToStorage, downloadFromStorage, deleteFromStorage } from "@/lib/storage";
+import { chunkAndEmbedFile } from "@/lib/embedding-store";
 
 const STORAGE_ROOT = path.join(process.cwd(), ".data", "business-files");
 const MAX_STORED_FILE_BYTES = 15 * 1024 * 1024;
@@ -162,6 +163,11 @@ export async function createBusinessFileFromUpload(input: {
       relatedRef: clean(input.relatedRef, 240) || null,
     },
   });
+
+  // Fire-and-forget chunk embedding — don't block the upload response
+  chunkAndEmbedFile(input.userId, row.id).catch((err) =>
+    console.error("[embed] Failed to chunk/embed file", { fileId: row.id, err: String(err) }),
+  );
 
   await prisma.auditLog.create({
     data: {

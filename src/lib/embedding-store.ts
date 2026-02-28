@@ -6,6 +6,8 @@
 import { prisma } from "@/lib/db";
 
 const EMBEDDING_MODEL = "text-embedding-3-small";
+const CHUNK_SIZE = 800;
+const CHUNK_OVERLAP = 100;
 
 function cosineSimilarity(a: number[], b: number[]): number {
   let dot = 0, magA = 0, magB = 0;
@@ -40,6 +42,103 @@ async function getOpenAIKey(userId: string): Promise<string | null> {
     return runtime.apiKey ?? null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Split text into overlapping chunks on sentence/paragraph boundaries.
+ */
+export function chunkText(text: string, chunkSize = CHUNK_SIZE, overlap = CHUNK_OVERLAP): string[] {
+  if (!text || text.length === 0) return [];
+  if (text.length <= chunkSize) return [text];
+
+  // Split on paragraph breaks first, then sentences, then words
+  const paragraphs = text.split(/\n{2,}/);
+  const chunks: string[] = [];
+  let current = "";
+
+  for (const para of paragraphs) {
+    const sentences = para.split(/(?<=[.!?])\s+/);
+    for (const sentence of sentences) {
+      if (current.length + sentence.length + 1 <= chunkSize) {
+        current = current ? `${current} ${sentence}` : sentence;
+      } else {
+        if (current) {
+          chunks.push(current.trim());
+          // Keep the overlap tail for context continuity
+          const words = current.split(/\s+/);
+          const overlapWords: string[] = [];
+          let overlapLen = 0;
+          for (let i = words.length - 1; i >= 0; i--) {
+            overlapLen += words[i].length + 1;
+            if (overlapLen > overlap) break;
+            overlapWords.unshift(words[i]);
+          }
+          current = overlapWords.length > 0 ? `${overlapWords.join(" ")} ${sentence}` : sentence;
+        } else {
+          // sentence longer than chunkSize — hard-split it
+          let remaining = sentence;
+          while (remaining.length > chunkSize) {
+            chunks.push(remaining.slice(0, chunkSize).trim());
+            remaining = remaining.slice(chunkSize - overlap);
+          }
+          current = remaining;
+        }
+      }
+    }
+  }
+  if (current.trim()) chunks.push(current.trim());
+  return chunks.filter((c) => c.length > 0);
+}
+
+/**
+ * Chunk a business file and embed each chunk.
+ * Skips if chunks already exist for this file. Silent no-op if no API key or no text.
+ */
+export async function chunkAndEmbedFile(userId: string, fileId: string): Promise<void> {
+  try {
+    const file = await prisma.businessFile.findFirst({
+      where: { id: fileId, userId },
+      select: { id: true, textExtract: true, name: true, embeddingModel: true },
+    });
+    if (!file || !file.textExtract) return;
+
+    // Skip if already chunked
+    const existingCount = await prisma.documentChunk.count({ where: { fileId } });
+    if (existingCount > 0) return;
+
+    const apiKey = await getOpenAIKey(userId);
+    if (!apiKey) return;
+
+    const fullText = `${file.name}\n\n${file.textExtract}`;
+    const chunks = chunkText(fullText);
+    if (chunks.length === 0) return;
+
+    // Embed chunks sequentially to avoid rate limits
+    const rows: Array<{ fileId: string; userId: string; chunkIndex: number; chunkText: string; embeddingJson: string | null }> = [];
+    for (let i = 0; i < chunks.length; i++) {
+      const embedding = await generateEmbedding(chunks[i], apiKey);
+      rows.push({
+        fileId,
+        userId,
+        chunkIndex: i,
+        chunkText: chunks[i],
+        embeddingJson: embedding ? JSON.stringify(embedding) : null,
+      });
+    }
+
+    await prisma.documentChunk.createMany({ data: rows });
+
+    // Update whole-doc embedding for backward compat (use first ~8000 chars)
+    const docEmbedding = await generateEmbedding(fullText.slice(0, 8000), apiKey);
+    if (docEmbedding) {
+      await prisma.businessFile.update({
+        where: { id: fileId },
+        data: { embeddingJson: JSON.stringify(docEmbedding), embeddingModel: EMBEDDING_MODEL },
+      });
+    }
+  } catch (err) {
+    console.error("[embed] chunkAndEmbedFile error", { fileId, err: String(err) });
   }
 }
 
@@ -104,9 +203,10 @@ export type SemanticSearchResult = {
 };
 
 /**
- * Semantic search over business files.
- * Generates a query embedding, computes cosine similarity against all embedded files,
- * returns top-k results. Falls back to keyword search if no API key.
+ * Semantic search over business file chunks.
+ * Generates a query embedding, computes cosine similarity against all stored chunks,
+ * keeps the best-matching chunk per file, returns top-k results.
+ * Falls back to keyword search if no API key.
  */
 export async function semanticSearchFiles(
   userId: string,
@@ -115,40 +215,87 @@ export async function semanticSearchFiles(
 ): Promise<SemanticSearchResult[]> {
   const apiKey = await getOpenAIKey(userId);
 
-  // Lazy-embed any pending files first
-  if (apiKey) await embedPendingFiles(userId, 20);
-
-  const files = await prisma.businessFile.findMany({
-    where: { userId },
-    select: { id: true, name: true, category: true, textExtract: true, embeddingJson: true },
-  });
-
-  if (files.length === 0) return [];
-
-  // If we have an API key, use cosine similarity
   if (apiKey) {
     const queryEmbedding = await generateEmbedding(query, apiKey);
     if (queryEmbedding) {
-      const scored = files
-        .filter((f) => f.embeddingJson)
-        .map((f) => {
-          const vec = JSON.parse(f.embeddingJson!) as number[];
-          return { f, sim: cosineSimilarity(queryEmbedding, vec) };
-        })
-        .sort((a, b) => b.sim - a.sim)
-        .slice(0, limit);
+      // Fetch all chunks for the user that have embeddings
+      const chunks = await prisma.documentChunk.findMany({
+        where: { userId, embeddingJson: { not: null } },
+        select: { fileId: true, chunkText: true, embeddingJson: true },
+        include: { file: { select: { name: true, category: true } } },
+      });
 
-      return scored.map(({ f, sim }) => ({
-        fileId: f.id,
-        name: f.name,
-        category: f.category,
-        similarity: Math.round(sim * 100) / 100,
-        excerpt: (f.textExtract ?? "").slice(0, 300),
-      }));
+      if (chunks.length > 0) {
+        // Score each chunk
+        type ChunkScore = { fileId: string; name: string; category: string; sim: number; chunkText: string };
+        const scored: ChunkScore[] = chunks.map((c) => {
+          const vec = JSON.parse(c.embeddingJson!) as number[];
+          return {
+            fileId: c.fileId,
+            name: (c as typeof c & { file: { name: string; category: string } }).file.name,
+            category: (c as typeof c & { file: { name: string; category: string } }).file.category,
+            sim: cosineSimilarity(queryEmbedding, vec),
+            chunkText: c.chunkText,
+          };
+        });
+
+        // Keep best chunk per file
+        const bestByFile = new Map<string, ChunkScore>();
+        for (const item of scored) {
+          const existing = bestByFile.get(item.fileId);
+          if (!existing || item.sim > existing.sim) {
+            bestByFile.set(item.fileId, item);
+          }
+        }
+
+        const results = Array.from(bestByFile.values())
+          .sort((a, b) => b.sim - a.sim)
+          .slice(0, limit);
+
+        return results.map(({ fileId, name, category, sim, chunkText }) => ({
+          fileId,
+          name,
+          category,
+          similarity: Math.round(sim * 100) / 100,
+          excerpt: chunkText.slice(0, 300),
+        }));
+      }
+
+      // No chunks yet — fall back to whole-file embeddings (backward compat)
+      // Lazy-embed any pending files first
+      await embedPendingFiles(userId, 20);
+
+      const files = await prisma.businessFile.findMany({
+        where: { userId },
+        select: { id: true, name: true, category: true, textExtract: true, embeddingJson: true },
+      });
+
+      if (files.length > 0) {
+        const scored = files
+          .filter((f) => f.embeddingJson)
+          .map((f) => {
+            const vec = JSON.parse(f.embeddingJson!) as number[];
+            return { f, sim: cosineSimilarity(queryEmbedding, vec) };
+          })
+          .sort((a, b) => b.sim - a.sim)
+          .slice(0, limit);
+
+        return scored.map(({ f, sim }) => ({
+          fileId: f.id,
+          name: f.name,
+          category: f.category,
+          similarity: Math.round(sim * 100) / 100,
+          excerpt: (f.textExtract ?? "").slice(0, 300),
+        }));
+      }
     }
   }
 
   // Fallback: keyword search
+  const files = await prisma.businessFile.findMany({
+    where: { userId },
+    select: { id: true, name: true, category: true, textExtract: true },
+  });
   const q = query.toLowerCase();
   return files
     .filter((f) => f.name.toLowerCase().includes(q) || (f.textExtract ?? "").toLowerCase().includes(q))
