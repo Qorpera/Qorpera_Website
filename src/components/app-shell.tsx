@@ -5,7 +5,6 @@ import { AppNav, AppNavVerticalGrouped, type NavGroup } from "@/components/app-n
 import { getInboxOpenApprovalCount } from "@/lib/inbox-store";
 import { getCompanySoul } from "@/lib/company-soul-store";
 import { getAppPreferences } from "@/lib/settings-store";
-import { AdvisorExecutionMode } from "@/components/advisor-execution-mode";
 import { listAdvisorSessions } from "@/lib/advisor-sessions-store";
 import { getModelRoutes, getAvailableModelCatalog } from "@/lib/model-routing-store";
 import { getPlanStatus } from "@/lib/plan-store";

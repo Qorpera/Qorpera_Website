@@ -346,7 +346,7 @@ export default async function ProfilePage({
               <div className="text-sm font-medium">Billing</div>
               <p className="mt-0.5 text-sm text-white/45">Manage purchases and review financial artifacts.</p>
             </div>
-            <Link href="/agents/hire" className="wf-btn-primary px-4 py-2 text-sm">Open Hire</Link>
+            <Link href="/pricing" className="wf-btn-primary px-4 py-2 text-sm">View Plans</Link>
           </div>
 
           {/* Billing stats */}
@@ -366,7 +366,6 @@ export default async function ProfilePage({
 
           <div className="flex gap-3 mb-8">
             <Link href="/business-logs" className="wf-btn px-4 py-2 text-sm">Business Logs</Link>
-            <Link href="/agents/hire" className="wf-btn px-4 py-2 text-sm">Recent Purchases</Link>
           </div>
 
           {/* Subscriptions table */}
@@ -454,12 +453,11 @@ export default async function ProfilePage({
               <div className="text-sm font-medium">Manage Agents</div>
               <p className="mt-0.5 text-sm text-white/45">Hire, inspect, and configure your workforce.</p>
             </div>
-            <Link href="/agents/hire" className="wf-btn-primary px-4 py-2 text-sm">Hire Agents</Link>
+            <Link href="/pricing" className="wf-btn-primary px-4 py-2 text-sm">View Plans</Link>
           </div>
 
           <div className="flex gap-3 py-5 border-b border-white/[0.07]">
             <Link href="/agents" className="wf-btn px-4 py-2 text-sm">Agent Roster</Link>
-            <Link href="/agents/hire" className="wf-btn px-4 py-2 text-sm">Purchases</Link>
           </div>
 
           <div className="pt-5">
