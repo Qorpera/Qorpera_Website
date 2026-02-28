@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireUserId } from "@/lib/auth";
 import { decodeSession } from "@/lib/session-codec";
 import { runSchedulerTick, runDelegatedTaskQueue } from "@/lib/orchestration-store";
+import { checkAndExpireApprovals } from "@/lib/inbox-expiry";
 import { verifySameOrigin } from "@/lib/request-security";
 
 export const runtime = "nodejs";
@@ -34,6 +35,14 @@ export async function POST(request: Request) {
 
   const tickResult = await runSchedulerTick(userId);
 
+  // Expire stale approval items (escalate or auto-close based on user prefs).
+  let expiredApprovals = 0;
+  try {
+    expiredApprovals = await checkAndExpireApprovals(userId);
+  } catch {
+    // Non-fatal
+  }
+
   // Drain the task queue — execute QUEUED tasks (newly created or previously queued).
   let executedCount = 0;
   try {
@@ -47,5 +56,6 @@ export async function POST(request: Request) {
     ok: true,
     ...tickResult,
     executed: executedCount,
+    expiredApprovals,
   });
 }

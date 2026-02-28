@@ -523,6 +523,7 @@ export async function createDelegatedTask(
     inputFromTaskId?: string | null;
     chainDepth?: number;
     webhookEventId?: string | null;
+    escalatedFromId?: string | null;
   },
 ) {
   const title = input.title.trim().slice(0, 240);
@@ -536,6 +537,24 @@ export async function createDelegatedTask(
     const cfg = await getAgentAutomationConfig(userId, input.toAgentTarget);
     if (!cfg.allowAgentDelegation) {
       throw new Error(`${input.toAgentTarget.replaceAll("_", " ")} does not accept agent-to-agent delegation right now`);
+    }
+  }
+
+  // Per-agent monthly task budget check (item 3)
+  const prefs = await getAppPreferences(userId);
+  const budget = prefs.agentBudgets[input.toAgentTarget];
+  if (budget?.monthlyTaskLimit) {
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const monthCount = await prisma.delegatedTask.count({
+      where: { userId, toAgentTarget: input.toAgentTarget, createdAt: { gte: monthStart } },
+    });
+    if (monthCount >= budget.monthlyTaskLimit) {
+      throw new Error(
+        `Monthly task limit reached for ${input.toAgentTarget.replaceAll("_", " ")} ` +
+        `(${monthCount}/${budget.monthlyTaskLimit}). Adjust limits in Settings → Preferences.`
+      );
     }
   }
 
@@ -553,6 +572,7 @@ export async function createDelegatedTask(
       inputFromTaskId: input.inputFromTaskId ?? null,
       chainDepth: input.chainDepth ?? 0,
       webhookEventId: input.webhookEventId ?? null,
+      escalatedFromId: input.escalatedFromId ?? null,
       status: DelegatedTaskStatus.QUEUED,
     },
   });
@@ -1247,15 +1267,19 @@ export async function executeDelegatedTask(userId: string, taskId: string, onEve
   try {
     return await _executeClaimedTask(userId, row, onEvent);
   } catch (execError: unknown) {
-    // Recovery: if attempts < maxAttempts, reset to QUEUED so the next heartbeat picks it up.
-    // Otherwise mark FAILED permanently.
+    // Recovery: if attempts < maxAttempts, reset to QUEUED with exponential backoff.
+    // Otherwise mark FAILED permanently and escalate to CHIEF_ADVISOR.
     const canRetry = row.attempts < (row.maxAttempts || 3);
     const nextStatus = canRetry ? DelegatedTaskStatus.QUEUED : DelegatedTaskStatus.FAILED;
+    // Exponential backoff: 30s * 2^attempt (attempt already incremented by this run)
+    const backoffMs = canRetry ? Math.min(30_000 * Math.pow(2, row.attempts), 3_600_000) : 0;
+    const nextRetryAt = canRetry ? new Date(Date.now() + backoffMs) : null;
     await prisma.delegatedTask.update({
       where: { id: row.id },
       data: {
         status: nextStatus,
         ...(nextStatus === DelegatedTaskStatus.FAILED ? { completedAt: new Date() } : {}),
+        ...(nextRetryAt ? { nextRetryAt } : {}),
       },
     }).catch(() => null);
 
@@ -1267,7 +1291,7 @@ export async function executeDelegatedTask(userId: string, taskId: string, onEve
         entityId: row.id,
         action: canRetry ? "RETRY_QUEUED" : "FAILED_PERMANENT",
         summary: canRetry
-          ? `Task "${row.title}" failed (attempt ${row.attempts}/${row.maxAttempts}), requeued for next heartbeat`
+          ? `Task "${row.title}" failed (attempt ${row.attempts}/${row.maxAttempts}), retrying in ${Math.round(backoffMs / 1000)}s`
           : `Task "${row.title}" failed permanently after ${row.attempts} attempts: ${errMsg.slice(0, 300)}`,
       },
     }).catch(() => null);
@@ -1277,6 +1301,25 @@ export async function executeDelegatedTask(userId: string, taskId: string, onEve
       notifyTaskFailed(userId, { taskTitle: row.title, agentName }).catch((e) => {
         console.error("[notifications] notifyTaskFailed error:", e);
       });
+
+      // Agent-to-agent escalation: delegate permanently failed task to CHIEF_ADVISOR.
+      if (row.toAgentTarget !== "CHIEF_ADVISOR") {
+        createDelegatedTask(userId, {
+          fromAgent: row.toAgentTarget as AgentTarget,
+          toAgentTarget: "CHIEF_ADVISOR",
+          title: `Escalation: "${row.title}" failed permanently`,
+          instructions: [
+            `The following task failed permanently after ${row.attempts} attempts and requires your decision:`,
+            `Agent: ${agentName}`,
+            `Original instructions: ${row.instructions.slice(0, 800)}`,
+            `Final error: ${errMsg.slice(0, 400)}`,
+            "",
+            "Please assess: retry manually, delegate to another agent, or close as unresolvable.",
+          ].join("\n"),
+          triggerSource: "AGENT_FAILURE_ESCALATION",
+          escalatedFromId: row.id,
+        }).catch(() => null);
+      }
     }
 
     throw execError;
@@ -1777,14 +1820,44 @@ async function _executeClaimedTask(
     });
   }
 
+  // Output auto-routing — fire configured routes for completed/failed tasks (item 2).
+  if (finalStatus === DelegatedTaskStatus.DONE) {
+    import("@/lib/output-routes-store").then(({ fireOutputRoutes }) =>
+      fireOutputRoutes({
+        userId,
+        agentTarget: row.toAgentTarget,
+        event: "completed",
+        digest: digest ?? "",
+        taskTitle: row.title,
+        taskId: row.id,
+      }).catch(() => null)
+    ).catch(() => null);
+  }
+
+  // Cost attribution — estimate token cost and record on the task (item 8).
+  // Uses a rough heuristic: 1 token ≈ $0.003/1K (GPT-4o blended) scaled to output length.
+  // Replaced with a real count from agent-llm usage if available.
+  const estimatedTokens = Math.ceil((output.length + row.instructions.length) / 4);
+  const estimatedCentsPer1K = 0.3; // ~$3/1M blended input+output (Claude Sonnet rate)
+  const costEstimateCents = Math.round((estimatedTokens / 1000) * estimatedCentsPer1K);
+  prisma.delegatedTask.update({
+    where: { id: row.id },
+    data: { costEstimateCents },
+  }).catch(() => null);
+
   onEvent?.({ type: "task_done", status: finalStatus });
 
   return toTaskView(updated);
 }
 
 export async function runDelegatedTaskQueue(userId: string, limit = 10) {
+  const now = new Date();
   const queued = await prisma.delegatedTask.findMany({
-    where: { userId, status: DelegatedTaskStatus.QUEUED },
+    where: {
+      userId,
+      status: DelegatedTaskStatus.QUEUED,
+      OR: [{ nextRetryAt: null }, { nextRetryAt: { lte: now } }],
+    },
     orderBy: { createdAt: "asc" },
     take: limit,
   });

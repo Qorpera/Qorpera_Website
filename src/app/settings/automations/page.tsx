@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { AutoApprovalPanel } from "@/components/auto-approval-panel";
+import { OutputRoutesPanel } from "@/components/output-routes-panel";
 
 export const metadata = { title: "Automations · Settings" };
 
@@ -9,8 +10,11 @@ export default async function AutomationsSettingsPage() {
   if (!session) redirect("/login");
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
       <AutoApprovalPanel />
+      <div className="border-t border-[rgba(255,255,255,0.06)] pt-8">
+        <OutputRoutesPanel />
+      </div>
     </div>
   );
 }

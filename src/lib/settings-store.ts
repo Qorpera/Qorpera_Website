@@ -1,6 +1,11 @@
 import { ConnectorCheckCadence, DefaultAutonomy } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
+export type AgentBudget = {
+  monthlyTaskLimit: number;
+  warnAtPct?: number; // 0-100, default 80
+};
+
 export type AppPreferences = {
   defaultAutonomy: "DRAFT_ONLY" | "APPROVAL" | "AUTO";
   requirePreview: boolean;
@@ -14,6 +19,12 @@ export type AppPreferences = {
   notifySubmissionReady: boolean;
   notifyTaskCompleted: boolean;
   notifyTaskFailed: boolean;
+  /** Hours until open approval items expire and escalate (0 = never). */
+  approvalExpiryHours: number;
+  /** Escalate expired approvals to CHIEF_ADVISOR instead of just closing them. */
+  escalationEnabled: boolean;
+  /** Per-agent monthly task caps. JSON: Record<agentKind, AgentBudget> */
+  agentBudgets: Record<string, AgentBudget>;
 };
 
 export const DEFAULT_PREFERENCES: AppPreferences = {
@@ -29,6 +40,9 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   notifySubmissionReady: true,
   notifyTaskCompleted: true,
   notifyTaskFailed: true,
+  approvalExpiryHours: 0,
+  escalationEnabled: true,
+  agentBudgets: {},
 };
 
 function fromDb(row: {
@@ -44,7 +58,14 @@ function fromDb(row: {
   notifySubmissionReady?: boolean | null;
   notifyTaskCompleted?: boolean | null;
   notifyTaskFailed?: boolean | null;
+  approvalExpiryHours?: number | null;
+  escalationEnabled?: boolean | null;
+  agentBudgetsJson?: string | null;
 }): AppPreferences {
+  let agentBudgets: Record<string, AgentBudget> = {};
+  try {
+    if (row.agentBudgetsJson) agentBudgets = JSON.parse(row.agentBudgetsJson) as Record<string, AgentBudget>;
+  } catch { /* ignore corrupt JSON */ }
   return {
     defaultAutonomy: row.defaultAutonomy,
     requirePreview: row.requirePreview,
@@ -58,6 +79,9 @@ function fromDb(row: {
     notifySubmissionReady: row.notifySubmissionReady ?? true,
     notifyTaskCompleted: row.notifyTaskCompleted ?? true,
     notifyTaskFailed: row.notifyTaskFailed ?? true,
+    approvalExpiryHours: row.approvalExpiryHours ?? 0,
+    escalationEnabled: row.escalationEnabled ?? true,
+    agentBudgets,
   };
 }
 
@@ -75,6 +99,9 @@ function toDb(next: Partial<AppPreferences>) {
     notifySubmissionReady?: boolean;
     notifyTaskCompleted?: boolean;
     notifyTaskFailed?: boolean;
+    approvalExpiryHours?: number;
+    escalationEnabled?: boolean;
+    agentBudgetsJson?: string;
   } = {};
 
   if (next.defaultAutonomy) data.defaultAutonomy = next.defaultAutonomy as DefaultAutonomy;
@@ -89,6 +116,9 @@ function toDb(next: Partial<AppPreferences>) {
   if (typeof next.notifySubmissionReady === "boolean") data.notifySubmissionReady = next.notifySubmissionReady;
   if (typeof next.notifyTaskCompleted === "boolean") data.notifyTaskCompleted = next.notifyTaskCompleted;
   if (typeof next.notifyTaskFailed === "boolean") data.notifyTaskFailed = next.notifyTaskFailed;
+  if (typeof next.approvalExpiryHours === "number") data.approvalExpiryHours = Math.max(0, next.approvalExpiryHours);
+  if (typeof next.escalationEnabled === "boolean") data.escalationEnabled = next.escalationEnabled;
+  if (next.agentBudgets !== undefined) data.agentBudgetsJson = JSON.stringify(next.agentBudgets);
 
   return data;
 }

@@ -1,33 +1,35 @@
 /**
  * Inbound provider webhook endpoint.
- * Accepts events from Calendly and HubSpot, validates HMAC, and stores them for
- * async processing by the scheduler.
+ * Accepts events from Calendly, HubSpot, Slack, GitHub, and Linear,
+ * validates HMAC, and stores them for async processing by the scheduler.
  *
  * Always returns 200 — never 4xx — to prevent providers from disabling the webhook.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyCalendlySignature, verifyHubspotSignature } from "@/lib/webhook-validators";
+import {
+  verifyCalendlySignature,
+  verifyHubspotSignature,
+  verifySlackSignature,
+  verifyGithubSignature,
+  verifyLinearSignature,
+} from "@/lib/webhook-validators";
 
 export const runtime = "nodejs";
 
-const VALID_PROVIDERS = ["calendly", "hubspot"] as const;
+const VALID_PROVIDERS = ["calendly", "hubspot", "slack", "github", "linear"] as const;
 type Provider = (typeof VALID_PROVIDERS)[number];
 
 function isValidProvider(p: string): p is Provider {
   return (VALID_PROVIDERS as readonly string[]).includes(p);
 }
 
-/**
- * Look up the internal userId for a Calendly event by matching the user_uri
- * stored in IntegrationConnection.metadataJson.
- */
+// ── UserId resolvers ──────────────────────────────────────────────
+
 async function resolveCalendlyUserId(payload: Record<string, unknown>): Promise<string | null> {
   try {
-    // Try nested payload path first (invitee.created / invitee.canceled)
-    const inner =
-      (payload.payload as Record<string, unknown> | undefined) ?? payload;
+    const inner = (payload.payload as Record<string, unknown> | undefined) ?? payload;
     const memberships = (
       (inner.scheduled_event as Record<string, unknown> | undefined)
         ?.event_memberships as Array<Record<string, unknown>> | undefined
@@ -39,7 +41,6 @@ async function resolveCalendlyUserId(payload: Record<string, unknown>): Promise<
       if (typeof m.user_uri === "string") candidateUris.push(m.user_uri);
     }
     if (creatorUri) candidateUris.push(creatorUri);
-
     if (candidateUris.length === 0) return null;
 
     const connections = await prisma.integrationConnection.findMany({
@@ -51,12 +52,8 @@ async function resolveCalendlyUserId(payload: Record<string, unknown>): Promise<
       if (!conn.metadataJson) continue;
       try {
         const meta = JSON.parse(conn.metadataJson) as Record<string, string>;
-        if (meta.user_uri && candidateUris.includes(meta.user_uri)) {
-          return conn.userId;
-        }
-      } catch {
-        continue;
-      }
+        if (meta.user_uri && candidateUris.includes(meta.user_uri)) return conn.userId;
+      } catch { continue; }
     }
     return null;
   } catch {
@@ -64,10 +61,6 @@ async function resolveCalendlyUserId(payload: Record<string, unknown>): Promise<
   }
 }
 
-/**
- * Look up the internal userId for a HubSpot event by matching portalId
- * stored in IntegrationConnection.metadataJson.hub_id.
- */
 async function resolveHubspotUserId(
   payload: Record<string, unknown> | Array<Record<string, unknown>>,
 ): Promise<string | null> {
@@ -86,9 +79,77 @@ async function resolveHubspotUserId(
       try {
         const meta = JSON.parse(conn.metadataJson) as Record<string, string>;
         if (meta.hub_id === portalId) return conn.userId;
-      } catch {
-        continue;
-      }
+      } catch { continue; }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveSlackUserId(payload: Record<string, unknown>): Promise<string | null> {
+  try {
+    const teamId = (payload.team_id as string | undefined) ??
+      ((payload.event as Record<string, unknown> | undefined)?.team as string | undefined);
+    if (!teamId) return null;
+
+    const connections = await prisma.integrationConnection.findMany({
+      where: { provider: "slack" },
+      select: { userId: true, metadataJson: true },
+    });
+
+    for (const conn of connections) {
+      if (!conn.metadataJson) continue;
+      try {
+        const meta = JSON.parse(conn.metadataJson) as Record<string, string>;
+        if (meta.team_id === teamId) return conn.userId;
+      } catch { continue; }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveGithubUserId(payload: Record<string, unknown>): Promise<string | null> {
+  try {
+    const installationId = ((payload.installation as Record<string, unknown> | undefined)?.id as number | undefined);
+    if (!installationId) return null;
+
+    const connections = await prisma.integrationConnection.findMany({
+      where: { provider: "github" },
+      select: { userId: true, metadataJson: true },
+    });
+
+    for (const conn of connections) {
+      if (!conn.metadataJson) continue;
+      try {
+        const meta = JSON.parse(conn.metadataJson) as Record<string, unknown>;
+        if (Number(meta.installation_id) === installationId) return conn.userId;
+      } catch { continue; }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveLinearUserId(payload: Record<string, unknown>): Promise<string | null> {
+  try {
+    const orgId = (payload.organizationId as string | undefined);
+    if (!orgId) return null;
+
+    const connections = await prisma.integrationConnection.findMany({
+      where: { provider: "linear" },
+      select: { userId: true, metadataJson: true },
+    });
+
+    for (const conn of connections) {
+      if (!conn.metadataJson) continue;
+      try {
+        const meta = JSON.parse(conn.metadataJson) as Record<string, string>;
+        if (meta.organization_id === orgId) return conn.userId;
+      } catch { continue; }
     }
     return null;
   } catch {
@@ -103,12 +164,20 @@ export async function POST(
   const { provider } = await params;
 
   if (!isValidProvider(provider)) {
-    // Still return 200 — unrecognised path shouldn't trigger provider disabling
     return NextResponse.json({ ok: true, skipped: true });
   }
 
-  // Read raw body as text (required for HMAC validation)
   const rawBody = await req.text().catch(() => "");
+
+  // Slack URL verification challenge — must respond before any body parsing
+  if (provider === "slack") {
+    try {
+      const parsed = JSON.parse(rawBody) as Record<string, unknown>;
+      if (parsed.type === "url_verification") {
+        return NextResponse.json({ challenge: parsed.challenge });
+      }
+    } catch { /* not JSON or no challenge */ }
+  }
 
   let payload: Record<string, unknown> | Array<Record<string, unknown>>;
   try {
@@ -120,19 +189,21 @@ export async function POST(
   // ── Resolve userId ─────────────────────────────────────────────
 
   let userId: string | null = null;
+  const singlePayload = (Array.isArray(payload) ? payload[0] : payload) as Record<string, unknown>;
 
   if (provider === "calendly") {
-    userId = await resolveCalendlyUserId(
-      (Array.isArray(payload) ? payload[0] : payload) as Record<string, unknown>,
-    );
+    userId = await resolveCalendlyUserId(singlePayload);
   } else if (provider === "hubspot") {
-    userId = await resolveHubspotUserId(
-      payload as Record<string, unknown> | Array<Record<string, unknown>>,
-    );
+    userId = await resolveHubspotUserId(payload as Record<string, unknown> | Array<Record<string, unknown>>);
+  } else if (provider === "slack") {
+    userId = await resolveSlackUserId(singlePayload);
+  } else if (provider === "github") {
+    userId = await resolveGithubUserId(singlePayload);
+  } else if (provider === "linear") {
+    userId = await resolveLinearUserId(singlePayload);
   }
 
   if (!userId) {
-    // Unknown user — accept silently
     return NextResponse.json({ ok: true, skipped: true });
   }
 
@@ -141,7 +212,6 @@ export async function POST(
   if (provider === "calendly") {
     const sigHeader = req.headers.get("calendly-webhook-signature") ?? "";
     if (sigHeader) {
-      // Fetch user's stored signing key
       const conn = await prisma.integrationConnection.findUnique({
         where: { userId_provider: { userId, provider: "calendly" } },
         select: { metadataJson: true },
@@ -150,15 +220,11 @@ export async function POST(
         try {
           const meta = JSON.parse(conn.metadataJson) as Record<string, string>;
           if (meta.webhook_signing_key) {
-            const valid = verifyCalendlySignature(rawBody, sigHeader, meta.webhook_signing_key);
-            if (!valid) {
+            if (!verifyCalendlySignature(rawBody, sigHeader, meta.webhook_signing_key)) {
               return NextResponse.json({ ok: true, skipped: true });
             }
           }
-          // If no signing key stored yet (registration race), accept without validation
-        } catch {
-          // Malformed metadataJson — accept without validation
-        }
+        } catch { /* accept */ }
       }
     }
   } else if (provider === "hubspot") {
@@ -166,15 +232,32 @@ export async function POST(
     const timestampHeader = req.headers.get("x-hubspot-request-timestamp") ?? "";
     const clientSecret = process.env.HUBSPOT_CLIENT_SECRET ?? "";
     if (sigHeader && clientSecret) {
-      const valid = verifyHubspotSignature(
-        rawBody,
-        sigHeader,
-        clientSecret,
-        req.method,
-        req.url,
-        timestampHeader,
-      );
-      if (!valid) {
+      if (!verifyHubspotSignature(rawBody, sigHeader, clientSecret, req.method, req.url, timestampHeader)) {
+        return NextResponse.json({ ok: true, skipped: true });
+      }
+    }
+  } else if (provider === "slack") {
+    const signature = req.headers.get("x-slack-signature") ?? "";
+    const timestamp = req.headers.get("x-slack-request-timestamp") ?? "";
+    const signingSecret = process.env.SLACK_SIGNING_SECRET ?? "";
+    if (signature && signingSecret) {
+      if (!verifySlackSignature(rawBody, signature, timestamp, signingSecret)) {
+        return NextResponse.json({ ok: true, skipped: true });
+      }
+    }
+  } else if (provider === "github") {
+    const sigHeader = req.headers.get("x-hub-signature-256") ?? "";
+    const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET ?? "";
+    if (sigHeader && webhookSecret) {
+      if (!verifyGithubSignature(rawBody, sigHeader, webhookSecret)) {
+        return NextResponse.json({ ok: true, skipped: true });
+      }
+    }
+  } else if (provider === "linear") {
+    const sigHeader = req.headers.get("linear-signature") ?? "";
+    const webhookSecret = process.env.LINEAR_WEBHOOK_SECRET ?? "";
+    if (sigHeader && webhookSecret) {
+      if (!verifyLinearSignature(rawBody, sigHeader, webhookSecret)) {
         return NextResponse.json({ ok: true, skipped: true });
       }
     }
@@ -185,16 +268,23 @@ export async function POST(
   let eventType: string;
 
   if (provider === "calendly") {
-    const p = (Array.isArray(payload) ? payload[0] : payload) as Record<string, unknown>;
-    eventType = String(p.event ?? "unknown");
-  } else {
-    // HubSpot sends an array; use first entry's subscriptionType
+    eventType = String(singlePayload.event ?? "unknown");
+  } else if (provider === "hubspot") {
     const first = Array.isArray(payload) ? payload[0] : (payload as Record<string, unknown>);
     eventType = String(
       (first as Record<string, unknown>).subscriptionType ??
       (first as Record<string, unknown>).event ??
       "unknown",
     );
+  } else if (provider === "slack") {
+    const event = (singlePayload.event as Record<string, unknown> | undefined) ?? {};
+    eventType = String(event.type ?? singlePayload.type ?? "unknown");
+  } else if (provider === "github") {
+    eventType = req.headers.get("x-github-event") ?? String(singlePayload.action ?? "unknown");
+  } else if (provider === "linear") {
+    eventType = String(singlePayload.type ?? "unknown");
+  } else {
+    eventType = "unknown";
   }
 
   // ── Store event ────────────────────────────────────────────────

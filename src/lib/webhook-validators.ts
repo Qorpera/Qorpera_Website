@@ -84,6 +84,74 @@ export function verifyHubspotSignature(
   }
 }
 
+// ── Slack ─────────────────────────────────────────────────────────
+
+/**
+ * Verify a Slack webhook signature.
+ * Header: `X-Slack-Signature: v0=<hmac>`
+ * Signed content: `v0:<X-Slack-Request-Timestamp>:<rawBody>`
+ */
+export function verifySlackSignature(
+  rawBody: string,
+  signature: string,
+  timestamp: string,
+  signingSecret: string,
+): boolean {
+  try {
+    const ageSeconds = Math.floor(Date.now() / 1000) - parseInt(timestamp, 10);
+    if (ageSeconds > MAX_AGE_SECONDS || ageSeconds < -30) return false;
+
+    const baseString = `v0:${timestamp}:${rawBody}`;
+    const expected = "v0=" + crypto.createHmac("sha256", signingSecret).update(baseString).digest("hex");
+
+    const expectedBuf = Buffer.from(expected);
+    const receivedBuf = Buffer.from(signature);
+    if (expectedBuf.length !== receivedBuf.length) return false;
+    return crypto.timingSafeEqual(expectedBuf, receivedBuf);
+  } catch {
+    return false;
+  }
+}
+
+// ── GitHub ────────────────────────────────────────────────────────
+
+/**
+ * Verify a GitHub webhook signature.
+ * Header: `X-Hub-Signature-256: sha256=<hmac>`
+ * Signed content: rawBody
+ */
+export function verifyGithubSignature(rawBody: string, header: string, secret: string): boolean {
+  try {
+    const received = header.startsWith("sha256=") ? header.slice(7) : header;
+    const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+    const expectedBuf = Buffer.from(expected);
+    const receivedBuf = Buffer.from(received);
+    if (expectedBuf.length !== receivedBuf.length) return false;
+    return crypto.timingSafeEqual(expectedBuf, receivedBuf);
+  } catch {
+    return false;
+  }
+}
+
+// ── Linear ────────────────────────────────────────────────────────
+
+/**
+ * Verify a Linear webhook signature.
+ * Header: `linear-signature: <hex-hmac-sha256>`
+ * Signed content: rawBody
+ */
+export function verifyLinearSignature(rawBody: string, header: string, secret: string): boolean {
+  try {
+    const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+    const expectedBuf = Buffer.from(expected);
+    const receivedBuf = Buffer.from(header);
+    if (expectedBuf.length !== receivedBuf.length) return false;
+    return crypto.timingSafeEqual(expectedBuf, receivedBuf);
+  } catch {
+    return false;
+  }
+}
+
 // ── Event summarizers ─────────────────────────────────────────────
 
 /**
@@ -137,5 +205,67 @@ export function summarizeHubspotEvent(
     return `HubSpot event "${subscriptionType}"${portalPart}${objectPart} received.`;
   } catch {
     return `HubSpot event "${eventType}" received.`;
+  }
+}
+
+/**
+ * Returns a 1-sentence LLM-friendly summary of a Slack event payload.
+ */
+export function summarizeSlackEvent(
+  eventType: string,
+  payload: Record<string, unknown>,
+): string {
+  try {
+    const event = (payload.event as Record<string, unknown> | undefined) ?? payload;
+    const user = (event.user as string | undefined) ?? (event.username as string | undefined) ?? "";
+    const channel = (event.channel as string | undefined) ?? "";
+    const text = ((event.text as string | undefined) ?? "").slice(0, 100);
+    const userPart = user ? ` from ${user}` : "";
+    const channelPart = channel ? ` in ${channel}` : "";
+    const textPart = text ? `: "${text}"` : "";
+    return `Slack event "${eventType}"${userPart}${channelPart}${textPart}.`;
+  } catch {
+    return `Slack event "${eventType}" received.`;
+  }
+}
+
+/**
+ * Returns a 1-sentence LLM-friendly summary of a GitHub event payload.
+ */
+export function summarizeGithubEvent(
+  eventType: string,
+  payload: Record<string, unknown>,
+): string {
+  try {
+    const action = (payload.action as string | undefined) ?? "";
+    const repo = ((payload.repository as Record<string, unknown> | undefined)?.full_name as string | undefined) ?? "";
+    const sender = ((payload.sender as Record<string, unknown> | undefined)?.login as string | undefined) ?? "";
+    const actionPart = action ? `.${action}` : "";
+    const repoPart = repo ? ` on ${repo}` : "";
+    const senderPart = sender ? ` by ${sender}` : "";
+    return `GitHub event "${eventType}${actionPart}"${repoPart}${senderPart}.`;
+  } catch {
+    return `GitHub event "${eventType}" received.`;
+  }
+}
+
+/**
+ * Returns a 1-sentence LLM-friendly summary of a Linear event payload.
+ */
+export function summarizeLinearEvent(
+  eventType: string,
+  payload: Record<string, unknown>,
+): string {
+  try {
+    const action = (payload.action as string | undefined) ?? "";
+    const data = (payload.data as Record<string, unknown> | undefined) ?? {};
+    const title = (data.title as string | undefined) ?? "";
+    const identifier = (data.identifier as string | undefined) ?? "";
+    const actionPart = action ? `.${action}` : "";
+    const titlePart = title ? ` "${title}"` : "";
+    const idPart = identifier ? ` (${identifier})` : "";
+    return `Linear event "${eventType}${actionPart}"${idPart}${titlePart}.`;
+  } catch {
+    return `Linear event "${eventType}" received.`;
   }
 }

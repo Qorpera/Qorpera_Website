@@ -1787,6 +1787,31 @@ async function handleSqlQuery(args: Record<string, unknown>, ctx: ToolExecutionC
   }
 }
 
+// --- Semantic file search ---
+
+async function handleSemanticSearchFiles(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const query = String(args.query ?? "").trim();
+  const limit = Math.min(10, Math.max(1, Number(args.limit ?? 5) || 5));
+
+  if (!query) return "Error: query is required";
+
+  const { semanticSearchFiles } = await import("@/lib/embedding-store");
+  const results = await semanticSearchFiles(ctx.userId, query, limit);
+
+  if (results.length === 0) {
+    return `No business files found matching: "${query}"`;
+  }
+
+  const lines = [`Found ${results.length} relevant file(s) for: "${query}"\n`];
+  for (const r of results) {
+    const sim = r.similarity > 0 ? ` (similarity: ${(r.similarity * 100).toFixed(0)}%)` : "";
+    lines.push(`[${r.category}] ${r.name}${sim}`);
+    if (r.excerpt) lines.push(`  Excerpt: ${r.excerpt}`);
+    lines.push("");
+  }
+  return lines.join("\n").trim();
+}
+
 // --- Dispatch ---
 
 const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {
@@ -1875,6 +1900,8 @@ const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: T
   generate_pdf: handleGeneratePdf,
   // Agent performance
   agent_performance: handleAgentPerformance,
+  // Semantic RAG search over business files
+  semantic_search_files: handleSemanticSearchFiles,
 };
 
 const RUNNER_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {

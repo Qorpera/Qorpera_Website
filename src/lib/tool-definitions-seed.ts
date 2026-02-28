@@ -906,6 +906,21 @@ const TOOL_SEEDS: ToolSeedRow[] = [
       required: ["title", "content"],
     }),
   },
+  // ── Semantic file search (RAG) ────────────────────────────────────────
+  {
+    name: "semantic_search_files",
+    category: "read",
+    executionMode: "in_process",
+    description: "Search business files using semantic similarity (RAG). Finds files most relevant to a natural-language query using vector embeddings (OpenAI text-embedding-3-small when available) or keyword fallback. Returns excerpts from the most relevant files. Use this instead of list_files when you need to find context about a specific topic, client, product, or project across all uploaded documents.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Natural language query describing what you're looking for (e.g. 'Q3 revenue targets', 'churn risk customers', 'brand voice guidelines')" },
+        limit: { type: "number", description: "Maximum number of results to return (default: 5, max: 10)" },
+      },
+      required: ["query"],
+    }),
+  },
   // ── Agent performance ─────────────────────────────────────────────────
   {
     name: "agent_performance",
@@ -996,7 +1011,7 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "list_inbox_items", "web_fetch", "run_command", "write_file",
     "delegate_task", "send_email", "call_webhook", "create_business_log",
     "figma_get_design", "figma_get_image", "web_search", "extract_content",
-    "schedule_followup", "sql_query", "generate_pdf", "agent_performance",
+    "schedule_followup", "sql_query", "generate_pdf", "agent_performance", "semantic_search_files",
     // HubSpot
     "hubspot_search_contacts", "hubspot_create_contact", "hubspot_update_contact",
     "hubspot_list_deals", "hubspot_create_note",
@@ -1021,7 +1036,7 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
   MARKETING_COORDINATOR: [
     "search_business_logs", "list_files", "read_file", "web_fetch",
     "delegate_task", "create_business_log", "send_email", "list_inbox_items",
-    "figma_get_design", "figma_get_image", "schedule_followup", "generate_pdf",
+    "figma_get_design", "figma_get_image", "schedule_followup", "generate_pdf", "semantic_search_files",
     // Google full suite
     "google_list_emails", "google_read_email", "google_send_email", "google_list_calendar_events",
     "google_create_calendar_event", "google_list_drive_files", "google_read_drive_file",
@@ -1068,7 +1083,7 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
   ],
   FINANCE_ANALYST: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
-    "list_inbox_items", "get_project_details", "sql_query", "generate_pdf",
+    "list_inbox_items", "get_project_details", "sql_query", "generate_pdf", "semantic_search_files",
     "google_list_drive_files", "google_read_drive_file",
     "google_create_doc", "google_append_doc", "google_create_sheet", "google_append_sheet_rows",
     // QuickBooks
@@ -1119,7 +1134,7 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "web_search", "extract_content", "quality_review",
     "search_business_logs", "create_business_log",
     "list_files", "read_file", "delegate_task", "list_inbox_items",
-    "sql_query", "generate_pdf",
+    "sql_query", "generate_pdf", "semantic_search_files",
     "notion_search", "notion_read_page", "notion_create_page",
     "google_list_drive_files", "google_read_drive_file",
     "google_create_doc", "google_append_doc",
