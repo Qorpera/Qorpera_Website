@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { listCycles, getLatestCycle, shouldAutoRun } from "@/lib/optimizer/optimizer-store";
+import { listCycles, getLatestCycle, isDue } from "@/lib/optimizer/optimizer-store";
 import { getAppliedApplications } from "@/lib/optimizer/optimizer-store";
 
 // GET /api/optimizer/cycles?agentKind=CHIEF_ADVISOR
@@ -15,7 +15,7 @@ export async function GET(req: Request) {
     listCycles(session.userId, agentKind, 5),
     getLatestCycle(session.userId, agentKind),
     getAppliedApplications(session.userId, agentKind),
-    shouldAutoRun(session.userId, agentKind),
+    isDue(session.userId),
   ]);
 
   return NextResponse.json({

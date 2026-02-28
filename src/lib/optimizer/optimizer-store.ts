@@ -131,6 +131,12 @@ export async function getAppliedPatches(userId: string, agentKind: string): Prom
   return apps.map((a) => a.patchText).join("\n\n");
 }
 
+export async function revokeImprovement(userId: string, improvementId: string) {
+  await prisma.agentOptimizationApplication.deleteMany({
+    where: { userId, improvementId },
+  });
+}
+
 export async function getAppliedApplications(userId: string, agentKind: string) {
   return prisma.agentOptimizationApplication.findMany({
     where: { userId, agentKind },
