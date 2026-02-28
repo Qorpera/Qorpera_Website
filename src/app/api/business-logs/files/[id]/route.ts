@@ -1,10 +1,10 @@
-import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireUserId } from "@/lib/auth";
 import { verifySameOrigin } from "@/lib/request-security";
-import { deleteBusinessFile } from "@/lib/business-files-store";
+import { deleteBusinessFile, getFileBuffer } from "@/lib/business-files-store";
+import { isCloudKey, getPresignedDownloadUrl } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -24,13 +24,17 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   if (!file) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   try {
-    const bytes = await readFile(file.storagePath);
+    if (isCloudKey(file.storagePath)) {
+      const url = await getPresignedDownloadUrl(file.storagePath, 3600);
+      return NextResponse.redirect(url);
+    }
+    const bytes = await getFileBuffer(file.storagePath);
     const headers = new Headers();
     headers.set("Content-Type", file.mimeType || "application/octet-stream");
     headers.set("Content-Disposition", `inline; filename="${basename(file.name).replace(/"/g, "")}"`);
-    return new NextResponse(bytes, { status: 200, headers });
+    return new NextResponse(new Uint8Array(bytes), { status: 200, headers });
   } catch {
-    return NextResponse.json({ error: "File is unavailable on disk" }, { status: 410 });
+    return NextResponse.json({ error: "File is unavailable" }, { status: 410 });
   }
 }
 
