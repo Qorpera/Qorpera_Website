@@ -109,24 +109,29 @@ export function WorkflowCanvas({ graph, onChange, readOnly, nodeStates }: Props)
     [setEdges],
   );
 
-  // Sync ReactFlow state back to WorkflowGraph on changes
-  const syncGraph = useCallback(() => {
-    const wfNodes: WorkflowNode[] = nodes.map((n) => ({
+  // Build WorkflowGraph from ReactFlow nodes/edges
+  const buildGraph = useCallback((rfNodes: Node[], rfEdges: Edge[]): WorkflowGraph => {
+    const wfNodes: WorkflowNode[] = rfNodes.map((n) => ({
       id: n.id,
       type: (n.data as { nodeType: WorkflowNodeType }).nodeType,
       label: (n.data as { label: string }).label,
       position: n.position,
       config: (n.data as { config?: Record<string, unknown> }).config ?? {},
     }));
-    const wfEdges = edges.map((e) => ({
+    const wfEdges = rfEdges.map((e) => ({
       id: e.id,
       source: e.source,
       target: e.target,
       label: typeof e.label === "string" ? e.label : undefined,
       conditionBranch: typeof e.label === "string" && (e.label === "true" || e.label === "false") ? e.label as "true" | "false" : undefined,
     }));
-    onChange({ nodes: wfNodes, edges: wfEdges });
-  }, [nodes, edges, onChange]);
+    return { nodes: wfNodes, edges: wfEdges };
+  }, []);
+
+  // Sync current ReactFlow state back to WorkflowGraph (for onMoveEnd)
+  const syncGraph = useCallback(() => {
+    onChange(buildGraph(nodes, edges));
+  }, [nodes, edges, onChange, buildGraph]);
 
   const addNode = useCallback((type: WorkflowNodeType) => {
     nodeIdCounter++;
@@ -200,21 +205,22 @@ export function WorkflowCanvas({ graph, onChange, readOnly, nodeStates }: Props)
             config: (selectedNode.data as { config?: Record<string, unknown> }).config ?? {},
           }}
           onUpdate={(updates) => {
-            setNodes((nds) =>
-              nds.map((n) =>
-                n.id === selectedNode.id
-                  ? { ...n, data: { ...n.data, ...updates } }
-                  : n,
-              ),
+            const updatedNodes = nodes.map((n) =>
+              n.id === selectedNode.id
+                ? { ...n, data: { ...n.data, ...updates } }
+                : n,
             );
-            syncGraph();
+            setNodes(updatedNodes);
+            onChange(buildGraph(updatedNodes, edges));
           }}
           onClose={() => setSelectedNodeId(null)}
           onDelete={() => {
-            setNodes((nds) => nds.filter((n) => n.id !== selectedNode.id));
-            setEdges((eds) => eds.filter((e) => e.source !== selectedNode.id && e.target !== selectedNode.id));
+            const updatedNodes = nodes.filter((n) => n.id !== selectedNode.id);
+            const updatedEdges = edges.filter((e) => e.source !== selectedNode.id && e.target !== selectedNode.id);
+            setNodes(updatedNodes);
+            setEdges(updatedEdges);
             setSelectedNodeId(null);
-            syncGraph();
+            onChange(buildGraph(updatedNodes, updatedEdges));
           }}
         />
       )}

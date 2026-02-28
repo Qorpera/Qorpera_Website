@@ -30,6 +30,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ agentKi
   const body = (await req.json()) as { action: "promote" | "rollback"; variantId?: string };
 
   if (body.action === "promote" && body.variantId) {
+    const variant = await prisma.promptVariant.findFirst({
+      where: { id: body.variantId, userId: session.userId },
+    });
+    if (!variant) return NextResponse.json({ error: "Not found" }, { status: 404 });
     await promoteVariant(body.variantId);
     return NextResponse.json({ ok: true, action: "promoted" });
   }

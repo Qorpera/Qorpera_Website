@@ -878,12 +878,14 @@ const TOOL_SEEDS: ToolSeedRow[] = [
     name: "hubspot_list_activities",
     category: "external",
     executionMode: "in_process",
-    description: "List recent engagement activities from HubSpot (calls, emails, meetings, notes). Requires HubSpot integration.",
+    description: "List recent engagement activities for a HubSpot contact (calls, emails, meetings, notes). Requires HubSpot integration.",
     parametersJson: JSON.stringify({
       type: "object",
       properties: {
+        contact_id: { type: "string", description: "HubSpot contact ID to list activities for" },
         limit: { type: "number", description: "Max activities to return (default: 20)" },
       },
+      required: ["contact_id"],
     }),
   },
   {
@@ -896,9 +898,9 @@ const TOOL_SEEDS: ToolSeedRow[] = [
       properties: {
         type: { type: "string", description: "Engagement type: NOTE, EMAIL, CALL, MEETING" },
         body: { type: "string", description: "Engagement content/body" },
-        contact_id: { type: "string", description: "Optional contact ID to associate" },
+        contact_id: { type: "string", description: "Contact ID to associate the engagement with" },
       },
-      required: ["type", "body"],
+      required: ["type", "body", "contact_id"],
     }),
   },
   {
@@ -1090,8 +1092,9 @@ const TOOL_SEEDS: ToolSeedRow[] = [
     parametersJson: JSON.stringify({
       type: "object",
       properties: {
-        team_id: { type: "string", description: "Optional team ID to filter cycles" },
+        team_id: { type: "string", description: "Team ID to list cycles for" },
       },
+      required: ["team_id"],
     }),
   },
   {

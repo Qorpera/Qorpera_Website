@@ -927,7 +927,8 @@ async function handleGoogleCreateCalendarEvent(args: Record<string, unknown>, ct
   if (!summary || !startDateTime || !endDateTime) return "Error: summary, start_datetime, and end_datetime are required";
   try {
     const { createCalendarEvent } = await import("@/lib/integrations/google");
-    const result = await createCalendarEvent(token, summary, startDateTime, endDateTime, args.description ? String(args.description) : undefined);
+    const attendees = Array.isArray(args.attendees) ? (args.attendees as string[]) : undefined;
+    const result = await createCalendarEvent(token, summary, startDateTime, endDateTime, args.description ? String(args.description) : undefined, attendees);
     return JSON.stringify(result, null, 2);
   } catch (e) {
     return `Error: ${e instanceof Error ? e.message : "unknown"}`;
@@ -1681,9 +1682,9 @@ async function handleSlackCreateChannel(args: Record<string, unknown>, ctx: Tool
 async function handleSlackInviteToChannel(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
   const token = await getIntegrationToken(ctx.userId, "slack");
   if (!token) return integrationNotConnected("slack");
-  const channel = String(args.channel ?? ""), users = String(args.users ?? "");
-  if (!channel || !users) return "Error: channel and users are required";
-  try { const { inviteToChannel } = await import("@/lib/integrations/slack"); await inviteToChannel(token, channel, users); return `Users invited to ${channel}.`; }
+  const channel = String(args.channel ?? ""), userId = String(args.user_id ?? "");
+  if (!channel || !userId) return "Error: channel and user_id are required";
+  try { const { inviteToChannel } = await import("@/lib/integrations/slack"); await inviteToChannel(token, channel, userId); return `User invited to ${channel}.`; }
   catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
 }
 
@@ -1759,7 +1760,8 @@ async function handleLinearCreateComment(args: Record<string, unknown>, ctx: Too
 
 async function handleLinearListCycles(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
   const token = await getIntegrationToken(ctx.userId, "linear"); if (!token) return integrationNotConnected("linear");
-  const teamId = String(args.team_id ?? ""); if (!teamId) return "Error: team_id is required";
+  const teamId = String(args.team_id ?? "");
+  if (!teamId) return "Error: team_id is required";
   try { const { listCycles } = await import("@/lib/integrations/linear"); return JSON.stringify(await listCycles(token, teamId), null, 2); }
   catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
 }
@@ -1829,8 +1831,8 @@ async function handleNotionListDatabases(args: Record<string, unknown>, ctx: Too
 
 async function handleGithubCreatePR(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
   const token = await getIntegrationToken(ctx.userId, "github"); if (!token) return integrationNotConnected("github");
-  const repo = String(args.repo ?? ""), title = String(args.title ?? ""), head = String(args.head ?? ""), base = String(args.base ?? "");
-  if (!repo || !title || !head || !base) return "Error: repo, title, head, and base are required";
+  const repo = String(args.repo ?? ""), title = String(args.title ?? ""), head = String(args.head ?? ""), base = String(args.base || "main");
+  if (!repo || !title || !head) return "Error: repo, title, and head are required";
   try { const { createPullRequest } = await import("@/lib/integrations/github");
     const pr = await createPullRequest(token, repo, { title, head, base, body: args.body ? String(args.body) : undefined, draft: args.draft === true });
     return JSON.stringify({ number: pr.number, title: pr.title, url: pr.html_url }, null, 2); }

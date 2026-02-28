@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { getWorkflowRun } from "@/lib/workflow-store";
 
 export const runtime = "nodejs";
@@ -12,6 +13,14 @@ export async function GET(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { runId } = await params;
+
+  // Verify run belongs to user
+  const ownerCheck = await prisma.workflowRun.findFirst({
+    where: { id: runId, userId: session.userId },
+    select: { id: true },
+  });
+  if (!ownerCheck) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   const run = await getWorkflowRun(runId);
   if (!run) return NextResponse.json({ error: "Not found" }, { status: 404 });
 

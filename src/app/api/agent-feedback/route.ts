@@ -14,15 +14,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Suppress unused variable warning — userId confirms auth
-  void userId;
-
   const { searchParams } = new URL(request.url);
   const cursor = searchParams.get("cursor") ?? undefined;
   const limitParam = parseInt(searchParams.get("limit") ?? "50", 10);
   const limit = Math.min(Math.max(1, isNaN(limitParam) ? 50 : limitParam), 200);
 
-  const { items, nextCursor } = await listAllFeedback({ cursor, limit });
+  const { items, nextCursor } = await listAllFeedback({ userId, cursor, limit });
   return NextResponse.json({ items, nextCursor });
 }
 

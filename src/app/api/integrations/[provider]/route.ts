@@ -16,7 +16,7 @@ export async function DELETE(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { provider } = await params;
-  const validProviders = ["hubspot", "slack", "google", "linear", "calendly"];
+  const validProviders = ["hubspot", "slack", "google", "linear", "calendly", "quickbooks", "xero", "github", "notion", "jira"];
   if (!validProviders.includes(provider)) {
     return NextResponse.json({ error: "Invalid provider" }, { status: 400 });
   }

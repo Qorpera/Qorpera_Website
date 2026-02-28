@@ -15,6 +15,8 @@ const ALL_AGENT_TARGETS = new Set<string>([
   "FINANCE_ANALYST",
   "OPERATIONS_MANAGER",
   "EXECUTIVE_ASSISTANT",
+  "RESEARCH_ANALYST",
+  "SEO_SPECIALIST",
 ]);
 
 function validTarget(value: unknown): value is AgentTarget {

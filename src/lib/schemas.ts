@@ -12,7 +12,11 @@ export const SignupBody = z.object({
 });
 
 // Agents
-const AgentTarget = z.enum(["CHIEF_ADVISOR", "ASSISTANT"]);
+const AgentTarget = z.enum([
+  "CHIEF_ADVISOR", "ASSISTANT", "SALES_REP", "CUSTOMER_SUCCESS",
+  "MARKETING_COORDINATOR", "FINANCE_ANALYST", "OPERATIONS_MANAGER",
+  "EXECUTIVE_ASSISTANT", "RESEARCH_ANALYST", "SEO_SPECIALIST",
+]);
 
 export const UpsertAutomationConfigBody = z.object({
   agentTarget: AgentTarget,

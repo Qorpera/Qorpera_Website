@@ -103,15 +103,22 @@ export async function updateWorkflowRunNodeState(
   nodeId: string,
   state: Partial<NodeRunState>,
 ): Promise<void> {
-  const run = await prisma.workflowRun.findUnique({ where: { id: runId } });
-  if (!run) return;
+  // Use a transaction with row-level locking to prevent concurrent overwrites
+  // when parallel workflow branches complete simultaneously.
+  await prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRawUnsafe<Array<{ nodeStatesJson: string }>>(
+      `SELECT "nodeStatesJson" FROM "WorkflowRun" WHERE "id" = $1 FOR UPDATE`,
+      runId,
+    );
+    if (rows.length === 0) return;
 
-  const nodeStates = JSON.parse(run.nodeStatesJson) as Record<string, NodeRunState>;
-  nodeStates[nodeId] = { ...nodeStates[nodeId], ...state };
+    const nodeStates = JSON.parse(rows[0].nodeStatesJson) as Record<string, NodeRunState>;
+    nodeStates[nodeId] = { ...nodeStates[nodeId], ...state };
 
-  await prisma.workflowRun.update({
-    where: { id: runId },
-    data: { nodeStatesJson: JSON.stringify(nodeStates) },
+    await tx.workflowRun.update({
+      where: { id: runId },
+      data: { nodeStatesJson: JSON.stringify(nodeStates) },
+    });
   });
 }
 

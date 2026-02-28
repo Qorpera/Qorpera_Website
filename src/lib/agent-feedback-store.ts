@@ -23,10 +23,11 @@ export async function createFeedback(
   return row;
 }
 
-export async function listAllFeedback(opts?: { cursor?: string; limit?: number }) {
+export async function listAllFeedback(opts?: { userId?: string; cursor?: string; limit?: number }) {
   const limit = Math.min(Math.max(1, opts?.limit ?? 50), 200);
 
   const rows = await prisma.agentFeedback.findMany({
+    where: opts?.userId ? { userId: opts.userId } : {},
     orderBy: { createdAt: "desc" },
     take: limit + 1,
     ...(opts?.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
