@@ -78,22 +78,12 @@ export default async function ProfilePage({
     redirect("/profile?pwChanged=1");
   }
 
-  const [soul, reviewCount, businessFiles, sessions, hiredJobs, recentOrders, subscriptions, planStatus] = await Promise.all([
+  const [soul, reviewCount, businessFiles, sessions, hiredJobs, planStatus] = await Promise.all([
     getCompanySoul(session.userId),
     getInboxOpenApprovalCount(session.userId),
     listBusinessFiles(session.userId, 200),
     listAdvisorSessions(session.userId, 200),
     prisma.hiredJob.findMany({ where: { userId: session.userId }, orderBy: { createdAt: "desc" } }),
-    prisma.agentPurchaseOrder.findMany({
-      where: { userId: session.userId },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    }),
-    prisma.stripeSubscription.findMany({
-      where: { userId: session.userId },
-      orderBy: { updatedAt: "desc" },
-      take: 20,
-    }),
     getPlanStatus(session.userId),
   ]);
   const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true, username: true, createdAt: true, totpEnabled: true } });
@@ -342,107 +332,17 @@ export default async function ProfilePage({
 
       {/* Billing tab */}
       {activeTab === "billing" ? (
-        <div className="space-y-0 pt-6">
-          <div className="flex items-center justify-between gap-2 mb-6">
+        <div className="space-y-6 pt-6">
+          <div className="flex items-center justify-between gap-2">
             <div>
               <div className="text-sm font-medium">Billing</div>
-              <p className="mt-0.5 text-sm text-white/45">Manage purchases and review financial artifacts.</p>
+              <p className="mt-0.5 text-sm text-white/45">Manage your plan and review financial artifacts.</p>
             </div>
             <Link href="/pricing" className="wf-btn-primary px-4 py-2 text-sm">View Plans</Link>
           </div>
-
-          {/* Billing stats */}
-          <div className="flex border-b border-white/[0.07] pb-5 mb-6">
-            {[
-              ["Purchased agents", String(hiredJobs.length)],
-              ["Purchase attempts", String(recentOrders.length)],
-              ["Financial files", String(businessFiles.filter((f) => f.category === "FINANCIAL").length)],
-              ["Subscriptions", String(subscriptions.length)],
-            ].map(([label, value], i) => (
-              <div key={label} className={`flex-1 ${i > 0 ? "border-l border-white/[0.07] pl-5" : ""} ${i < 3 ? "pr-5" : ""}`}>
-                <div className="text-xs text-white/35 uppercase tracking-wider">{label}</div>
-                <div className="mt-1 text-xl font-semibold tabular-nums">{value}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-3 mb-8">
+          <div className="flex gap-3">
             <Link href="/business-logs" className="wf-btn px-4 py-2 text-sm">Business Logs</Link>
-          </div>
-
-          {/* Subscriptions table */}
-          <div className="mb-8">
-            <div className="text-xs uppercase tracking-wider text-white/35 mb-3">Live subscription status</div>
-            {subscriptions.length === 0 ? (
-              <p className="text-sm text-white/35">No subscription records yet.</p>
-            ) : (
-              <div className="border border-white/[0.08] rounded-lg overflow-hidden">
-                <div className="grid grid-cols-12 bg-white/[0.02] px-4 py-2.5 text-xs uppercase tracking-wider text-white/30">
-                  <div className="col-span-3">Agent</div>
-                  <div className="col-span-2">Plan</div>
-                  <div className="col-span-2">Status</div>
-                  <div className="col-span-3">Period</div>
-                  <div className="col-span-2">Flags</div>
-                </div>
-                {subscriptions.map((sub: {
-                  id: string;
-                  agentKind: string | null;
-                  schedule: string | null;
-                  status: string;
-                  currentPeriodStart: Date | null;
-                  currentPeriodEnd: Date | null;
-                  cancelAtPeriodEnd: boolean;
-                  canceledAt: Date | null;
-                }) => (
-                  <div key={sub.id} className="grid grid-cols-12 border-t border-white/[0.06] px-4 py-3 text-sm">
-                    <div className="col-span-3 text-white/60">{sub.agentKind ? kindLabel(sub.agentKind) : "Unknown"}</div>
-                    <div className="col-span-2 text-white/60">{sub.schedule ?? "—"}</div>
-                    <div className="col-span-2">
-                      <span className={`inline-flex rounded-md px-2 py-0.5 text-xs ${
-                        sub.status === "active" || sub.status === "trialing" ? "bg-emerald-500/15 text-emerald-300" :
-                        sub.status === "past_due" || sub.status === "unpaid" ? "bg-rose-500/15 text-rose-300" :
-                        "bg-amber-500/15 text-amber-300"
-                      }`}>
-                        {sub.status}
-                      </span>
-                    </div>
-                    <div className="col-span-3 text-xs text-white/40">
-                      {sub.currentPeriodStart || sub.currentPeriodEnd
-                        ? `${sub.currentPeriodStart ? new Date(sub.currentPeriodStart).toLocaleDateString() : "?"} → ${sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd).toLocaleDateString() : "?"}`
-                        : "Not available"}
-                    </div>
-                    <div className="col-span-2 text-xs text-white/40">
-                      {sub.cancelAtPeriodEnd ? "Cancels at period end" : sub.canceledAt ? "Canceled" : "Active"}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Purchase orders table */}
-          <div>
-            <div className="text-xs uppercase tracking-wider text-white/35 mb-3">Purchase history</div>
-            <div className="border border-white/[0.08] rounded-lg overflow-hidden">
-              <div className="grid grid-cols-12 bg-white/[0.02] px-4 py-2.5 text-xs uppercase tracking-wider text-white/30">
-                <div className="col-span-4">Created</div>
-                <div className="col-span-3">Agent</div>
-                <div className="col-span-2">Plan</div>
-                <div className="col-span-3">Status</div>
-              </div>
-              {recentOrders.length === 0 ? (
-                <div className="px-4 py-4 text-sm text-white/35">No purchases yet.</div>
-              ) : (
-                recentOrders.map((order: { id: string; createdAt: Date; agentKind: string; schedule: string; status: string }) => (
-                  <div key={order.id} className="grid grid-cols-12 border-t border-white/[0.06] px-4 py-3 text-sm">
-                    <div className="col-span-4 text-white/60">{new Date(order.createdAt).toLocaleString()}</div>
-                    <div className="col-span-3 text-white/60">{kindLabel(order.agentKind)}</div>
-                    <div className="col-span-2 text-white/60">{order.schedule}</div>
-                    <div className="col-span-3 text-white/60">{order.status}</div>
-                  </div>
-                ))
-              )}
-            </div>
+            <Link href="/profile?tab=plans" className="wf-btn px-4 py-2 text-sm">Plan &amp; subscription</Link>
           </div>
         </div>
       ) : null}
