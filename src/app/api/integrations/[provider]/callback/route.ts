@@ -392,7 +392,7 @@ export async function GET(
 ) {
   const { provider } = await params;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://qorpera.com";
   const errorRedirect = (msg: string) =>
     NextResponse.redirect(`${appUrl}/settings/integrations?error=${encodeURIComponent(msg)}`);
 
@@ -491,7 +491,7 @@ export async function GET(
           const orgUri = await getUserOrganization(tokens.accessToken, userUri).catch(() => "");
           const { subscriptionUri } = await registerWebhookSubscription(
             tokens.accessToken,
-            process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+            process.env.NEXT_PUBLIC_APP_URL ?? "https://qorpera.com",
             userUri,
             orgUri,
             signingKey,

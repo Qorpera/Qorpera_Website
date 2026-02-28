@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     data: { resetToken: token, resetTokenExp: new Date(Date.now() + RESET_TTL_MS) },
   });
 
-  const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "https://qorpera.com";
   const resetUrl = `${origin}/reset-password?token=${token}&email=${encodeURIComponent(user.email)}`;
 
   await sendEmail({

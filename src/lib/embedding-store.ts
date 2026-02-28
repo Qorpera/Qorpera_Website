@@ -221,8 +221,12 @@ export async function semanticSearchFiles(
       // Fetch all chunks for the user that have embeddings
       const chunks = await prisma.documentChunk.findMany({
         where: { userId, embeddingJson: { not: null } },
-        select: { fileId: true, chunkText: true, embeddingJson: true },
-        include: { file: { select: { name: true, category: true } } },
+        select: {
+          fileId: true,
+          chunkText: true,
+          embeddingJson: true,
+          file: { select: { name: true, category: true } },
+        },
       });
 
       if (chunks.length > 0) {
@@ -232,8 +236,8 @@ export async function semanticSearchFiles(
           const vec = JSON.parse(c.embeddingJson!) as number[];
           return {
             fileId: c.fileId,
-            name: (c as typeof c & { file: { name: string; category: string } }).file.name,
-            category: (c as typeof c & { file: { name: string; category: string } }).file.category,
+            name: c.file.name,
+            category: c.file.category,
             sim: cosineSimilarity(queryEmbedding, vec),
             chunkText: c.chunkText,
           };
@@ -257,7 +261,7 @@ export async function semanticSearchFiles(
           name,
           category,
           similarity: Math.round(sim * 100) / 100,
-          excerpt: chunkText.slice(0, 300),
+          excerpt: chunkText.slice(0, 800),
         }));
       }
 
@@ -280,13 +284,16 @@ export async function semanticSearchFiles(
           .sort((a, b) => b.sim - a.sim)
           .slice(0, limit);
 
-        return scored.map(({ f, sim }) => ({
-          fileId: f.id,
-          name: f.name,
-          category: f.category,
-          similarity: Math.round(sim * 100) / 100,
-          excerpt: (f.textExtract ?? "").slice(0, 300),
-        }));
+        if (scored.length > 0) {
+          return scored.map(({ f, sim }) => ({
+            fileId: f.id,
+            name: f.name,
+            category: f.category,
+            similarity: Math.round(sim * 100) / 100,
+            excerpt: (f.textExtract ?? "").slice(0, 800),
+          }));
+        }
+        // All files exist but none have embeddings yet — fall through to keyword
       }
     }
   }

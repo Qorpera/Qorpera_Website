@@ -222,24 +222,18 @@ function buildSmartPayload(
 
   const smartFiles: unknown[] = [];
   let relevantFileCount = 0;
-  for (const { file, score, isSemantic } of scoredFiles) {
-    // A file is "relevant" if it has a keyword hit OR a semantic match above threshold
-    const isRelevant = isSemantic || score > 0;
+  for (const { file, score } of scoredFiles) {
+    // A file is "relevant" if it has a semantic match (score ≥ 3.0) or a keyword hit (score ≥ 1)
+    const isRelevant = score > 0;
     if (isRelevant) {
       relevantFileCount++;
-      // For semantic hits, inject the best-matching chunk as the excerpt
-      const semanticExcerpt = isSemantic && file.id
-        ? (opts.semanticResults?.find((r) => r.fileId === file.id)?.excerpt ?? null)
-        : null;
       smartFiles.push({
         ...file,
-        textExtract: semanticExcerpt
-          ? semanticExcerpt
-          : file.textExtract
-            ? file.textExtract.length > 6000
-              ? file.textExtract.slice(0, 6000) + "…"
-              : file.textExtract
-            : null,
+        textExtract: file.textExtract
+          ? file.textExtract.length > 6000
+            ? file.textExtract.slice(0, 6000) + "…"
+            : file.textExtract
+          : null,
       });
     } else if (smartFiles.length < relevantFileCount + 20) {
       smartFiles.push({
@@ -581,6 +575,7 @@ export async function buildAdvisorContext(userId: string) {
       body: row.body,
     })),
     businessFiles: businessFiles.map((row) => ({
+      id: row.id,
       name: row.name,
       category: row.category,
       source: row.source,
@@ -679,6 +674,7 @@ async function callOpenAIAdvisor({
   projectDescription,
   history,
   context,
+  semanticResults,
 }: {
   userId: string;
   mode: AdvisorMode;
@@ -686,6 +682,7 @@ async function callOpenAIAdvisor({
   projectDescription?: string;
   history: ChatTurn[];
   context: unknown;
+  semanticResults?: SemanticSearchResult[];
 }): Promise<AdvisorStructuredReply | null> {
   const runtime = await getProviderApiKeyRuntime(userId, "OPENAI");
   const apiKey = runtime.apiKey;
@@ -752,6 +749,7 @@ async function callOpenAIAdvisor({
                 projectDescription,
                 history,
                 charLimit: 120_000,
+                semanticResults,
               }),
             },
           ],
@@ -808,7 +806,10 @@ export async function runAdvisorChat(input: {
   history?: ChatTurn[];
   projectDescription?: string;
 }) {
-  const context = await buildAdvisorContext(input.userId);
+  const [context, semanticResults] = await Promise.all([
+    buildAdvisorContext(input.userId),
+    semanticSearchFiles(input.userId, input.userMessage, 8).catch(() => [] as SemanticSearchResult[]),
+  ]);
   const selectedRoute = await getModelRoute(input.userId, "ADVISOR");
   let providerError: string | null = null;
 
@@ -819,6 +820,7 @@ export async function runAdvisorChat(input: {
     projectDescription: input.projectDescription,
     history: input.history ?? [],
     context,
+    semanticResults,
   }).catch((e: unknown) => {
     providerError = e instanceof Error ? e.message : "Provider request failed";
     return null;
