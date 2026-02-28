@@ -12,6 +12,13 @@ const scriptSrc = isProd
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  async redirects() {
+    return [
+      { source: "/settings/connectors", destination: "/settings/connections", permanent: true },
+      { source: "/settings/integrations", destination: "/settings/connections", permanent: true },
+      { source: "/conversations", destination: "/settings/channels", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

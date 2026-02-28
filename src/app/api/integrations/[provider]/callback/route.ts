@@ -447,7 +447,7 @@ export async function GET(
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://qorpera.com";
   const errorRedirect = (msg: string) =>
-    NextResponse.redirect(`${appUrl}/settings/integrations?error=${encodeURIComponent(msg)}`);
+    NextResponse.redirect(`${appUrl}/settings/connections?error=${encodeURIComponent(msg)}`);
 
   if (!isValidProvider(provider)) return errorRedirect("invalid_provider");
 
@@ -575,5 +575,5 @@ export async function GET(
     return errorRedirect("exchange_failed");
   }
 
-  return NextResponse.redirect(`${appUrl}/settings/integrations?connected=${provider}`);
+  return NextResponse.redirect(`${appUrl}/settings/connections?connected=${provider}`);
 }

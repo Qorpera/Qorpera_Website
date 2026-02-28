@@ -41,10 +41,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "System",
     items: [
-      { href: "/settings/connectors", label: "Connectors" },
-      { href: "/settings/integrations", label: "Integrations" },
+      { href: "/settings/connections", label: "Connections" },
       { href: "/settings/channels", label: "Channels" },
-      { href: "/conversations", label: "Conversations" },
       { href: "/settings/automations", label: "Automations" },
       { href: "/settings", label: "Settings", dataTour: "nav-settings" },
     ],

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import type { AppPreferences } from "@/lib/settings-store";
 import { AuditLogPanel } from "@/components/audit-log-panel";
-import { AutoApprovalsPanel } from "@/components/auto-approvals-panel";
 import { DbConnectionsPanel } from "@/components/db-connections-panel";
 import { LicenseKeysPanel } from "@/components/license-keys-panel";
 import { AgentFeedbackPanel } from "@/components/agent-feedback-panel";
@@ -22,7 +21,7 @@ export function SettingsConsole({ initial }: { initial: AppPreferences }) {
   const [prefs, setPrefs] = useState(initial);
   const [saving, setSaving] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [section, setSection] = useState<"auto-approvals" | "databases" | "notifications" | "licenses" | "feedback" | "audit">("auto-approvals");
+  const [section, setSection] = useState<"databases" | "notifications" | "licenses" | "feedback" | "audit">("databases");
 
   async function patch(next: Partial<AppPreferences>, key: string) {
     setSaving(key);
@@ -42,7 +41,6 @@ export function SettingsConsole({ initial }: { initial: AppPreferences }) {
   }
 
   const tabs = [
-    ["auto-approvals", "Auto-approvals"],
     ["databases", "Databases"],
     ["notifications", "Notifications"],
     ["licenses", "Licenses"],
@@ -123,8 +121,6 @@ export function SettingsConsole({ initial }: { initial: AppPreferences }) {
             </div>
           </div>
         ) : null}
-
-        {section === "auto-approvals" ? <AutoApprovalsPanel /> : null}
 
         {section === "databases" ? <DbConnectionsPanel /> : null}
 
