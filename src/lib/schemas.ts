@@ -186,6 +186,26 @@ export const SubmitFeedbackBody = z.object({
   sourceRef: z.string().max(240).optional(),
 });
 
+// Database connections
+export const CreateDbConnectionBody = z.object({
+  name: z.string().min(1).max(200),
+  connectionString: z.string().min(1).max(2000),
+  allowedTables: z.array(z.string().min(1).max(120)).max(50).optional().nullable(),
+});
+export const UpdateDbConnectionBody = CreateDbConnectionBody.partial().extend({
+  enabled: z.boolean().optional(),
+});
+
+// Auto-approval rules
+export const CreateAutoApprovalBody = z.object({
+  name: z.string().min(1).max(200),
+  toolName: z.string().min(1).max(120),
+  conditionJson: z.string().max(2000).optional().nullable(),
+});
+export const UpdateAutoApprovalBody = CreateAutoApprovalBody.partial().extend({
+  enabled: z.boolean().optional(),
+});
+
 // Schedules
 const ScheduleAgentKind = z.enum([
   "CHIEF_ADVISOR", "ASSISTANT", "SALES_REP", "CUSTOMER_SUCCESS",

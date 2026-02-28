@@ -1510,6 +1510,203 @@ async function handleScheduleFollowup(args: Record<string, unknown>, ctx: ToolEx
   }
 }
 
+// --- PDF generation tool ---
+
+function wrapPdfText(
+  text: string,
+  font: { widthOfTextAtSize: (t: string, s: number) => number },
+  size: number,
+  maxWidth: number,
+): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const test = current ? `${current} ${word}` : word;
+    if (font.widthOfTextAtSize(test, size) > maxWidth && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = test;
+    }
+  }
+  if (current) lines.push(current);
+  return lines.length > 0 ? lines : [""];
+}
+
+async function handleGeneratePdf(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const title = String(args.title ?? "").trim();
+  const content = String(args.content ?? "").trim();
+  const filenameArg = String(args.filename ?? "").trim();
+
+  if (!title) return "Error: title is required";
+  if (!content) return "Error: content is required";
+
+  try {
+    const { PDFDocument, rgb, StandardFonts } = await import("pdf-lib");
+
+    const doc = await PDFDocument.create();
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const boldFont = await doc.embedFont(StandardFonts.HelveticaBold);
+
+    const pageWidth = 595;
+    const pageHeight = 842;
+    const margin = 60;
+    const textWidth = pageWidth - margin * 2;
+    let page = doc.addPage([pageWidth, pageHeight]);
+    let y = pageHeight - margin;
+
+    // Title
+    const titleSize = 20;
+    for (const line of wrapPdfText(title, boldFont, titleSize, textWidth)) {
+      if (y - titleSize < margin) { page = doc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; }
+      page.drawText(line, { x: margin, y: y - titleSize, size: titleSize, font: boldFont, color: rgb(0.1, 0.1, 0.1) });
+      y -= titleSize + 6;
+    }
+    y -= 12;
+
+    // Horizontal rule
+    page.drawLine({ start: { x: margin, y }, end: { x: pageWidth - margin, y }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
+    y -= 18;
+
+    // Body
+    const bodySize = 11;
+    const lineH = bodySize + 5;
+    for (const para of content.split("\n")) {
+      if (para.trim() === "") { y -= lineH; continue; }
+
+      const h1 = para.match(/^#\s+(.*)/);
+      const h2 = para.match(/^##\s+(.*)/);
+      if (h1) {
+        y -= 6;
+        for (const line of wrapPdfText(h1[1], boldFont, 15, textWidth)) {
+          if (y - 15 < margin) { page = doc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; }
+          page.drawText(line, { x: margin, y: y - 15, size: 15, font: boldFont, color: rgb(0.1, 0.1, 0.1) });
+          y -= 19;
+        }
+        y -= 4;
+        continue;
+      }
+      if (h2) {
+        y -= 4;
+        for (const line of wrapPdfText(h2[1], boldFont, 13, textWidth)) {
+          if (y - 13 < margin) { page = doc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; }
+          page.drawText(line, { x: margin, y: y - 13, size: 13, font: boldFont, color: rgb(0.15, 0.15, 0.15) });
+          y -= 17;
+        }
+        y -= 2;
+        continue;
+      }
+
+      const bullet = para.match(/^[-*]\s+(.*)/);
+      const indentX = bullet ? margin + 14 : margin;
+      const lineText = bullet ? bullet[1] : para;
+      const wrapped = wrapPdfText(lineText, font, bodySize, bullet ? textWidth - 14 : textWidth);
+      if (bullet) {
+        if (y - bodySize < margin) { page = doc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; }
+        page.drawText("•", { x: margin, y: y - bodySize, size: bodySize, font, color: rgb(0.3, 0.3, 0.3) });
+      }
+      for (const line of wrapped) {
+        if (y - bodySize < margin) { page = doc.addPage([pageWidth, pageHeight]); y = pageHeight - margin; }
+        page.drawText(line, { x: indentX, y: y - bodySize, size: bodySize, font, color: rgb(0.2, 0.2, 0.2) });
+        y -= lineH;
+      }
+    }
+
+    const pdfBytes = await doc.save();
+    const { createBusinessFileFromUpload } = await import("@/lib/business-files-store");
+    const safeTitle = title.replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_").slice(0, 60);
+    const filename = filenameArg || `${safeTitle || "document"}.pdf`;
+    const file = await createBusinessFileFromUpload({
+      userId: ctx.userId,
+      fileName: filename,
+      mimeType: "application/pdf",
+      bytes: pdfBytes,
+      category: "GENERAL",
+      source: "AGENT",
+      authorLabel: ctx.agentKind,
+    });
+    return `PDF generated successfully.\nFile: ${file.name}\nFile ID: ${file.id}\nPages: ${doc.getPageCount()}`;
+  } catch (e) {
+    return `Error generating PDF: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+// --- Agent performance tool ---
+
+async function handleAgentPerformance(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const agentKind = String(args.agent_kind ?? "").trim() || null;
+  const days = Math.min(365, Math.max(1, Number(args.days ?? 30) || 30));
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  const [tasks, toolCalls, submissions] = await Promise.all([
+    prisma.delegatedTask.findMany({
+      where: {
+        userId: ctx.userId,
+        createdAt: { gte: since },
+        ...(agentKind ? { toAgentTarget: agentKind } : {}),
+      },
+      select: { toAgentTarget: true, status: true },
+    }),
+    prisma.delegatedTaskToolCall.findMany({
+      where: {
+        delegatedTask: {
+          userId: ctx.userId,
+          createdAt: { gte: since },
+          ...(agentKind ? { toAgentTarget: agentKind } : {}),
+        },
+      },
+      select: { toolName: true, latencyMs: true, status: true, delegatedTask: { select: { toAgentTarget: true } } },
+    }),
+    prisma.submission.findMany({
+      where: {
+        userId: ctx.userId,
+        createdAt: { gte: since },
+        ...(agentKind ? { agentKind } : {}),
+      },
+      select: { agentKind: true, status: true },
+    }),
+  ]);
+
+  const kinds = agentKind
+    ? [agentKind]
+    : [...new Set([...tasks.map((t) => t.toAgentTarget), ...submissions.map((s) => s.agentKind ?? "")])].filter(Boolean).sort();
+
+  if (kinds.length === 0) return `No agent activity found in the last ${days} days.`;
+
+  const lines: string[] = [`Agent Performance Report — last ${days} days\n${"─".repeat(48)}`];
+
+  for (const kind of kinds) {
+    const agentTasks = tasks.filter((t) => t.toAgentTarget === kind);
+    const agentSubs = submissions.filter((s) => s.agentKind === kind);
+    const agentCalls = toolCalls.filter((c) => c.delegatedTask.toAgentTarget === kind);
+
+    const tasksDone = agentTasks.filter((t) => t.status === "DONE").length;
+    const tasksFailed = agentTasks.filter((t) => t.status === "FAILED").length;
+    const tasksTotal = agentTasks.length;
+    const completionRate = tasksTotal > 0 ? Math.round((tasksDone / tasksTotal) * 100) : 0;
+
+    const subsAccepted = agentSubs.filter((s) => s.status === "ACCEPTED").length;
+    const subsTotal = agentSubs.length;
+    const acceptanceRate = subsTotal > 0 ? Math.round((subsAccepted / subsTotal) * 100) : 0;
+
+    const latencies = agentCalls.map((c) => c.latencyMs ?? 0).filter((l) => l > 0);
+    const avgLatency = latencies.length > 0 ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length) : null;
+
+    const toolCounts = new Map<string, number>();
+    for (const c of agentCalls) toolCounts.set(c.toolName, (toolCounts.get(c.toolName) ?? 0) + 1);
+    const topTools = [...toolCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([n, c]) => `${n} (${c}x)`);
+
+    lines.push(`\n${kind}`);
+    lines.push(`  Tasks:       ${tasksTotal} total | ${tasksDone} done | ${tasksFailed} failed | ${completionRate}% completion rate`);
+    lines.push(`  Submissions: ${subsTotal} total | ${subsAccepted} accepted | ${acceptanceRate}% acceptance rate`);
+    if (avgLatency !== null) lines.push(`  Tool calls:  ${agentCalls.length} calls | avg ${avgLatency}ms latency`);
+    if (topTools.length > 0) lines.push(`  Top tools:   ${topTools.join(", ")}`);
+  }
+
+  return lines.join("\n");
+}
+
 // --- SQL query tool ---
 
 async function handleSqlQuery(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
@@ -1678,6 +1875,10 @@ const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: T
   schedule_followup: handleScheduleFollowup,
   // SQL query
   sql_query: handleSqlQuery,
+  // PDF generation
+  generate_pdf: handleGeneratePdf,
+  // Agent performance
+  agent_performance: handleAgentPerformance,
 };
 
 const RUNNER_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {
@@ -1696,13 +1897,19 @@ export async function executeToolCall(
     const args = parseArgs(call.arguments);
 
     if (toolDef.executionMode === "approval_required" || (ctx.requireApproval && toolDef.category === "external")) {
-      // Do NOT execute the action here — store it for deferred execution after human approval.
-      // The actual call fires in pending-actions-executor.ts once the inbox item is approved.
-      return {
-        output: `Action "${call.name}" is pending human approval. It will execute once approved in the Inbox.`,
-        status: "approval_required",
-        latencyMs: Date.now() - start,
-      };
+      // Check if a user-defined auto-approval rule matches before requiring human approval.
+      const { checkAutoApproval } = await import("@/lib/auto-approval-store");
+      const autoApprovedBy = await checkAutoApproval(ctx.userId, call.name, args).catch(() => null);
+      if (!autoApprovedBy) {
+        // Do NOT execute the action here — store it for deferred execution after human approval.
+        // The actual call fires in pending-actions-executor.ts once the inbox item is approved.
+        return {
+          output: `Action "${call.name}" is pending human approval. It will execute once approved in the Inbox.`,
+          status: "approval_required",
+          latencyMs: Date.now() - start,
+        };
+      }
+      // Falls through to normal in_process execution below
     }
 
     if (toolDef.executionMode === "runner") {

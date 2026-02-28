@@ -890,6 +890,36 @@ const TOOL_SEEDS: ToolSeedRow[] = [
       required: ["query"],
     }),
   },
+  // ── PDF generation ────────────────────────────────────────────────────
+  {
+    name: "generate_pdf",
+    category: "write",
+    executionMode: "in_process",
+    description: "Generate a PDF document from a title and plain-text / light Markdown content (# H1, ## H2, - bullets). Saves the file to your business files and returns the file ID. Use for reports, summaries, proposals, or any document that needs to be shared as a PDF.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Document title displayed as a large heading at the top" },
+        content: { type: "string", description: "Document body. Plain text or light Markdown: # H1, ## H2, - bullet items, blank lines for paragraph breaks." },
+        filename: { type: "string", description: "Optional output filename (e.g. q1_report.pdf). Defaults to the title with .pdf extension." },
+      },
+      required: ["title", "content"],
+    }),
+  },
+  // ── Agent performance ─────────────────────────────────────────────────
+  {
+    name: "agent_performance",
+    category: "read",
+    executionMode: "in_process",
+    description: "Retrieve performance statistics for agents in this workspace: task completion rates, submission acceptance rates, average tool latency, and top tools used. Useful for reporting on workforce productivity or identifying agents that may need attention.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        agent_kind: { type: "string", description: "Optional: filter to a specific agent kind (e.g. MARKETING_COORDINATOR). Omit to see all agents." },
+        days: { type: "number", description: "Number of days to look back (default: 30, max: 365)" },
+      },
+    }),
+  },
   // ── Browser automation ────────────────────────────────────────────────
   {
     name: "browser_navigate",
@@ -966,7 +996,7 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "list_inbox_items", "web_fetch", "run_command", "write_file",
     "delegate_task", "send_email", "call_webhook", "create_business_log",
     "figma_get_design", "figma_get_image", "web_search", "extract_content",
-    "schedule_followup", "sql_query",
+    "schedule_followup", "sql_query", "generate_pdf", "agent_performance",
     // HubSpot
     "hubspot_search_contacts", "hubspot_create_contact", "hubspot_update_contact",
     "hubspot_list_deals", "hubspot_create_note",

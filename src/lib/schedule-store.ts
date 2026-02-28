@@ -17,25 +17,31 @@ export type ScheduleView = {
   nextRunAt: string | null;
   createdAt: string;
   updatedAt: string;
+  lastRunDigest: string | null;
+  lastRunCompletedAt: string | null;
 };
 
-function toView(s: {
-  id: string;
-  userId: string;
-  agentKind: string;
-  title: string;
-  instructions: string;
-  frequency: ScheduleFrequency;
-  dayOfWeek: number | null;
-  dayOfMonth: number | null;
-  timeOfDay: string;
-  timezone: string;
-  enabled: boolean;
-  lastRunAt: Date | null;
-  nextRunAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}): ScheduleView {
+function toView(
+  s: {
+    id: string;
+    userId: string;
+    agentKind: string;
+    title: string;
+    instructions: string;
+    frequency: ScheduleFrequency;
+    dayOfWeek: number | null;
+    dayOfMonth: number | null;
+    timeOfDay: string;
+    timezone: string;
+    enabled: boolean;
+    lastRunAt: Date | null;
+    nextRunAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  },
+  lastRunDigest?: string | null,
+  lastRunCompletedAt?: Date | null,
+): ScheduleView {
   return {
     id: s.id,
     userId: s.userId,
@@ -52,6 +58,8 @@ function toView(s: {
     nextRunAt: s.nextRunAt?.toISOString() ?? null,
     createdAt: s.createdAt.toISOString(),
     updatedAt: s.updatedAt.toISOString(),
+    lastRunDigest: lastRunDigest ?? null,
+    lastRunCompletedAt: lastRunCompletedAt?.toISOString() ?? null,
   };
 }
 
@@ -177,7 +185,34 @@ export async function listSchedules(userId: string): Promise<ScheduleView[]> {
     where: { userId },
     orderBy: { createdAt: "desc" },
   });
-  return rows.map(toView);
+  if (rows.length === 0) return [];
+
+  // Fetch the latest completed task digest for each schedule (matched by title + agentKind)
+  const digestMap = new Map<string, { digest: string; completedAt: Date }>();
+  const recentTasks = await prisma.delegatedTask.findMany({
+    where: {
+      userId,
+      triggerSource: "SCHEDULED",
+      status: { in: ["DONE", "REVIEW"] },
+      completionDigest: { not: null },
+      title: { in: rows.map((r) => r.title) },
+    },
+    orderBy: { completedAt: "desc" },
+    select: { title: true, toAgentTarget: true, completionDigest: true, completedAt: true },
+    take: rows.length * 3, // fetch a few per schedule to find the right agentKind
+  });
+
+  for (const task of recentTasks) {
+    const key = `${task.toAgentTarget}::${task.title}`;
+    if (!digestMap.has(key) && task.completionDigest && task.completedAt) {
+      digestMap.set(key, { digest: task.completionDigest, completedAt: task.completedAt });
+    }
+  }
+
+  return rows.map((s) => {
+    const hit = digestMap.get(`${s.agentKind}::${s.title}`);
+    return toView(s, hit?.digest, hit?.completedAt);
+  });
 }
 
 export async function createSchedule(userId: string, input: CreateScheduleInput): Promise<ScheduleView> {

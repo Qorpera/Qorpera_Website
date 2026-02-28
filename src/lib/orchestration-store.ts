@@ -1646,20 +1646,66 @@ async function _executeClaimedTask(
         row.toAgentTarget === "ASSISTANT" ? "Support" : "General";
       const itemType = approvalRequired ? "approval" : "draft";
       const itemSummary = (digest.split("\n")[0] || row.title).slice(0, 240);
-      await tx.inboxItem.create({
-        data: {
-          userId,
-          type: itemType,
-          summary: itemSummary,
-          impact: row.title,
-          owner: agentLabel,
-          department: dept,
-          sourceType: "DELEGATED_TASK",
-          sourceId: row.id,
-          digest,
-          pendingActionsJson: pendingActions.length > 0 ? JSON.stringify(pendingActions) : null,
-        },
-      });
+
+      // Check auto-approval rules: if ALL pending actions match a rule, execute immediately
+      let autoApproved = false;
+      if (pendingActions.length > 0) {
+        try {
+          const { checkAutoApproval } = await import("@/lib/auto-approval-store");
+          const autoApprovalChecks = await Promise.all(
+            pendingActions.map(async (a) => {
+              let argsObj: Record<string, unknown> = {};
+              try { argsObj = JSON.parse(a.argsJson); } catch { /* ignore */ }
+              const matchedRule = await checkAutoApproval(userId, a.toolName, argsObj);
+              return matchedRule;
+            }),
+          );
+          if (autoApprovalChecks.every((r) => r !== null)) {
+            autoApproved = true;
+            // Execute all pending actions immediately
+            const { executePendingActions } = await import("@/lib/pending-actions-executor");
+            const execResults = await executePendingActions(pendingActions, userId);
+            const executionResultJson = JSON.stringify(execResults);
+            // Create an already-approved inbox item (for audit trail)
+            await tx.inboxItem.create({
+              data: {
+                userId,
+                type: "approval",
+                summary: `[Auto-approved] ${itemSummary}`,
+                impact: row.title,
+                owner: agentLabel,
+                department: dept,
+                state: "APPROVED",
+                stateLabel: "Auto-approved",
+                sourceType: "DELEGATED_TASK",
+                sourceId: row.id,
+                digest,
+                pendingActionsJson: JSON.stringify(pendingActions),
+                executionResultJson,
+              },
+            });
+          }
+        } catch {
+          // Auto-approval check failed, fall through to normal inbox item
+        }
+      }
+
+      if (!autoApproved) {
+        await tx.inboxItem.create({
+          data: {
+            userId,
+            type: itemType,
+            summary: itemSummary,
+            impact: row.title,
+            owner: agentLabel,
+            department: dept,
+            sourceType: "DELEGATED_TASK",
+            sourceId: row.id,
+            digest,
+            pendingActionsJson: pendingActions.length > 0 ? JSON.stringify(pendingActions) : null,
+          },
+        });
+      }
     }
 
     await tx.auditLog.create({

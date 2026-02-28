@@ -128,6 +128,7 @@ function scheduleToForm(s: ScheduleView): FormState {
 // ── Main component ─────────────────────────────────────────────────
 export function SchedulesPanel({ initialSchedules }: { initialSchedules: ScheduleView[] }) {
   const [schedules, setSchedules] = useState<ScheduleView[]>(initialSchedules);
+  const [expandedDigest, setExpandedDigest] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(defaultForm());
@@ -255,6 +256,27 @@ export function SchedulesPanel({ initialSchedules }: { initialSchedules: Schedul
               </div>
               <p className="text-zinc-400 text-xs">{frequencyLabel(s)}</p>
               <p className="text-zinc-500 text-xs mt-0.5">Next run: {formatNextRun(s.nextRunAt)}</p>
+
+              {/* Last run digest */}
+              {s.lastRunDigest && (
+                <div className="mt-2">
+                  <button
+                    onClick={() => setExpandedDigest(expandedDigest === s.id ? null : s.id)}
+                    className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1"
+                  >
+                    <span>{expandedDigest === s.id ? "▾" : "▸"}</span>
+                    Last run output
+                    {s.lastRunCompletedAt && (
+                      <span className="text-zinc-600 ml-1">· {formatNextRun(s.lastRunCompletedAt)}</span>
+                    )}
+                  </button>
+                  {expandedDigest === s.id && (
+                    <p className="mt-1.5 text-xs text-zinc-400 bg-zinc-900/60 rounded-lg p-2.5 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
+                      {s.lastRunDigest}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
