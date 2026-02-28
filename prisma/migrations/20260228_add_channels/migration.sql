@@ -54,8 +54,11 @@ CREATE TABLE IF NOT EXISTS "ChannelMessage" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "ChannelMessage_pkey" PRIMARY KEY ("id")
 );
-ALTER TABLE "ChannelMessage" ADD CONSTRAINT "ChannelMessage_conversationId_fkey"
+DO $$ BEGIN
+  ALTER TABLE "ChannelMessage" ADD CONSTRAINT "ChannelMessage_conversationId_fkey"
     FOREIGN KEY ("conversationId") REFERENCES "ChannelConversation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 CREATE INDEX IF NOT EXISTS "ChannelMessage_conversationId_createdAt_idx" ON "ChannelMessage"("conversationId", "createdAt");
 
 -- ContactChannelMapping
