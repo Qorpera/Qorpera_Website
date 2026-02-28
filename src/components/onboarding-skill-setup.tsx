@@ -98,8 +98,7 @@ export function OnboardingSkillSetup({
     setFinishing(true);
     try {
       await fetch("/api/onboarding/complete", { method: "POST" });
-      router.push("/");
-      router.refresh();
+      router.push("/pricing?welcome=1");
     } catch {
       setFinishing(false);
     }

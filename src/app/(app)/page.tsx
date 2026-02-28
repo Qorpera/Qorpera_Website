@@ -53,10 +53,15 @@ export default async function HomePage({
   await ensureBaseAgents();
   await ensureWorkspaceSeeded(session.userId);
   const requestedSessionId = Array.isArray(resolved.session) ? resolved.session[0] : resolved.session;
-  const sessionThread =
+
+  const [sessionThread, sessionCount] = await Promise.all([
     requestedSessionId && typeof requestedSessionId === "string"
-      ? await getAdvisorSessionWithMessages(session.userId, requestedSessionId)
-      : null;
+      ? getAdvisorSessionWithMessages(session.userId, requestedSessionId)
+      : Promise.resolve(null),
+    prisma.advisorSession.count({ where: { userId: session.userId } }),
+  ]);
+
+  const isFirstTime = sessionCount === 0;
 
   const initialMessages = sessionThread?.messages.map((m) => ({
     id: m.id,
@@ -75,6 +80,7 @@ export default async function HomePage({
         hideHeader
         frameless
         chatgptHome
+        firstTime={isFirstTime}
         sessionId={sessionThread?.id ?? null}
         initialMessages={initialMessages}
         seedQuestion=""

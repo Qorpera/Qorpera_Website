@@ -96,6 +96,7 @@ export function AdvisorChat({
   hideHeader = false,
   frameless = false,
   chatgptHome = false,
+  firstTime = false,
   sessionId,
   initialMessages,
 }: {
@@ -110,6 +111,7 @@ export function AdvisorChat({
   hideHeader?: boolean;
   frameless?: boolean;
   chatgptHome?: boolean;
+  firstTime?: boolean;
   sessionId?: string | null;
   initialMessages?: Message[];
 }) {
@@ -340,8 +342,13 @@ export function AdvisorChat({
           <div className="flex min-h-0 flex-1 items-center justify-center">
             <div className="w-full max-w-3xl">
               <div className="mb-8 text-center text-2xl font-medium tracking-tight text-[var(--foreground)]/95">
-                Let&apos;s put some agents to work
+                {firstTime ? "Welcome. I'm your Chief Advisor." : "Let\u2019s put some agents to work"}
               </div>
+              {firstTime && (
+                <p className="mb-6 text-center text-sm text-white/40">
+                  I have full context of your workspace — ask me anything to get started.
+                </p>
+              )}
               <div className="rounded-3xl border border-[var(--border)] bg-[rgba(255,255,255,0.02)] p-3">
                 <textarea
                   ref={inputRef}
@@ -363,6 +370,25 @@ export function AdvisorChat({
                   </button>
                 </div>
               </div>
+              {firstTime && (
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  {[
+                    "Which agents should I hire first?",
+                    "What should I work on this week?",
+                    "How does Qorpera work?",
+                    "Review my company setup and suggest improvements",
+                  ].map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => setInput(prompt)}
+                      className="rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1.5 text-xs text-white/60 hover:border-teal-500/40 hover:text-white/90 transition-colors"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : null}

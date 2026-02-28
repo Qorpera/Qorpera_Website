@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PLAN_CATALOG } from "@/lib/plan-catalog";
 import { PricingSubscribeButton } from "@/components/pricing-subscribe-button";
 import { PricingInquiryButton } from "@/components/pricing-inquiry-modal";
@@ -14,9 +15,39 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PricingPage() {
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ welcome?: string }>;
+}) {
+  const { welcome } = (await searchParams) ?? {};
+  const isWelcome = welcome === "1";
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-16">
+    <div className="mx-auto max-w-5xl px-4 py-12">
+
+      {/* Welcome banner — shown once after onboarding completes */}
+      {isWelcome && (
+        <div className="mb-10 rounded-2xl border border-teal-500/25 bg-teal-500/[0.07] px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-teal-300">Your workspace is ready 🎉</p>
+            <p className="mt-0.5 text-sm text-white/55">
+              Pick a plan to activate your first agents. Not sure which fits?{" "}
+              <Link href="/" className="text-teal-400 underline underline-offset-2 hover:text-teal-300">
+                Ask the Chief Advisor
+              </Link>{" "}
+              — he&apos;s in the sidebar and can recommend based on your goals.
+            </p>
+          </div>
+          <Link
+            href="/"
+            className="shrink-0 rounded-lg border border-teal-500/30 bg-teal-500/10 px-4 py-2 text-sm font-medium text-teal-300 hover:bg-teal-500/20 transition-colors"
+          >
+            Chat with advisor →
+          </Link>
+        </div>
+      )}
+
       {/* Hero */}
       <div className="mb-14 text-center">
         <h1 className="text-3xl font-bold tracking-tight text-zinc-100 sm:text-4xl">
