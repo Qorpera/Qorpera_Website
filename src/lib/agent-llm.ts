@@ -357,6 +357,14 @@ function conversationToOpenAIInput(messages: ConversationMessage[]) {
   return input;
 }
 
+function safeParseJson(raw: string): Record<string, unknown> {
+  try {
+    return JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
 function conversationToOllamaMessages(messages: ConversationMessage[]) {
   const result: Array<Record<string, unknown>> = [];
   for (const msg of messages) {
@@ -373,7 +381,7 @@ function conversationToOllamaMessages(messages: ConversationMessage[]) {
         tool_calls: msg.tool_calls.map((tc) => ({
           id: tc.id,
           type: "function",
-          function: { name: tc.name, arguments: JSON.parse(tc.arguments) },
+          function: { name: tc.name, arguments: safeParseJson(tc.arguments) },
         })),
       });
     } else if (msg.role === "tool_result") {
@@ -407,7 +415,7 @@ function conversationToAnthropicMessages(messages: ConversationMessage[]) {
           type: "tool_use",
           id: tc.id,
           name: tc.name,
-          input: JSON.parse(tc.arguments),
+          input: safeParseJson(tc.arguments),
         })),
       });
     } else if (msg.role === "tool_result") {
@@ -432,7 +440,7 @@ function conversationToGoogleContents(messages: ConversationMessage[]) {
       result.push({
         role: "model",
         parts: msg.tool_calls.map((tc) => ({
-          functionCall: { name: tc.name, args: JSON.parse(tc.arguments) },
+          functionCall: { name: tc.name, args: safeParseJson(tc.arguments) },
         })),
       });
     } else if (msg.role === "tool_result") {

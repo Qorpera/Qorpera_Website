@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
 import { notifyTaskFailed } from "@/lib/notifications";
+import { eventBus } from "@/lib/event-bus";
 
 import type { RunnerNode, RunnerJob, RunnerPolicy } from "@prisma/client";
 
@@ -786,6 +787,15 @@ export async function completeRunnerJob(input: {
       console.error("[notifications] notifyTaskFailed error:", e);
     });
   }
+
+  eventBus.emit({
+    type: "RUNNER_JOB_COMPLETED",
+    userId: updated.userId,
+    jobId: updated.id,
+    jobType: updated.jobType,
+    ok: input.ok,
+    errorMessage: input.ok ? null : (updated.errorMessage ?? null),
+  });
 
   const policy = await ensureRunnerPolicyForUser(job.userId);
   return jobView(updated, policy);

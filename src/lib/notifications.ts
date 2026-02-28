@@ -9,6 +9,14 @@ import { sendEmail } from "@/lib/email-sender";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.qorpera.ai";
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 // ─── HTML template helpers ────────────────────────────────────────────────────
 
 function buildHtml(opts: {
@@ -71,7 +79,7 @@ export async function notifyApprovalNeeded(
     `Review and approve at: ${ctaHref}`;
   const html = buildHtml({
     title: "Approval needed",
-    body: `Your agent <strong>${opts.agentName}</strong> has completed work on <strong>${opts.taskTitle}</strong> and needs your approval before taking action.`,
+    body: `Your agent <strong>${escapeHtml(opts.agentName)}</strong> has completed work on <strong>${escapeHtml(opts.taskTitle)}</strong> and needs your approval before taking action.`,
     ctaLabel: "Review in Inbox",
     ctaHref,
     accentColor: "#f59e0b", // amber for approval
@@ -96,7 +104,7 @@ export async function notifySubmissionReady(
     `View it at: ${ctaHref}`;
   const html = buildHtml({
     title: "Submission ready for review",
-    body: `Your agent <strong>${opts.agentName}</strong> has finished drafting <strong>${opts.taskTitle}</strong>. The submission is waiting in your inbox.`,
+    body: `Your agent <strong>${escapeHtml(opts.agentName)}</strong> has finished drafting <strong>${escapeHtml(opts.taskTitle)}</strong>. The submission is waiting in your inbox.`,
     ctaLabel: "View Submission",
     ctaHref,
   });
@@ -120,7 +128,7 @@ export async function notifyTaskCompleted(
     `View results at: ${ctaHref}`;
   const html = buildHtml({
     title: "Task completed",
-    body: `Your agent <strong>${opts.agentName}</strong> has successfully completed <strong>${opts.taskTitle}</strong>.`,
+    body: `Your agent <strong>${escapeHtml(opts.agentName)}</strong> has successfully completed <strong>${escapeHtml(opts.taskTitle)}</strong>.`,
     ctaLabel: "View Results",
     ctaHref,
     accentColor: "#2dd4bf", // teal for success
@@ -145,11 +153,11 @@ export async function notifyTaskFailed(
     `Your agent "${opts.agentName}" encountered an error while working on "${opts.taskTitle}".${errorNote}\n\n` +
     `Review details at: ${ctaHref}`;
   const errorHtml = opts.errorMessage
-    ? `<p style="margin:12px 0 0;font-size:12px;color:rgba(241,245,249,0.45);font-family:monospace;">${opts.errorMessage}</p>`
+    ? `<p style="margin:12px 0 0;font-size:12px;color:rgba(241,245,249,0.45);font-family:monospace;">${escapeHtml(opts.errorMessage)}</p>`
     : "";
   const html = buildHtml({
     title: "Task failed",
-    body: `Your agent <strong>${opts.agentName}</strong> encountered an error while working on <strong>${opts.taskTitle}</strong>.${errorHtml}`,
+    body: `Your agent <strong>${escapeHtml(opts.agentName)}</strong> encountered an error while working on <strong>${escapeHtml(opts.taskTitle)}</strong>.${errorHtml}`,
     ctaLabel: "View Details",
     ctaHref,
     accentColor: "#f87171", // red for failure

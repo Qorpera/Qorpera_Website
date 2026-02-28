@@ -171,12 +171,13 @@ export async function getAccessToken(userId: string, provider: string): Promise<
           signal: AbortSignal.timeout(10000),
         });
         if (res.ok) {
-          const data = (await res.json()) as { access_token: string; expires_in?: number };
+          const data = (await res.json()) as { access_token: string; expires_in?: number; refresh_token?: string };
           const expiresAt = data.expires_in
             ? new Date(Date.now() + data.expires_in * 1000)
             : null;
           await saveConnection(userId, provider, {
             accessToken: data.access_token,
+            refreshToken: data.refresh_token ?? undefined,
             expiresAt,
             scopes: row.scopes,
           });

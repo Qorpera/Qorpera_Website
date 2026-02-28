@@ -580,6 +580,15 @@ export async function createDelegatedTask(
   return toTaskView(row);
 }
 
+const VALID_TASK_TRANSITIONS: Record<string, Set<string>> = {
+  QUEUED:  new Set(["RUNNING", "PAUSED", "FAILED"]),
+  RUNNING: new Set(["DONE", "REVIEW", "FAILED", "PAUSED", "QUEUED"]),
+  REVIEW:  new Set(["DONE", "FAILED"]),
+  PAUSED:  new Set(["QUEUED", "FAILED"]),
+  FAILED:  new Set(["QUEUED"]), // manual retry
+  DONE:    new Set<string>(),   // terminal
+};
+
 export async function updateDelegatedTaskStatus(
   userId: string,
   id: string,
@@ -589,11 +598,18 @@ export async function updateDelegatedTaskStatus(
   if (!nextStatus) throw new Error("Invalid status");
   const row = await prisma.delegatedTask.findFirst({ where: { id, userId } });
   if (!row) throw new Error("Task not found");
+
+  const allowed = VALID_TASK_TRANSITIONS[row.status];
+  if (!allowed?.has(nextStatus)) {
+    throw new Error(`Cannot transition from ${row.status} to ${nextStatus}`);
+  }
+
+  const isTerminal = nextStatus === DelegatedTaskStatus.DONE || nextStatus === DelegatedTaskStatus.FAILED;
   const updated = await prisma.delegatedTask.update({
     where: { id },
     data: {
       status: nextStatus,
-      completedAt: status === "DONE" ? new Date() : null,
+      completedAt: isTerminal ? (row.completedAt ?? new Date()) : row.completedAt,
     },
   });
   await prisma.auditLog.create({
