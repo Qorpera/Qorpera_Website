@@ -596,8 +596,9 @@ export async function pollRunnerJobs(input: { runnerId: string; limit?: number; 
   const leased: Array<ReturnType<typeof jobView> & { leaseToken: string }> = [];
   for (const job of available.slice(0, take)) {
     const leaseToken = randomToken(18);
-    const updated = await prisma.runnerJob.update({
-      where: { id: job.id },
+    // Atomic claim: only lease if the job is still QUEUED (prevents double-leasing)
+    const claimed = await prisma.runnerJob.updateMany({
+      where: { id: job.id, status: "QUEUED" },
       data: {
         runnerNodeId: input.runnerId,
         status: "LEASED",
@@ -606,7 +607,9 @@ export async function pollRunnerJobs(input: { runnerId: string; limit?: number; 
         attempts: (job.attempts ?? 0) + 1,
       },
     });
-    leased.push({ ...jobView(updated), leaseToken });
+    if (claimed.count === 0) continue; // another runner grabbed it first
+    const updated = await prisma.runnerJob.findFirst({ where: { id: job.id } });
+    if (updated) leased.push({ ...jobView(updated), leaseToken });
   }
 
   return { jobs: leased };
@@ -779,7 +782,9 @@ export async function completeRunnerJob(input: {
   });
 
   if (!input.ok) {
-    notifyTaskFailed(updated.userId, { taskTitle: updated.title, agentName: "Runner" }).catch(() => {});
+    notifyTaskFailed(updated.userId, { taskTitle: updated.title, agentName: "Runner" }).catch((e) => {
+      console.error("[notifications] notifyTaskFailed error:", e);
+    });
   }
 
   const policy = await ensureRunnerPolicyForUser(job.userId);
@@ -809,4 +814,84 @@ export async function getRunnerJobForUser(userId: string, jobId: string) {
   const row = await prisma.runnerJob.findFirst({ where: { id: jobId, userId } });
   if (!row) throw new Error("Runner job not found");
   return jobView(row, policy);
+}
+
+/**
+ * Mark runners OFFLINE if their lastSeenAt exceeds the staleness threshold,
+ * and requeue any jobs they had leased. Called during heartbeat tick.
+ */
+export async function sweepStaleRunners(userId: string): Promise<number> {
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+  const staleRunners = await prisma.runnerNode.findMany({
+    where: {
+      userId,
+      status: "ONLINE",
+      lastSeenAt: { lt: fiveMinAgo },
+    },
+    select: { id: true, name: true },
+  });
+
+  if (staleRunners.length === 0) return 0;
+
+  const staleRunnerIds = staleRunners.map((r) => r.id);
+
+  // Mark stale runners OFFLINE
+  await prisma.runnerNode.updateMany({
+    where: { id: { in: staleRunnerIds } },
+    data: { status: "OFFLINE" },
+  });
+
+  // Find jobs leased/running on these dead runners
+  const orphanedJobs = await prisma.runnerJob.findMany({
+    where: {
+      userId,
+      runnerNodeId: { in: staleRunnerIds },
+      status: { in: ["LEASED", "RUNNING"] },
+    },
+    select: { id: true, title: true, attempts: true, maxAttempts: true, runnerNodeId: true },
+  });
+
+  for (const job of orphanedJobs) {
+    const canRetry = (job.attempts ?? 0) < (job.maxAttempts ?? 1);
+    await prisma.runnerJob.update({
+      where: { id: job.id },
+      data: {
+        status: canRetry ? "QUEUED" : "FAILED",
+        runnerNodeId: canRetry ? null : job.runnerNodeId,
+        leaseToken: null,
+        leaseExpiresAt: null,
+        errorMessage: canRetry
+          ? "Runner went offline; re-queued for retry"
+          : "Runner went offline and retry budget exhausted",
+        finishedAt: canRetry ? null : new Date(),
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        scope: "RUNNER_JOB",
+        entityId: job.id,
+        action: canRetry ? "REQUEUE_DEAD_RUNNER" : "FAIL_DEAD_RUNNER",
+        summary: canRetry
+          ? `Re-queued job "${job.title}" after runner went offline`
+          : `Failed job "${job.title}" after runner went offline (retries exhausted)`,
+      },
+    }).catch(() => null);
+  }
+
+  for (const runner of staleRunners) {
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        scope: "HEARTBEAT_RECOVERY",
+        entityId: runner.id,
+        action: "RUNNER_MARKED_OFFLINE",
+        summary: `Marked runner "${runner.name}" offline (no heartbeat for 5+ minutes)`,
+      },
+    }).catch(() => null);
+  }
+
+  return staleRunners.length;
 }

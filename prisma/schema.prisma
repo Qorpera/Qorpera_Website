@@ -704,6 +704,8 @@ model DelegatedTask {
   projectRef       String?
   completionDigest String?
   inputFromTaskId  String?
+  attempts         Int               @default(0)
+  maxAttempts      Int               @default(3)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   completedAt      DateTime?

@@ -676,6 +676,19 @@ export async function runSchedulerTick(userId: string) {
 }
 
 export async function runHeartbeatTick(userId: string): Promise<DelegatedTaskView[]> {
+  // Sweep stale RUNNING tasks first — requeue or fail them so they're
+  // available for pickup in this tick's normal queue execution.
+  const { sweepStaleTasks } = await import("@/lib/heartbeat-precheck");
+  await sweepStaleTasks(userId).catch((e) =>
+    console.error("[heartbeat] stale-task sweep error:", e),
+  );
+
+  // Mark dead runners OFFLINE and requeue their orphaned jobs
+  const { sweepStaleRunners } = await import("@/lib/runner-control-plane");
+  await sweepStaleRunners(userId).catch((e) =>
+    console.error("[heartbeat] stale-runner sweep error:", e),
+  );
+
   const configs = await prisma.agentAutomationConfig.findMany({
     where: { userId, heartbeatEnabled: true, scheduleEnabled: true },
   });
@@ -1143,12 +1156,57 @@ export async function executeDelegatedTask(userId: string, taskId: string, onEve
   // Atomic claim — prevents double-execution in parallel scenarios
   const claimed = await prisma.delegatedTask.updateMany({
     where: { id: taskId, userId, status: { in: [DelegatedTaskStatus.QUEUED, DelegatedTaskStatus.PAUSED] } },
-    data: { status: DelegatedTaskStatus.RUNNING },
+    data: { status: DelegatedTaskStatus.RUNNING, attempts: { increment: 1 } },
   });
   if (claimed.count === 0) throw new Error("Task already claimed or not runnable");
 
   const row = await prisma.delegatedTask.findFirst({ where: { id: taskId, userId } });
   if (!row) throw new Error("Task not found");
+
+  try {
+    return await _executeClaimedTask(userId, row, onEvent);
+  } catch (execError: unknown) {
+    // Recovery: if attempts < maxAttempts, reset to QUEUED so the next heartbeat picks it up.
+    // Otherwise mark FAILED permanently.
+    const canRetry = row.attempts < (row.maxAttempts || 3);
+    const nextStatus = canRetry ? DelegatedTaskStatus.QUEUED : DelegatedTaskStatus.FAILED;
+    await prisma.delegatedTask.update({
+      where: { id: row.id },
+      data: {
+        status: nextStatus,
+        ...(nextStatus === DelegatedTaskStatus.FAILED ? { completedAt: new Date() } : {}),
+      },
+    }).catch(() => null);
+
+    const errMsg = execError instanceof Error ? execError.message : String(execError);
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        scope: "DELEGATED_TASK",
+        entityId: row.id,
+        action: canRetry ? "RETRY_QUEUED" : "FAILED_PERMANENT",
+        summary: canRetry
+          ? `Task "${row.title}" failed (attempt ${row.attempts}/${row.maxAttempts}), requeued for next heartbeat`
+          : `Task "${row.title}" failed permanently after ${row.attempts} attempts: ${errMsg.slice(0, 300)}`,
+      },
+    }).catch(() => null);
+
+    if (!canRetry) {
+      const agentName = row.toAgentTarget === "ASSISTANT" ? "Mara" : row.toAgentTarget.replaceAll("_", " ");
+      notifyTaskFailed(userId, { taskTitle: row.title, agentName }).catch((e) => {
+        console.error("[notifications] notifyTaskFailed error:", e);
+      });
+    }
+
+    throw execError;
+  }
+}
+
+async function _executeClaimedTask(
+  userId: string,
+  row: Awaited<ReturnType<typeof prisma.delegatedTask.findFirst>> & {},
+  onEvent?: (event: AgenticStreamEvent) => void,
+) {
   if (!(await isAgentTargetAvailableToUser(userId, row.toAgentTarget as AgentTarget))) {
     throw new Error(`${row.toAgentTarget.replaceAll("_", " ")} is not hired for this workspace`);
   }
@@ -1579,11 +1637,17 @@ export async function executeDelegatedTask(userId: string, taskId: string, onEve
     row.toAgentTarget === "ASSISTANT" ? "Mara" :
     row.toAgentTarget.replaceAll("_", " ");
   if (needsReview && approvalRequired) {
-    notifyApprovalNeeded(userId, { taskTitle: row.title, agentName: agentDisplayName, taskId: row.id }).catch(() => {});
+    notifyApprovalNeeded(userId, { taskTitle: row.title, agentName: agentDisplayName, taskId: row.id }).catch((e) => {
+      console.error("[notifications] notifyApprovalNeeded error:", e);
+    });
   } else if (needsReview) {
-    notifySubmissionReady(userId, { taskTitle: row.title, agentName: agentDisplayName, taskId: row.id }).catch(() => {});
+    notifySubmissionReady(userId, { taskTitle: row.title, agentName: agentDisplayName, taskId: row.id }).catch((e) => {
+      console.error("[notifications] notifySubmissionReady error:", e);
+    });
   } else {
-    notifyTaskCompleted(userId, { taskTitle: row.title, agentName: agentDisplayName }).catch(() => {});
+    notifyTaskCompleted(userId, { taskTitle: row.title, agentName: agentDisplayName }).catch((e) => {
+      console.error("[notifications] notifyTaskCompleted error:", e);
+    });
   }
 
   onEvent?.({ type: "task_done", status: finalStatus });
@@ -1611,19 +1675,13 @@ export async function runDelegatedTaskQueue(userId: string, limit = 10) {
   const tasksToRun = [...byAgent.values()].map((tasks) => tasks[0]);
 
   // Execute all agents in parallel with Promise.allSettled
+  // executeDelegatedTask handles its own recovery (retry or fail)
   const results = await Promise.allSettled(
     tasksToRun.map(async (task) => {
       try {
         return await executeDelegatedTask(userId, task.id);
       } catch {
-        await prisma.delegatedTask.update({
-          where: { id: task.id },
-          data: { status: DelegatedTaskStatus.FAILED },
-        }).catch(() => null);
-        notifyTaskFailed(userId, {
-          taskTitle: task.title,
-          agentName: task.toAgentTarget === "ASSISTANT" ? "Mara" : task.toAgentTarget.replaceAll("_", " "),
-        }).catch(() => {});
+        // executeDelegatedTask already handled recovery (requeued or failed)
         return null;
       }
     }),

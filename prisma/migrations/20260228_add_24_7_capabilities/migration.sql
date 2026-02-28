@@ -36,3 +36,7 @@ CREATE TABLE "WebhookEndpoint" (
 
 CREATE UNIQUE INDEX "WebhookEndpoint_userId_agentTarget_key" ON "WebhookEndpoint"("userId", "agentTarget");
 CREATE INDEX "WebhookEndpoint_userId_enabled_idx" ON "WebhookEndpoint"("userId", "enabled");
+
+-- Task retry tracking
+ALTER TABLE "DelegatedTask" ADD COLUMN "attempts" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "DelegatedTask" ADD COLUMN "maxAttempts" INTEGER NOT NULL DEFAULT 3;
