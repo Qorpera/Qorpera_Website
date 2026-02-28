@@ -52,6 +52,71 @@ export type WorkforceEvent =
       agentTarget: string;
       taskId: string;
       eventType: string;
+    }
+  | {
+      type: "WEBHOOK_EVENT_DISPATCHED";
+      userId: string;
+      webhookEventId: string;
+      taskId: string;
+      agentTarget: string;
+      provider: string;
+      eventType: string;
+    }
+  | {
+      type: "AGENT_DAEMON_WAKE";
+      userId: string;
+      agentTarget: string;
+      reason: string;
+    }
+  | {
+      type: "CHANNEL_MESSAGE_RECEIVED";
+      userId: string;
+      channelType: string;
+      conversationId: string;
+      senderLabel: string;
+    }
+  | {
+      type: "CHANNEL_MESSAGE_SENT";
+      userId: string;
+      channelType: string;
+      conversationId: string;
+      recipientId: string;
+    }
+  | {
+      type: "AGENT_MESSAGE_SENT";
+      userId: string;
+      taskGroupId: string;
+      fromAgent: string;
+      toAgent: string;
+      messageType: string;
+    }
+  | {
+      type: "TASK_GROUP_COMPLETED";
+      userId: string;
+      taskGroupId: string;
+      status: string;
+    }
+  | {
+      type: "WORKFLOW_RUN_STARTED";
+      userId: string;
+      workflowId: string;
+      runId: string;
+      workflowName: string;
+    }
+  | {
+      type: "WORKFLOW_RUN_COMPLETED";
+      userId: string;
+      workflowId: string;
+      runId: string;
+      status: string;
+    }
+  | {
+      type: "WORKFLOW_NODE_COMPLETED";
+      userId: string;
+      workflowRunId: string;
+      nodeId: string;
+      nodeType: string;
+      status: string;
     };
 
 export type WorkforceEventType = WorkforceEvent["type"];

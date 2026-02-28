@@ -265,6 +265,44 @@ export async function getAccessToken(userId: string, provider: string): Promise<
     }
   }
 
+  // Jira (Atlassian): auto-refresh when within 5 minutes of expiry
+  if (provider === "jira" && row.tokenExpiresAt && row.encryptedRefreshToken) {
+    const fiveMinFromNow = new Date(Date.now() + 5 * 60 * 1000);
+    if (row.tokenExpiresAt <= fiveMinFromNow) {
+      try {
+        const refreshToken = decryptSecret(row.encryptedRefreshToken);
+        const params = new URLSearchParams({
+          grant_type: "refresh_token",
+          client_id: process.env.JIRA_CLIENT_ID ?? "",
+          client_secret: process.env.JIRA_CLIENT_SECRET ?? "",
+          refresh_token: refreshToken,
+        });
+        const res = await fetch("https://auth.atlassian.com/oauth/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: params.toString(),
+          signal: AbortSignal.timeout(10000),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as {
+            access_token: string;
+            refresh_token?: string;
+            expires_in?: number;
+          };
+          await saveConnection(userId, provider, {
+            accessToken: data.access_token,
+            refreshToken: data.refresh_token,
+            expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : null,
+            scopes: row.scopes,
+          });
+          return data.access_token;
+        }
+      } catch {
+        // Fall through to return existing token
+      }
+    }
+  }
+
   try {
     return decryptSecret(row.encryptedAccessToken);
   } catch {

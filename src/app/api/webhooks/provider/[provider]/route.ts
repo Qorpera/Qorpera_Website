@@ -300,7 +300,7 @@ export async function POST(
 
   // ── Store event ────────────────────────────────────────────────
 
-  await prisma.webhookEvent.create({
+  const webhookEvent = await prisma.webhookEvent.create({
     data: {
       userId,
       provider,
@@ -309,6 +309,15 @@ export async function POST(
       status: "PENDING",
     },
   });
+
+  // ── Immediate dispatch via event routing rules (fire-and-forget) ──
+  import("@/lib/event-dispatch").then(({ dispatchEventImmediately }) =>
+    dispatchEventImmediately(webhookEvent.id, userId, {
+      provider,
+      eventType,
+      payload: rawBody.slice(0, 65535),
+    }).catch((err) => console.error("[webhook-provider] dispatch error", err)),
+  );
 
   return NextResponse.json({ ok: true });
 }

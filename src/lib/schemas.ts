@@ -30,6 +30,7 @@ export const UpsertAutomationConfigBody = z.object({
   heartbeatIntervalMin: z.number().int().min(5).max(60).optional(),
   requireApprovalForExternalActions: z.boolean().optional(),
   allowAgentDelegation: z.boolean().optional(),
+  alwaysOn: z.boolean().optional(),
   integrations: z.array(z.string()).optional(),
   notes: z.string().max(2000).optional(),
 });
@@ -42,6 +43,7 @@ export const CreateDelegatedTaskBody = z.object({
   triggerSource: z.string().max(60).optional(),
   dueLabel: z.string().max(120).optional().nullable(),
   projectRef: z.string().max(240).optional().nullable(),
+  isLongRunning: z.boolean().optional(),
 });
 
 export const UpdateDelegatedTaskStatusBody = z.object({

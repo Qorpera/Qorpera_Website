@@ -9,7 +9,7 @@ const EMBEDDING_MODEL = "text-embedding-3-small";
 const CHUNK_SIZE = 800;
 const CHUNK_OVERLAP = 100;
 
-function cosineSimilarity(a: number[], b: number[]): number {
+export function cosineSimilarity(a: number[], b: number[]): number {
   let dot = 0, magA = 0, magB = 0;
   for (let i = 0; i < a.length; i++) {
     dot += a[i] * b[i];
@@ -20,7 +20,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return denom === 0 ? 0 : dot / denom;
 }
 
-async function generateEmbedding(text: string, apiKey: string): Promise<number[] | null> {
+export async function generateEmbedding(text: string, apiKey: string): Promise<number[] | null> {
   try {
     const res = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",

@@ -89,3 +89,85 @@ export async function createNote(token: string, noteBody: string, contactId?: st
     }),
   });
 }
+
+export async function createDeal(token: string, properties: Record<string, string>) {
+  return hubspotFetch(token, "/crm/v3/objects/deals", {
+    method: "POST",
+    body: JSON.stringify({ properties }),
+  });
+}
+
+export async function updateDeal(token: string, dealId: string, properties: Record<string, string>) {
+  return hubspotFetch(token, `/crm/v3/objects/deals/${dealId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ properties }),
+  });
+}
+
+export async function getDeal(token: string, dealId: string) {
+  return hubspotFetch(
+    token,
+    `/crm/v3/objects/deals/${dealId}?properties=dealname,amount,dealstage,closedate,pipeline,hs_lastmodifieddate`,
+  );
+}
+
+export async function listPipelineStages(token: string, pipelineId = "default") {
+  return hubspotFetch(token, `/crm/v3/pipelines/deals/${pipelineId}/stages`);
+}
+
+export async function createCompany(token: string, properties: Record<string, string>) {
+  return hubspotFetch(token, "/crm/v3/objects/companies", {
+    method: "POST",
+    body: JSON.stringify({ properties }),
+  });
+}
+
+export async function searchCompanies(token: string, query: string) {
+  return hubspotFetch(token, "/crm/v3/objects/companies/search", {
+    method: "POST",
+    body: JSON.stringify({
+      filterGroups: query
+        ? [{ filters: [{ propertyName: "name", operator: "CONTAINS_TOKEN", value: query }] }]
+        : [],
+      properties: ["name", "domain", "industry", "city", "phone", "numberofemployees"],
+      limit: 20,
+    }),
+  });
+}
+
+export async function listActivities(token: string, contactId: string, limit = 20) {
+  return hubspotFetch(
+    token,
+    `/crm/v3/objects/contacts/${contactId}/associations/engagements?limit=${Math.min(limit, 50)}`,
+  );
+}
+
+export async function createEngagement(
+  token: string,
+  type: "NOTE" | "EMAIL" | "CALL" | "MEETING" | "TASK",
+  contactId: string,
+  body: string,
+) {
+  return hubspotFetch(token, "/crm/v3/objects/engagements", {
+    method: "POST",
+    body: JSON.stringify({
+      properties: {
+        hs_engagement_type: type,
+        hs_body_preview: body.slice(0, 200),
+        hs_timestamp: new Date().toISOString(),
+      },
+      associations: [{
+        to: { id: contactId },
+        types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 9 }],
+      }],
+    }),
+  });
+}
+
+export async function listContactLists(token: string, limit = 20) {
+  return hubspotFetch(token, `/contacts/v1/lists?count=${Math.min(limit, 50)}`);
+}
+
+export async function getCustomProperties(token: string, objectType: "contacts" | "deals" | "companies" = "contacts") {
+  return hubspotFetch(token, `/crm/v3/properties/${objectType}`);
+}

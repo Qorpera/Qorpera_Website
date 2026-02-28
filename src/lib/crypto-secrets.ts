@@ -10,8 +10,17 @@ type EncryptedPayload = {
 function getKey() {
   const raw =
     process.env.CREDENTIAL_ENCRYPTION_KEY ||
-    process.env.APP_SECRET ||
-    "qorpera-dev-only-insecure-key-change-me";
+    process.env.APP_SECRET;
+  if (!raw) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "CREDENTIAL_ENCRYPTION_KEY or APP_SECRET must be set in production. " +
+        "All stored secrets are unrecoverable without a stable encryption key.",
+      );
+    }
+    // Dev-only fallback — never used in production
+    return crypto.createHash("sha256").update("qorpera-dev-only-insecure-key-do-not-use").digest();
+  }
   return crypto.createHash("sha256").update(raw).digest();
 }
 

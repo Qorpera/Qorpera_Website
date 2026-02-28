@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 
-type Preset = "auth" | "signup" | "chat" | "webhook";
+type Preset = "auth" | "signup" | "chat" | "webhook" | "scheduler" | "task_create" | "workflow_run";
 
 // [maxRequests, windowSeconds]
 const PRESETS: Record<Preset, [number, number]> = {
-  auth:    [5,   15 * 60],
-  signup:  [3,   60 * 60],
-  chat:    [30,  60],
-  webhook: [120, 60],      // 120 events/min per provider+IP
+  auth:         [5,   15 * 60],
+  signup:       [3,   60 * 60],
+  chat:         [30,  60],
+  webhook:      [120, 60],      // 120 events/min per provider+IP
+  scheduler:    [5,   60],      // 5 ticks/min per user (normal is 1/min)
+  task_create:  [30,  60],      // 30 tasks/min per user
+  workflow_run: [10,  60],      // 10 workflow runs/min per user
 };
 
 /**

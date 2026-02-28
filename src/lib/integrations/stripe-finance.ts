@@ -91,6 +91,68 @@ export async function listInvoices(apiKey: string, limit = 20) {
   }));
 }
 
+async function stripePost(apiKey: string, path: string, data: Record<string, string>) {
+  const res = await fetch(`${STRIPE_API}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(data).toString(),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
+    throw new Error(`Stripe API ${res.status}: ${err?.error?.message ?? res.statusText}`);
+  }
+  return res.json() as Promise<Record<string, unknown>>;
+}
+
+export async function getCustomer(apiKey: string, customerId: string) {
+  return stripeFetch(apiKey, `/customers/${customerId}`);
+}
+
+export async function createCustomer(apiKey: string, data: { email?: string; name?: string; description?: string; metadata?: Record<string, string> }) {
+  const params: Record<string, string> = {};
+  if (data.email) params.email = data.email;
+  if (data.name) params.name = data.name;
+  if (data.description) params.description = data.description;
+  if (data.metadata) {
+    for (const [k, v] of Object.entries(data.metadata)) params[`metadata[${k}]`] = v;
+  }
+  return stripePost(apiKey, "/customers", params);
+}
+
+export async function getInvoice(apiKey: string, invoiceId: string) {
+  return stripeFetch(apiKey, `/invoices/${invoiceId}`);
+}
+
+export async function createInvoice(apiKey: string, customerId: string, description?: string) {
+  const params: Record<string, string> = { customer: customerId };
+  if (description) params.description = description;
+  return stripePost(apiKey, "/invoices", params);
+}
+
+export async function getSubscription(apiKey: string, subscriptionId: string) {
+  return stripeFetch(apiKey, `/subscriptions/${subscriptionId}`);
+}
+
+export async function listCharges(apiKey: string, limit = 20) {
+  return stripeFetch(apiKey, "/charges", { limit: String(Math.min(limit, 100)) });
+}
+
+export async function getBalanceTransactions(apiKey: string, limit = 20) {
+  return stripeFetch(apiKey, "/balance_transactions", { limit: String(Math.min(limit, 100)) });
+}
+
+export async function listProducts(apiKey: string, limit = 20) {
+  return stripeFetch(apiKey, "/products", { limit: String(Math.min(limit, 100)), active: "true" });
+}
+
+export async function listPrices(apiKey: string, limit = 20) {
+  return stripeFetch(apiKey, "/prices", { limit: String(Math.min(limit, 100)), active: "true" });
+}
+
 export async function getRevenueOverview(apiKey: string) {
   // Fetch balance, recent charges, and MRR from active subscriptions
   const [balanceData, chargesData, subsData] = await Promise.all([

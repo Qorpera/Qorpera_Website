@@ -91,6 +91,7 @@ export function AgentAutomationConfigPanel({
           maxRuntimeSeconds: next.maxRuntimeSeconds,
           requireApprovalForExternalActions: next.requireApprovalForExternalActions,
           allowAgentDelegation: next.allowAgentDelegation,
+          alwaysOn: next.alwaysOn,
           integrations: next.integrations,
           notes: next.notes,
         }),
@@ -116,6 +117,40 @@ export function AgentAutomationConfigPanel({
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold tracking-tight">Automation / wake mode</h2>
         <span className="text-xs wf-muted">{saving ? "Saving..." : status ?? ""}</span>
+      </div>
+
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={() => patch({ alwaysOn: !config.alwaysOn })}
+          className={`w-full rounded-2xl border px-5 py-4 text-left transition-colors ${
+            config.alwaysOn
+              ? "border-emerald-500/50 bg-emerald-500/15"
+              : "border-[var(--border)] bg-[rgba(255,255,255,0.02)]"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-semibold">Always On</div>
+              <div className="mt-1 text-xs wf-muted">
+                {config.alwaysOn
+                  ? "Agent continuously checks for new work every scheduler tick. No separate daemon required."
+                  : "Enable to keep this agent running 24/7. It will wake every scheduler tick to check for pending tasks, events, and inbox items."}
+              </div>
+            </div>
+            <div
+              className={`flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
+                config.alwaysOn ? "bg-emerald-500" : "bg-[rgba(255,255,255,0.1)]"
+              }`}
+            >
+              <div
+                className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                  config.alwaysOn ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </div>
+          </div>
+        </button>
       </div>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2">

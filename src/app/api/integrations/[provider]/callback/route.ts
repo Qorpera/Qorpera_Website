@@ -7,7 +7,7 @@ import crypto from "node:crypto";
 
 export const runtime = "nodejs";
 
-const VALID_PROVIDERS = ["hubspot", "slack", "google", "linear", "calendly", "quickbooks", "xero", "github", "notion"] as const;
+const VALID_PROVIDERS = ["hubspot", "slack", "google", "linear", "calendly", "quickbooks", "xero", "github", "notion", "jira"] as const;
 type Provider = (typeof VALID_PROVIDERS)[number];
 
 function isValidProvider(p: string): p is Provider {
@@ -379,6 +379,59 @@ async function exchangeCode(
         ...(data.workspace_id ? { workspace_id: data.workspace_id } : {}),
         ...(data.workspace_name ? { workspace_name: data.workspace_name } : {}),
         ...(data.bot_id ? { bot_id: data.bot_id } : {}),
+      },
+    };
+  }
+
+  if (provider === "jira") {
+    const params = new URLSearchParams({
+      grant_type: "authorization_code",
+      client_id: process.env.JIRA_CLIENT_ID ?? "",
+      client_secret: process.env.JIRA_CLIENT_SECRET ?? "",
+      code,
+      redirect_uri: redirectUri,
+    });
+    const res = await fetch("https://auth.atlassian.com/oauth/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`Jira token exchange failed: ${res.status}`);
+    const data = (await res.json()) as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in?: number;
+      scope?: string;
+    };
+
+    // Fetch cloud ID (required for API calls)
+    let cloudId: string | undefined;
+    let siteName: string | undefined;
+    try {
+      const sitesRes = await fetch("https://api.atlassian.com/oauth/token/accessible-resources", {
+        headers: { Authorization: `Bearer ${data.access_token}`, Accept: "application/json" },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (sitesRes.ok) {
+        const sites = (await sitesRes.json()) as Array<{ id: string; name: string; url: string }>;
+        if (sites[0]) {
+          cloudId = sites[0].id;
+          siteName = sites[0].name;
+        }
+      }
+    } catch {
+      // Non-critical
+    }
+
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : undefined,
+      scopes: data.scope,
+      metadata: {
+        ...(cloudId ? { cloud_id: cloudId } : {}),
+        ...(siteName ? { site_name: siteName } : {}),
       },
     };
   }

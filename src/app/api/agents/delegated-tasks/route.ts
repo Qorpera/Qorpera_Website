@@ -3,6 +3,7 @@ import { requireUserId } from "@/lib/auth";
 import { createDelegatedTask, listDelegatedTasks, updateDelegatedTaskStatus } from "@/lib/orchestration-store";
 import { CreateDelegatedTaskBody, UpdateDelegatedTaskStatusBody } from "@/lib/schemas";
 import { verifySameOrigin } from "@/lib/request-security";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,9 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const rl = await checkRateLimit(`task_create:${userId}`, "task_create");
+  if (!rl.allowed) return rl.response!;
+
   const raw = await request.json().catch(() => ({}));
   const parsed = CreateDelegatedTaskBody.safeParse(raw);
   if (!parsed.success) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });

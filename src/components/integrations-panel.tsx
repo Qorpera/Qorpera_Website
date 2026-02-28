@@ -16,7 +16,7 @@ const PROVIDERS: ProviderConfig[] = [
   {
     key: "hubspot",
     label: "HubSpot CRM",
-    description: "Search contacts, manage deals, create notes, and update CRM records.",
+    description: "Full CRM: contacts, deals, companies, pipelines, engagements, and custom properties.",
     icon: "H",
     metadataLabel: (m) =>
       m.hub_domain ? m.hub_domain : m.hub_id ? `Portal ${m.hub_id}` : "",
@@ -24,7 +24,7 @@ const PROVIDERS: ProviderConfig[] = [
   {
     key: "slack",
     label: "Slack",
-    description: "List channels and post messages with human approval.",
+    description: "Channels, messages, threads, reactions, users, and scheduled messages.",
     icon: "S",
     metadataLabel: (m) => m.workspace_name ?? "",
   },
@@ -38,7 +38,7 @@ const PROVIDERS: ProviderConfig[] = [
   {
     key: "linear",
     label: "Linear",
-    description: "List and create issues, update status across Linear teams.",
+    description: "Issues, projects, labels, cycles, roadmaps, and comments across teams.",
     icon: "L",
     metadataLabel: (m) => m.workspace_name ?? "",
   },
@@ -66,16 +66,23 @@ const PROVIDERS: ProviderConfig[] = [
   {
     key: "github",
     label: "GitHub",
-    description: "List repositories, view and create issues, and track pull requests.",
+    description: "Repos, issues, pull requests, branches, workflows, and code comparisons.",
     icon: "GH",
     metadataLabel: (m) => m.login ? `@${m.login}` : "",
   },
   {
     key: "notion",
     label: "Notion",
-    description: "Search pages, read content, create new pages, and append notes to your workspace.",
+    description: "Search pages, query databases, create entries, and manage your workspace.",
     icon: "N",
     metadataLabel: (m) => m.workspace_name ?? "",
+  },
+  {
+    key: "jira",
+    label: "Jira",
+    description: "List projects, manage issues and sprints, track transitions, and collaborate across boards.",
+    icon: "J",
+    metadataLabel: (m) => m.site_name ?? "",
   },
 ];
 

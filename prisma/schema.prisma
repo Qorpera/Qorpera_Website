@@ -241,6 +241,7 @@ model User {
   autoApprovalRules        AutoApprovalRule[]
   databaseConnections      DatabaseConnection[]
   outputRoutes             OutputRoute[]
+  workflows                Workflow[]
 }
 
 model HiredJob {
@@ -731,6 +732,10 @@ model AgentAutomationConfig {
   heartbeatIntervalMin  Int      @default(15)
   requireApprovalForExternalActions Boolean @default(true)
   allowAgentDelegation            Boolean @default(true)
+  alwaysOn              Boolean  @default(false)
+  daemonPriorityOrder   Int      @default(50)
+  idleCheckIntervalMs   Int      @default(5000)
+  maxConcurrentTasks    Int      @default(1)
   integrationsCsv String         @default("")
   notes          String          @default("")
   createdAt      DateTime        @default(now())
@@ -740,6 +745,18 @@ model AgentAutomationConfig {
 
   @@unique([userId, agentTarget])
   @@index([userId, triggerMode, updatedAt])
+}
+
+model AgentDaemonHeartbeat {
+  id           String   @id @default(cuid())
+  processId    String   @unique
+  startedAt    DateTime @default(now())
+  lastSeenAt   DateTime @default(now())
+  status       String   @default("RUNNING") // RUNNING|STOPPED|STALE
+  activeAgents Int      @default(0)
+  metadataJson String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model DelegatedTask {
@@ -763,16 +780,44 @@ model DelegatedTask {
   nextRetryAt      DateTime?
   escalatedFromId  String?
   costEstimateCents Int              @default(0)
+  isLongRunning    Boolean           @default(false)
+  maxRuntimeHours  Int               @default(4)
+  currentPhase     Int               @default(0)
+  totalPhases      Int               @default(1)
+  progressPct      Int               @default(0)
+  lastCheckpointAt DateTime?
+  taskGroupId      String?
+  workflowRunId    String?
+  workflowNodeId   String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   completedAt      DateTime?
 
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   toolCalls        DelegatedTaskToolCall[]
+  checkpoints      TaskCheckpoint[]
 
   @@index([userId, toAgentTarget, status, createdAt])
   @@index([userId, status, nextRetryAt])
   @@index([userId, createdAt])
+}
+
+model TaskCheckpoint {
+  id                 String   @id @default(cuid())
+  delegatedTaskId    String
+  phaseIndex         Int
+  phaseName          String   @default("")
+  messagesJson       String?
+  tracesJson         String?
+  intermediateOutput String?
+  turnsCompleted     Int      @default(0)
+  totalToolCalls     Int      @default(0)
+  stateJson          String?
+  createdAt          DateTime @default(now())
+
+  delegatedTask DelegatedTask @relation(fields: [delegatedTaskId], references: [id], onDelete: Cascade)
+
+  @@index([delegatedTaskId, phaseIndex])
 }
 
 model DelegatedTaskToolCall {
@@ -954,12 +999,15 @@ model OllamaUsage {
 }
 
 model AgentMemory {
-  id           String   @id @default(cuid())
-  userId       String
-  agentKind    String
-  indexContent String   @default("")
-  entryCount   Int      @default(0)
-  updatedAt    DateTime @updatedAt
+  id              String    @id @default(cuid())
+  userId          String
+  agentKind       String
+  indexContent    String    @default("")
+  entryCount      Int       @default(0)
+  maxEntries      Int       @default(500)
+  totalTokens     Int       @default(0)
+  lastCompactedAt DateTime?
+  updatedAt       DateTime  @updatedAt
 
   user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   entries AgentMemoryEntry[]
@@ -969,18 +1017,27 @@ model AgentMemory {
 }
 
 model AgentMemoryEntry {
-  id            String   @id @default(cuid())
-  agentMemoryId String
-  topic         String
-  title         String
-  content       String
-  importance    Int      @default(5)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String    @id @default(cuid())
+  agentMemoryId  String
+  topic          String
+  title          String
+  content        String
+  importance     Int       @default(5)
+  category       String    @default("general")
+  tags           String    @default("")
+  accessCount    Int       @default(0)
+  lastAccessedAt DateTime?
+  decayScore     Float     @default(1.0)
+  embeddingJson  String?
+  sourceTaskId   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   agentMemory AgentMemory @relation(fields: [agentMemoryId], references: [id], onDelete: Cascade)
 
   @@index([agentMemoryId, importance])
+  @@index([agentMemoryId, category])
+  @@index([agentMemoryId, decayScore])
 }
 
 model AgentLicenseKey {
@@ -1020,6 +1077,57 @@ model PlanLicenseKey {
 
   @@index([creatorUserId, createdAt])
   @@index([redeemedById])
+}
+
+model PromptVariant {
+  id            String   @id @default(cuid())
+  userId        String
+  agentKind     String
+  label         String
+  patchText     String
+  sourceActionId String?
+  isActive      Boolean  @default(false)
+  isControl     Boolean  @default(false)
+  trafficPercent Float   @default(50)
+  taskCount     Int      @default(0)
+  avgRating     Float    @default(0)
+  acceptRate    Float    @default(0)
+  revisionRate  Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  assignments   PromptVariantTaskAssignment[]
+
+  @@index([userId, agentKind, isActive])
+}
+
+model PromptVariantTaskAssignment {
+  id              String   @id @default(cuid())
+  variantId       String
+  delegatedTaskId String   @unique
+  rating          Int?
+  accepted        Boolean?
+  createdAt       DateTime @default(now())
+
+  variant         PromptVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([variantId])
+}
+
+model FeedbackPattern {
+  id         String   @id @default(cuid())
+  userId     String
+  agentKind  String
+  pattern    String
+  frequency  Int      @default(1)
+  examples   String?  // JSON array of example submission IDs
+  severity   String   @default("MEDIUM") // LOW|MEDIUM|HIGH|CRITICAL
+  addressed  Boolean  @default(false)
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@index([userId, agentKind, addressed])
+  @@index([userId, agentKind, severity])
 }
 
 model AgentFeedback {
@@ -1195,20 +1303,40 @@ model AgentOptimizationApplication {
 // ── Webhook Events (inbound provider events) ─────────────────────
 
 model WebhookEvent {
-  id           String    @id @default(cuid())
-  userId       String
-  provider     String
-  eventType    String
-  payload      String    // raw JSON, max 65535 chars stored
-  status       String    @default("PENDING") // PENDING|PROCESSING|PROCESSED|FAILED|SKIPPED
-  errorMessage String?
-  processedAt  DateTime?
-  createdAt    DateTime  @default(now())
+  id             String    @id @default(cuid())
+  userId         String
+  provider       String
+  eventType      String
+  payload        String    // raw JSON, max 65535 chars stored
+  status         String    @default("PENDING") // PENDING|PROCESSING|PROCESSED|FAILED|SKIPPED
+  errorMessage   String?
+  routedToAgent  String?
+  dispatchMode   String    @default("QUEUED") // QUEUED|IMMEDIATE
+  taskId         String?
+  processedAt    DateTime?
+  createdAt      DateTime  @default(now())
 
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status, createdAt])
   @@index([userId, provider, createdAt])
+}
+
+model EventRoutingRule {
+  id             String   @id @default(cuid())
+  userId         String
+  provider       String   // e.g. "hubspot", "slack", "github", "*"
+  eventPattern   String   // glob pattern on eventType, e.g. "contact.*", "push", "*"
+  agentTarget    String
+  priority       Int      @default(50)
+  enabled        Boolean  @default(true)
+  conditionJson  String?  // optional JSON conditions on payload fields
+  transformJson  String?  // optional JSON template for task title/instructions
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId, enabled, priority])
+  @@index([userId, provider])
 }
 
 model Schedule {
@@ -1252,6 +1380,208 @@ model AutoApprovalRule {
 }
 
 // ── Database Connections (SQL query tool) ────────────────────────────────────
+
+enum ChannelType {
+  SLACK
+  EMAIL
+  WHATSAPP
+  SMS
+  VOICE
+}
+
+model ChannelConfig {
+  id          String      @id @default(cuid())
+  userId      String
+  channelType ChannelType
+  enabled     Boolean     @default(false)
+  isDefault   Boolean     @default(false)
+  configJson  String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([userId, channelType])
+  @@index([userId, enabled])
+}
+
+model ChannelConversation {
+  id                String      @id @default(cuid())
+  userId            String
+  channelType       ChannelType
+  externalThreadId  String?
+  externalContactId String?
+  agentTarget       String?
+  delegatedTaskId   String?
+  status            String      @default("ACTIVE") // ACTIVE|CLOSED|ARCHIVED
+  lastMessageAt     DateTime    @default(now())
+  metadataJson      String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  messages          ChannelMessage[]
+
+  @@index([userId, channelType, status])
+  @@index([userId, externalThreadId])
+}
+
+model ChannelMessage {
+  id             String              @id @default(cuid())
+  conversationId String
+  direction      String              // "inbound" | "outbound"
+  senderLabel    String
+  contentText    String
+  contentHtml    String?
+  contentJson    String?
+  externalId     String?
+  status         String              @default("SENT") // SENT|DELIVERED|READ|FAILED
+  createdAt      DateTime            @default(now())
+
+  conversation   ChannelConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+model ContactChannelMapping {
+  id          String      @id @default(cuid())
+  userId      String
+  externalId  String
+  channelType ChannelType
+  contactName String      @default("")
+  agentTarget String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([userId, externalId, channelType])
+  @@index([userId, channelType])
+}
+
+model TaskGroup {
+  id           String   @id @default(cuid())
+  userId       String
+  title        String
+  status       String   @default("ACTIVE") // ACTIVE|COMPLETED|FAILED
+  parentTaskId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  messages     AgentMessage[]
+  workspace    WorkspaceEntry[]
+
+  @@index([userId, status])
+}
+
+model AgentMessage {
+  id          String   @id @default(cuid())
+  taskGroupId String
+  fromAgent   String
+  toAgent     String
+  messageType String   @default("INFO") // INFO|REQUEST|RESPONSE|PROPOSAL|COUNTER|RESULT
+  content     String
+  metadata    String?
+  readByJson  String?
+  createdAt   DateTime @default(now())
+
+  taskGroup   TaskGroup @relation(fields: [taskGroupId], references: [id], onDelete: Cascade)
+
+  @@index([taskGroupId, createdAt])
+  @@index([taskGroupId, toAgent])
+}
+
+model WorkspaceEntry {
+  id          String   @id @default(cuid())
+  taskGroupId String
+  key         String
+  value       String
+  writtenBy   String
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  taskGroup   TaskGroup @relation(fields: [taskGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([taskGroupId, key])
+  @@index([taskGroupId])
+}
+
+model CustomSkill {
+  id                String   @id @default(cuid())
+  userId            String
+  name              String
+  displayName       String
+  shortDescription  String   @default("")
+  category          String   @default("general")
+  requirementsJson  String?  // JSON array of env var names needed
+  skillMdContent    String   // The skill markdown content
+  scriptsJson       String?  // JSON array of script paths
+  referencesJson    String?  // JSON array of reference URLs
+  enabled           Boolean  @default(true)
+  isPublished       Boolean  @default(false)
+  shareToken        String?  @unique
+  validationStatus  String   @default("PENDING") // PENDING|VALID|INVALID
+  validationErrors  String?
+  version           Int      @default(1)
+  lastTestedAt      DateTime?
+  lastTestResult    String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId, enabled])
+  @@index([shareToken])
+}
+
+// ── Workflow Engine ───────────────────────────────────────────────────
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum WorkflowRunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+model Workflow {
+  id                String         @id @default(cuid())
+  userId            String
+  name              String
+  description       String         @default("")
+  status            WorkflowStatus @default(DRAFT)
+  graphJson         String         // JSON: WorkflowGraph (nodes + edges)
+  templateSlug      String?
+  scheduleId        String?
+  webhookEndpointId String?
+  version           Int            @default(1)
+  lastRunAt         DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  runs              WorkflowRun[]
+
+  @@index([userId, status])
+}
+
+model WorkflowRun {
+  id                String            @id @default(cuid())
+  workflowId        String
+  userId            String
+  status            WorkflowRunStatus @default(RUNNING)
+  graphSnapshotJson String            // JSON: snapshot of graph at run time
+  nodeStatesJson    String            @default("{}") // JSON: Record<nodeId, NodeRunState>
+  triggerPayload    String?           // JSON: trigger context
+  startedAt         DateTime          @default(now())
+  completedAt       DateTime?
+  errorMessage      String?
+
+  workflow          Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId, status])
+  @@index([userId, startedAt])
+}
 
 model DatabaseConnection {
   id                        String    @id @default(cuid())

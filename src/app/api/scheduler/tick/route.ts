@@ -4,6 +4,7 @@ import { decodeSession } from "@/lib/session-codec";
 import { runSchedulerTick, runDelegatedTaskQueue } from "@/lib/orchestration-store";
 import { checkAndExpireApprovals } from "@/lib/inbox-expiry";
 import { verifySameOrigin } from "@/lib/request-security";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -32,6 +33,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   }
+
+  const rl = await checkRateLimit(`scheduler:${userId}`, "scheduler");
+  if (!rl.allowed) return rl.response!;
 
   const tickResult = await runSchedulerTick(userId);
 

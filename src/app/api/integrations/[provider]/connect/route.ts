@@ -5,7 +5,7 @@ import crypto from "node:crypto";
 
 export const runtime = "nodejs";
 
-const VALID_PROVIDERS = ["hubspot", "slack", "google", "linear", "calendly", "quickbooks", "xero", "github", "notion"] as const;
+const VALID_PROVIDERS = ["hubspot", "slack", "google", "linear", "calendly", "quickbooks", "xero", "github", "notion", "jira"] as const;
 type Provider = (typeof VALID_PROVIDERS)[number];
 
 function isValidProvider(p: string): p is Provider {
@@ -116,6 +116,19 @@ function buildAuthUrl(provider: Provider, state: string, redirectUri: string): s
       state,
     });
     return `https://api.notion.com/v1/oauth/authorize?${params.toString()}`;
+  }
+
+  if (provider === "jira") {
+    const params = new URLSearchParams({
+      audience: "api.atlassian.com",
+      client_id: process.env.JIRA_CLIENT_ID ?? "",
+      scope: "read:jira-work write:jira-work read:jira-user offline_access",
+      redirect_uri: redirectUri,
+      state,
+      response_type: "code",
+      prompt: "consent",
+    });
+    return `https://auth.atlassian.com/authorize?${params.toString()}`;
   }
 
   throw new Error(`Unknown provider: ${provider}`);

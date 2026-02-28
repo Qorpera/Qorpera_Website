@@ -800,6 +800,808 @@ const TOOL_SEEDS: ToolSeedRow[] = [
       },
     }),
   },
+  // ── HubSpot expanded ─────────────────────────────────────────────────
+  {
+    name: "hubspot_create_deal",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a new deal in HubSpot CRM. Always requires human approval. Requires HubSpot integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        properties: { type: "object", description: "Deal properties (e.g. {\"dealname\": \"Acme Q2\", \"amount\": \"5000\", \"pipeline\": \"default\", \"dealstage\": \"appointmentscheduled\"})" },
+      },
+      required: ["properties"],
+    }),
+  },
+  {
+    name: "hubspot_update_deal",
+    category: "external",
+    executionMode: "in_process",
+    description: "Update properties on an existing HubSpot deal by ID. Requires HubSpot integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        deal_id: { type: "string", description: "HubSpot deal ID" },
+        properties: { type: "object", description: "Fields to update" },
+      },
+      required: ["deal_id", "properties"],
+    }),
+  },
+  {
+    name: "hubspot_get_deal",
+    category: "external",
+    executionMode: "in_process",
+    description: "Get a specific HubSpot deal by ID with all properties. Requires HubSpot integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        deal_id: { type: "string", description: "HubSpot deal ID" },
+      },
+      required: ["deal_id"],
+    }),
+  },
+  {
+    name: "hubspot_list_pipeline_stages",
+    category: "external",
+    executionMode: "in_process",
+    description: "List all deal pipelines and their stages from HubSpot. Useful for understanding sales workflow. Requires HubSpot integration.",
+    parametersJson: JSON.stringify({ type: "object", properties: {} }),
+  },
+  {
+    name: "hubspot_create_company",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a new company in HubSpot CRM. Always requires human approval. Requires HubSpot integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        properties: { type: "object", description: "Company properties (e.g. {\"name\": \"Acme Inc\", \"domain\": \"acme.com\", \"industry\": \"SaaS\"})" },
+      },
+      required: ["properties"],
+    }),
+  },
+  {
+    name: "hubspot_search_companies",
+    category: "external",
+    executionMode: "in_process",
+    description: "Search HubSpot companies by name or domain. Returns matching company records. Requires HubSpot integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Search query — company name or domain" },
+      },
+      required: ["query"],
+    }),
+  },
+  {
+    name: "hubspot_list_activities",
+    category: "external",
+    executionMode: "in_process",
+    description: "List recent engagement activities from HubSpot (calls, emails, meetings, notes). Requires HubSpot integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "Max activities to return (default: 20)" },
+      },
+    }),
+  },
+  {
+    name: "hubspot_create_engagement",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create an engagement (note, email, call, meeting) in HubSpot, optionally linked to a contact. Always requires human approval. Requires HubSpot integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        type: { type: "string", description: "Engagement type: NOTE, EMAIL, CALL, MEETING" },
+        body: { type: "string", description: "Engagement content/body" },
+        contact_id: { type: "string", description: "Optional contact ID to associate" },
+      },
+      required: ["type", "body"],
+    }),
+  },
+  {
+    name: "hubspot_list_contact_lists",
+    category: "external",
+    executionMode: "in_process",
+    description: "List contact lists (static and dynamic) from HubSpot. Requires HubSpot integration.",
+    parametersJson: JSON.stringify({ type: "object", properties: {} }),
+  },
+  {
+    name: "hubspot_get_custom_properties",
+    category: "external",
+    executionMode: "in_process",
+    description: "Get custom properties for a HubSpot object type (contacts, deals, companies). Useful for understanding available CRM fields. Requires HubSpot integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        object_type: { type: "string", description: "Object type: contacts, deals, or companies (default: contacts)" },
+      },
+    }),
+  },
+  // ── Slack expanded ──────────────────────────────────────────────────
+  {
+    name: "slack_add_reaction",
+    category: "external",
+    executionMode: "in_process",
+    description: "Add an emoji reaction to a Slack message. Requires Slack integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        channel: { type: "string", description: "Channel ID" },
+        timestamp: { type: "string", description: "Message timestamp (ts)" },
+        name: { type: "string", description: "Emoji name without colons (e.g. thumbsup)" },
+      },
+      required: ["channel", "timestamp", "name"],
+    }),
+  },
+  {
+    name: "slack_reply_to_thread",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Reply in a Slack message thread. Always requires human approval. Requires Slack integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        channel: { type: "string", description: "Channel ID" },
+        thread_ts: { type: "string", description: "Parent message timestamp" },
+        text: { type: "string", description: "Reply text" },
+      },
+      required: ["channel", "thread_ts", "text"],
+    }),
+  },
+  {
+    name: "slack_create_channel",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a new Slack channel. Always requires human approval. Requires Slack integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Channel name (lowercase, no spaces)" },
+        is_private: { type: "boolean", description: "Whether the channel is private (default: false)" },
+      },
+      required: ["name"],
+    }),
+  },
+  {
+    name: "slack_invite_to_channel",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Invite a user to a Slack channel. Always requires human approval. Requires Slack integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        channel: { type: "string", description: "Channel ID" },
+        user_id: { type: "string", description: "Slack user ID to invite" },
+      },
+      required: ["channel", "user_id"],
+    }),
+  },
+  {
+    name: "slack_lookup_user",
+    category: "external",
+    executionMode: "in_process",
+    description: "Look up a Slack user by email address. Returns user ID, name, and profile. Requires Slack integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        email: { type: "string", description: "Email address to look up" },
+      },
+      required: ["email"],
+    }),
+  },
+  {
+    name: "slack_list_users",
+    category: "external",
+    executionMode: "in_process",
+    description: "List members of the Slack workspace. Returns user IDs, names, and emails. Requires Slack integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "Max users to return (default: 50)" },
+      },
+    }),
+  },
+  {
+    name: "slack_schedule_message",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Schedule a Slack message for future delivery. Always requires human approval. Requires Slack integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        channel: { type: "string", description: "Channel ID" },
+        text: { type: "string", description: "Message text" },
+        post_at: { type: "number", description: "Unix timestamp for when to send" },
+      },
+      required: ["channel", "text", "post_at"],
+    }),
+  },
+  {
+    name: "slack_set_channel_topic",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Set the topic of a Slack channel. Always requires human approval. Requires Slack integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        channel: { type: "string", description: "Channel ID" },
+        topic: { type: "string", description: "New channel topic text" },
+      },
+      required: ["channel", "topic"],
+    }),
+  },
+  // ── Linear expanded ─────────────────────────────────────────────────
+  {
+    name: "linear_list_projects",
+    category: "external",
+    executionMode: "in_process",
+    description: "List projects from Linear with status, progress, and lead info. Requires Linear integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        first: { type: "number", description: "Number of projects to return (default: 20)" },
+      },
+    }),
+  },
+  {
+    name: "linear_create_project",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a new project in Linear. Always requires human approval. Requires Linear integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Project name" },
+        team_ids: { type: "array", items: { type: "string" }, description: "Team IDs associated with the project" },
+        description: { type: "string", description: "Optional project description" },
+      },
+      required: ["name", "team_ids"],
+    }),
+  },
+  {
+    name: "linear_list_labels",
+    category: "external",
+    executionMode: "in_process",
+    description: "List issue labels from Linear. Returns label names, colors, and IDs. Requires Linear integration.",
+    parametersJson: JSON.stringify({ type: "object", properties: {} }),
+  },
+  {
+    name: "linear_create_comment",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Add a comment to a Linear issue. Always requires human approval. Requires Linear integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        issue_id: { type: "string", description: "Linear issue ID" },
+        body: { type: "string", description: "Comment body (Markdown supported)" },
+      },
+      required: ["issue_id", "body"],
+    }),
+  },
+  {
+    name: "linear_list_cycles",
+    category: "external",
+    executionMode: "in_process",
+    description: "List cycles (sprints) from Linear with status and dates. Requires Linear integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        team_id: { type: "string", description: "Optional team ID to filter cycles" },
+      },
+    }),
+  },
+  {
+    name: "linear_get_roadmap",
+    category: "external",
+    executionMode: "in_process",
+    description: "Get the Linear roadmap with project milestones and progress. Requires Linear integration.",
+    parametersJson: JSON.stringify({ type: "object", properties: {} }),
+  },
+  {
+    name: "linear_update_project",
+    category: "external",
+    executionMode: "in_process",
+    description: "Update a Linear project's properties (name, description, state). Requires Linear integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        project_id: { type: "string", description: "Linear project ID" },
+        input: { type: "object", description: "Fields to update (e.g. {\"name\": \"New name\", \"state\": \"completed\"})" },
+      },
+      required: ["project_id", "input"],
+    }),
+  },
+  {
+    name: "linear_get_issue_history",
+    category: "external",
+    executionMode: "in_process",
+    description: "Get the change history of a Linear issue (state changes, assignments, edits). Requires Linear integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        issue_id: { type: "string", description: "Linear issue ID" },
+      },
+      required: ["issue_id"],
+    }),
+  },
+  // ── Notion expanded ─────────────────────────────────────────────────
+  {
+    name: "notion_query_database",
+    category: "external",
+    executionMode: "in_process",
+    description: "Query a Notion database with optional filters. Returns matching entries with properties. Requires Notion integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        database_id: { type: "string", description: "Notion database ID" },
+        filter: { type: "object", description: "Optional Notion filter object" },
+        page_size: { type: "number", description: "Max results (default: 20, max: 100)" },
+      },
+      required: ["database_id"],
+    }),
+  },
+  {
+    name: "notion_create_database_entry",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a new entry in a Notion database. Always requires human approval. Requires Notion integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        database_id: { type: "string", description: "Notion database ID" },
+        properties: { type: "object", description: "Entry properties matching the database schema" },
+      },
+      required: ["database_id", "properties"],
+    }),
+  },
+  {
+    name: "notion_update_page",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Update properties on a Notion page or database entry. Always requires human approval. Requires Notion integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        page_id: { type: "string", description: "Notion page ID" },
+        properties: { type: "object", description: "Properties to update" },
+      },
+      required: ["page_id", "properties"],
+    }),
+  },
+  {
+    name: "notion_delete_page",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Archive (soft-delete) a Notion page. Always requires human approval. Requires Notion integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        page_id: { type: "string", description: "Notion page ID to archive" },
+      },
+      required: ["page_id"],
+    }),
+  },
+  {
+    name: "notion_list_databases",
+    category: "external",
+    executionMode: "in_process",
+    description: "List databases in your Notion workspace. Returns database titles and IDs. Requires Notion integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "Max databases to return (default: 10)" },
+      },
+    }),
+  },
+  // ── GitHub expanded ─────────────────────────────────────────────────
+  {
+    name: "github_create_pr",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a pull request on GitHub. Always requires human approval. Requires GitHub integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        repo: { type: "string", description: "Repository in owner/repo format" },
+        title: { type: "string", description: "PR title" },
+        body: { type: "string", description: "PR description (Markdown)" },
+        head: { type: "string", description: "Branch with changes" },
+        base: { type: "string", description: "Target branch (default: main)" },
+      },
+      required: ["repo", "title", "head"],
+    }),
+  },
+  {
+    name: "github_merge_pr",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Merge a pull request on GitHub. Always requires human approval. Requires GitHub integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        repo: { type: "string", description: "Repository in owner/repo format" },
+        pull_number: { type: "number", description: "PR number" },
+        merge_method: { type: "string", description: "Merge method: merge, squash, or rebase (default: merge)" },
+      },
+      required: ["repo", "pull_number"],
+    }),
+  },
+  {
+    name: "github_list_workflow_runs",
+    category: "external",
+    executionMode: "in_process",
+    description: "List recent GitHub Actions workflow runs for a repository. Requires GitHub integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        repo: { type: "string", description: "Repository in owner/repo format" },
+        limit: { type: "number", description: "Max runs to return (default: 10)" },
+      },
+      required: ["repo"],
+    }),
+  },
+  {
+    name: "github_trigger_workflow",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Trigger a GitHub Actions workflow dispatch event. Always requires human approval. Requires GitHub integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        repo: { type: "string", description: "Repository in owner/repo format" },
+        workflow_id: { type: "string", description: "Workflow file name (e.g. deploy.yml) or ID" },
+        ref: { type: "string", description: "Branch or tag to run on (default: main)" },
+        inputs: { type: "object", description: "Optional workflow input parameters" },
+      },
+      required: ["repo", "workflow_id"],
+    }),
+  },
+  {
+    name: "github_add_label",
+    category: "external",
+    executionMode: "in_process",
+    description: "Add labels to a GitHub issue or pull request. Requires GitHub integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        repo: { type: "string", description: "Repository in owner/repo format" },
+        issue_number: { type: "number", description: "Issue or PR number" },
+        labels: { type: "array", items: { type: "string" }, description: "Labels to add" },
+      },
+      required: ["repo", "issue_number", "labels"],
+    }),
+  },
+  {
+    name: "github_update_issue",
+    category: "external",
+    executionMode: "in_process",
+    description: "Update a GitHub issue (title, body, state, assignees, labels). Requires GitHub integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        repo: { type: "string", description: "Repository in owner/repo format" },
+        issue_number: { type: "number", description: "Issue number" },
+        title: { type: "string", description: "New title" },
+        body: { type: "string", description: "New body" },
+        state: { type: "string", description: "State: open or closed" },
+        assignees: { type: "array", items: { type: "string" }, description: "Assignee usernames" },
+      },
+      required: ["repo", "issue_number"],
+    }),
+  },
+  {
+    name: "github_create_comment",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a comment on a GitHub issue or PR. Always requires human approval. Requires GitHub integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        repo: { type: "string", description: "Repository in owner/repo format" },
+        issue_number: { type: "number", description: "Issue or PR number" },
+        body: { type: "string", description: "Comment body (Markdown)" },
+      },
+      required: ["repo", "issue_number", "body"],
+    }),
+  },
+  {
+    name: "github_list_branches",
+    category: "external",
+    executionMode: "in_process",
+    description: "List branches in a GitHub repository. Requires GitHub integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        repo: { type: "string", description: "Repository in owner/repo format" },
+        limit: { type: "number", description: "Max branches to return (default: 30)" },
+      },
+      required: ["repo"],
+    }),
+  },
+  {
+    name: "github_get_commit",
+    category: "external",
+    executionMode: "in_process",
+    description: "Get details of a specific Git commit from GitHub (message, author, files changed). Requires GitHub integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        repo: { type: "string", description: "Repository in owner/repo format" },
+        ref: { type: "string", description: "Commit SHA or branch name" },
+      },
+      required: ["repo", "ref"],
+    }),
+  },
+  {
+    name: "github_compare_commits",
+    category: "external",
+    executionMode: "in_process",
+    description: "Compare two commits/branches on GitHub. Shows ahead/behind counts and changed files. Requires GitHub integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        repo: { type: "string", description: "Repository in owner/repo format" },
+        base: { type: "string", description: "Base commit/branch" },
+        head: { type: "string", description: "Head commit/branch" },
+      },
+      required: ["repo", "base", "head"],
+    }),
+  },
+  // ── Jira ────────────────────────────────────────────────────────────
+  {
+    name: "jira_list_projects",
+    category: "external",
+    executionMode: "in_process",
+    description: "List Jira projects you have access to. Returns project keys, names, and types. Requires Jira integration.",
+    parametersJson: JSON.stringify({ type: "object", properties: {} }),
+  },
+  {
+    name: "jira_list_issues",
+    category: "external",
+    executionMode: "in_process",
+    description: "List issues from a Jira project or search with JQL. Returns issue keys, summaries, statuses, and assignees. Requires Jira integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        project_key: { type: "string", description: "Jira project key (e.g. PROJ)" },
+        jql: { type: "string", description: "Optional JQL query to filter issues" },
+        max_results: { type: "number", description: "Max issues to return (default: 20, max: 50)" },
+      },
+    }),
+  },
+  {
+    name: "jira_get_issue",
+    category: "external",
+    executionMode: "in_process",
+    description: "Get full details of a Jira issue by key (e.g. PROJ-123). Returns summary, description, status, assignee, priority, and comments. Requires Jira integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        issue_key: { type: "string", description: "Jira issue key (e.g. PROJ-123)" },
+      },
+      required: ["issue_key"],
+    }),
+  },
+  {
+    name: "jira_create_issue",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a new Jira issue. Always requires human approval. Requires Jira integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        project_key: { type: "string", description: "Jira project key" },
+        summary: { type: "string", description: "Issue summary/title" },
+        description: { type: "string", description: "Issue description" },
+        issue_type: { type: "string", description: "Issue type: Task, Bug, Story, Epic (default: Task)" },
+        priority: { type: "string", description: "Priority: Highest, High, Medium, Low, Lowest" },
+        assignee_id: { type: "string", description: "Optional Jira account ID to assign" },
+      },
+      required: ["project_key", "summary"],
+    }),
+  },
+  {
+    name: "jira_update_issue",
+    category: "external",
+    executionMode: "in_process",
+    description: "Update fields on an existing Jira issue. Requires Jira integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        issue_key: { type: "string", description: "Jira issue key" },
+        fields: { type: "object", description: "Fields to update (e.g. {\"summary\": \"New title\", \"priority\": {\"name\": \"High\"}})" },
+      },
+      required: ["issue_key", "fields"],
+    }),
+  },
+  {
+    name: "jira_add_comment",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Add a comment to a Jira issue. Always requires human approval. Requires Jira integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        issue_key: { type: "string", description: "Jira issue key" },
+        body: { type: "string", description: "Comment text" },
+      },
+      required: ["issue_key", "body"],
+    }),
+  },
+  {
+    name: "jira_transition_issue",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Transition a Jira issue to a new status (e.g. To Do → In Progress → Done). Always requires human approval. Use jira_list_transitions first to see available transitions. Requires Jira integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        issue_key: { type: "string", description: "Jira issue key" },
+        transition_id: { type: "string", description: "Transition ID (from jira_list_transitions)" },
+      },
+      required: ["issue_key", "transition_id"],
+    }),
+  },
+  {
+    name: "jira_list_transitions",
+    category: "external",
+    executionMode: "in_process",
+    description: "List available status transitions for a Jira issue. Use before jira_transition_issue. Requires Jira integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        issue_key: { type: "string", description: "Jira issue key" },
+      },
+      required: ["issue_key"],
+    }),
+  },
+  {
+    name: "jira_assign_issue",
+    category: "external",
+    executionMode: "in_process",
+    description: "Assign a Jira issue to a user by account ID. Requires Jira integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        issue_key: { type: "string", description: "Jira issue key" },
+        account_id: { type: "string", description: "Jira account ID of the assignee" },
+      },
+      required: ["issue_key", "account_id"],
+    }),
+  },
+  {
+    name: "jira_search_users",
+    category: "external",
+    executionMode: "in_process",
+    description: "Search for Jira users by name or email. Returns account IDs for assignment. Requires Jira integration.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Name or email to search for" },
+      },
+      required: ["query"],
+    }),
+  },
+  // ── Stripe expanded ─────────────────────────────────────────────────
+  {
+    name: "stripe_get_customer",
+    category: "external",
+    executionMode: "in_process",
+    description: "Get a specific Stripe customer by ID with full details. Requires STRIPE_SECRET_KEY in Settings → Skills.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        customer_id: { type: "string", description: "Stripe customer ID (cus_...)" },
+      },
+      required: ["customer_id"],
+    }),
+  },
+  {
+    name: "stripe_create_customer",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a new Stripe customer. Always requires human approval. Requires STRIPE_SECRET_KEY in Settings → Skills.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        email: { type: "string", description: "Customer email" },
+        name: { type: "string", description: "Customer name" },
+        description: { type: "string", description: "Optional description" },
+      },
+    }),
+  },
+  {
+    name: "stripe_get_invoice",
+    category: "external",
+    executionMode: "in_process",
+    description: "Get a specific Stripe invoice by ID with full details. Requires STRIPE_SECRET_KEY in Settings → Skills.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        invoice_id: { type: "string", description: "Stripe invoice ID (in_...)" },
+      },
+      required: ["invoice_id"],
+    }),
+  },
+  {
+    name: "stripe_create_invoice",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a new Stripe invoice for a customer. Always requires human approval. Requires STRIPE_SECRET_KEY in Settings → Skills.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        customer_id: { type: "string", description: "Stripe customer ID" },
+        description: { type: "string", description: "Optional invoice description" },
+      },
+      required: ["customer_id"],
+    }),
+  },
+  {
+    name: "stripe_get_subscription",
+    category: "external",
+    executionMode: "in_process",
+    description: "Get a specific Stripe subscription by ID with full details. Requires STRIPE_SECRET_KEY in Settings → Skills.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        subscription_id: { type: "string", description: "Stripe subscription ID (sub_...)" },
+      },
+      required: ["subscription_id"],
+    }),
+  },
+  {
+    name: "stripe_list_charges",
+    category: "external",
+    executionMode: "in_process",
+    description: "List recent Stripe charges with amounts, status, and customer info. Requires STRIPE_SECRET_KEY in Settings → Skills.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "Max charges to return (default: 20, max: 100)" },
+      },
+    }),
+  },
+  {
+    name: "stripe_get_balance_transactions",
+    category: "external",
+    executionMode: "in_process",
+    description: "List Stripe balance transactions (payments, refunds, fees). Requires STRIPE_SECRET_KEY in Settings → Skills.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "Max transactions to return (default: 20, max: 100)" },
+      },
+    }),
+  },
+  {
+    name: "stripe_list_products",
+    category: "external",
+    executionMode: "in_process",
+    description: "List active Stripe products. Returns product names, descriptions, and IDs. Requires STRIPE_SECRET_KEY in Settings → Skills.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "Max products to return (default: 20, max: 100)" },
+      },
+    }),
+  },
+  {
+    name: "stripe_list_prices",
+    category: "external",
+    executionMode: "in_process",
+    description: "List active Stripe prices with amounts, currencies, and billing intervals. Requires STRIPE_SECRET_KEY in Settings → Skills.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "Max prices to return (default: 20, max: 100)" },
+      },
+    }),
+  },
   // ── Google Docs / Sheets write ─────────────────────────────────────────
   {
     name: "google_create_doc",
@@ -856,6 +1658,124 @@ const TOOL_SEEDS: ToolSeedRow[] = [
         rows: { type: "array", items: { type: "array", items: { type: "string" } }, description: "Array of rows, each row is an array of cell values" },
       },
       required: ["spreadsheet_id", "rows"],
+    }),
+  },
+  // ── Channel messaging (Phase 2B) ──────────────────────────────────────
+  {
+    name: "channel_send_message",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Send a message to a contact via a connected channel (Slack, Email, WhatsApp, SMS). Always requires human approval. Configure channels in Settings → Channels.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        channel_type: { type: "string", enum: ["SLACK", "EMAIL", "WHATSAPP", "SMS"], description: "Channel to send through" },
+        contact_id: { type: "string", description: "Recipient identifier (email, phone number, Slack user ID, etc.)" },
+        content: { type: "string", description: "Message content" },
+      },
+      required: ["channel_type", "contact_id", "content"],
+    }),
+  },
+  {
+    name: "channel_reply",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Reply to an existing conversation via its channel. Always requires human approval. Use channel_list_conversations to find conversation IDs.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        conversation_id: { type: "string", description: "Conversation ID to reply to" },
+        content: { type: "string", description: "Reply content" },
+      },
+      required: ["conversation_id", "content"],
+    }),
+  },
+  {
+    name: "channel_list_conversations",
+    category: "read",
+    executionMode: "in_process",
+    description: "List active conversations across all connected channels. Shows latest message preview for each conversation.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        channel_type: { type: "string", enum: ["SLACK", "EMAIL", "WHATSAPP", "SMS"], description: "Optional: filter by channel type" },
+        limit: { type: "number", description: "Max conversations to return (default: 10, max: 20)" },
+      },
+    }),
+  },
+  // ── Agent-to-agent communication (Phase 3B) ─────────────────────────
+  {
+    name: "send_agent_message",
+    category: "orchestration",
+    executionMode: "in_process",
+    description: "Send a message to another agent in your task group. Use for coordination, requests, proposals, or sharing results between collaborating agents.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        task_group_id: { type: "string", description: "Task group ID for the collaboration" },
+        to_agent: { type: "string", description: "Target agent kind (e.g. SALES_REP, FINANCE_ANALYST)" },
+        content: { type: "string", description: "Message content" },
+        message_type: { type: "string", enum: ["INFO", "REQUEST", "RESPONSE", "PROPOSAL", "COUNTER", "RESULT"], description: "Message type (default: INFO)" },
+      },
+      required: ["task_group_id", "to_agent", "content"],
+    }),
+  },
+  {
+    name: "read_agent_messages",
+    category: "read",
+    executionMode: "in_process",
+    description: "Read recent messages from collaborating agents in a task group.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        task_group_id: { type: "string", description: "Task group ID" },
+        limit: { type: "number", description: "Max messages to return (default: 10, max: 20)" },
+      },
+      required: ["task_group_id"],
+    }),
+  },
+  {
+    name: "write_workspace",
+    category: "orchestration",
+    executionMode: "in_process",
+    description: "Write a key-value entry to the shared workspace in a task group. Other agents can read this data.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        task_group_id: { type: "string", description: "Task group ID" },
+        key: { type: "string", description: "Workspace key (e.g. 'analysis_results', 'draft_email')" },
+        value: { type: "string", description: "Value to store" },
+      },
+      required: ["task_group_id", "key", "value"],
+    }),
+  },
+  {
+    name: "read_workspace",
+    category: "read",
+    executionMode: "in_process",
+    description: "Read from the shared workspace in a task group. Omit key to see all entries.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        task_group_id: { type: "string", description: "Task group ID" },
+        key: { type: "string", description: "Optional: specific key to read. Omit to list all entries." },
+      },
+      required: ["task_group_id"],
+    }),
+  },
+  {
+    name: "request_agent_help",
+    category: "orchestration",
+    executionMode: "in_process",
+    description: "Request help from another agent by creating a task group and delegating work. Creates a new task for the target agent with instructions and links both tasks in a shared group for communication.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        to_agent: { type: "string", description: "Target agent kind to request help from (e.g. RESEARCH_ANALYST, FINANCE_ANALYST)" },
+        title: { type: "string", description: "Help request title (max 240 chars)" },
+        instructions: { type: "string", description: "Detailed instructions for the helper agent" },
+      },
+      required: ["to_agent", "title", "instructions"],
     }),
   },
   // ── Agent-scheduled follow-up ──────────────────────────────────────────
@@ -1012,26 +1932,54 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "delegate_task", "send_email", "call_webhook", "create_business_log",
     "figma_get_design", "figma_get_image", "web_search", "extract_content",
     "schedule_followup", "sql_query", "generate_pdf", "agent_performance", "semantic_search_files",
-    // HubSpot
+    // HubSpot full
     "hubspot_search_contacts", "hubspot_create_contact", "hubspot_update_contact",
     "hubspot_list_deals", "hubspot_create_note",
-    // Slack
+    "hubspot_create_deal", "hubspot_update_deal", "hubspot_get_deal",
+    "hubspot_list_pipeline_stages", "hubspot_create_company", "hubspot_search_companies",
+    "hubspot_list_activities", "hubspot_create_engagement",
+    "hubspot_list_contact_lists", "hubspot_get_custom_properties",
+    // Slack full
     "slack_list_channels", "slack_post_message",
+    "slack_add_reaction", "slack_reply_to_thread", "slack_create_channel",
+    "slack_invite_to_channel", "slack_lookup_user", "slack_list_users",
+    "slack_schedule_message", "slack_set_channel_topic",
     // Google full suite including Docs/Sheets write
     "google_list_emails", "google_read_email", "google_send_email", "google_list_calendar_events",
     "google_create_calendar_event", "google_list_drive_files", "google_read_drive_file",
     "google_create_doc", "google_append_doc", "google_create_sheet", "google_append_sheet_rows",
-    // Linear
+    // Linear full
     "linear_list_issues", "linear_create_issue", "linear_update_issue",
+    "linear_list_projects", "linear_create_project", "linear_list_labels",
+    "linear_create_comment", "linear_list_cycles", "linear_get_roadmap",
+    "linear_update_project", "linear_get_issue_history",
     // Calendly all 4
     "calendly_list_event_types", "calendly_list_scheduled_events",
     "calendly_get_event_invitees", "calendly_create_scheduling_link",
-    // GitHub
+    // GitHub full
     "github_list_repos", "github_list_issues", "github_create_issue", "github_list_prs",
-    // Notion
+    "github_create_pr", "github_merge_pr", "github_list_workflow_runs",
+    "github_trigger_workflow", "github_add_label", "github_update_issue",
+    "github_create_comment", "github_list_branches", "github_get_commit", "github_compare_commits",
+    // Notion full
     "notion_search", "notion_read_page", "notion_create_page", "notion_append_block",
+    "notion_query_database", "notion_create_database_entry",
+    "notion_update_page", "notion_delete_page", "notion_list_databases",
+    // Jira full
+    "jira_list_projects", "jira_list_issues", "jira_get_issue",
+    "jira_create_issue", "jira_update_issue", "jira_add_comment",
+    "jira_transition_issue", "jira_list_transitions", "jira_assign_issue", "jira_search_users",
+    // Stripe full
+    "stripe_get_revenue", "stripe_list_customers", "stripe_list_subscriptions", "stripe_list_invoices",
+    "stripe_get_customer", "stripe_create_customer", "stripe_get_invoice", "stripe_create_invoice",
+    "stripe_get_subscription", "stripe_list_charges", "stripe_get_balance_transactions",
+    "stripe_list_products", "stripe_list_prices",
     // Browser automation: all 5
     "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
+    // Channel messaging (Phase 2B)
+    "channel_send_message", "channel_reply", "channel_list_conversations",
+    // Agent-to-agent communication (Phase 3B)
+    "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
   ],
   MARKETING_COORDINATOR: [
     "search_business_logs", "list_files", "read_file", "web_fetch",
@@ -1041,45 +1989,88 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "google_list_emails", "google_read_email", "google_send_email", "google_list_calendar_events",
     "google_create_calendar_event", "google_list_drive_files", "google_read_drive_file",
     "google_create_doc", "google_append_doc", "google_create_sheet", "google_append_sheet_rows",
-    // Slack
+    // Slack expanded
     "slack_list_channels", "slack_post_message",
-    // Notion
+    "slack_add_reaction", "slack_reply_to_thread", "slack_lookup_user",
+    "slack_list_users", "slack_schedule_message",
+    // Notion expanded
     "notion_search", "notion_read_page", "notion_create_page", "notion_append_block",
+    "notion_query_database", "notion_create_database_entry", "notion_list_databases",
+    // GitHub read
+    "github_list_repos", "github_list_issues", "github_list_prs",
     // Browser: all 5
     "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
+    // Channel messaging
+    "channel_send_message", "channel_reply", "channel_list_conversations",
+    // Agent-to-agent communication
+    "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
   ],
   ASSISTANT: [
     "read_file", "list_files", "search_business_logs", "list_inbox_items",
     "web_fetch", "run_command", "write_file", "send_email", "call_webhook",
     "create_business_log", "delegate_task",
+    // Slack basics
+    "slack_list_channels", "slack_post_message", "slack_reply_to_thread",
+    // Notion basics
+    "notion_search", "notion_read_page",
+    // Jira basics
+    "jira_list_projects", "jira_list_issues", "jira_get_issue",
     // Browser: all 5
     "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
+    // Channel messaging
+    "channel_send_message", "channel_reply", "channel_list_conversations",
+    // Agent-to-agent communication
+    "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
   ],
   SALES_REP: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
     "web_fetch", "send_email", "call_webhook", "delegate_task", "list_inbox_items",
-    // HubSpot all 5 + Slack + Linear list/update
+    // HubSpot full
     "hubspot_search_contacts", "hubspot_create_contact", "hubspot_update_contact",
     "hubspot_list_deals", "hubspot_create_note",
+    "hubspot_create_deal", "hubspot_update_deal", "hubspot_get_deal",
+    "hubspot_list_pipeline_stages", "hubspot_create_company", "hubspot_search_companies",
+    "hubspot_list_activities", "hubspot_create_engagement",
+    "hubspot_list_contact_lists", "hubspot_get_custom_properties",
+    // Slack expanded
     "slack_list_channels", "slack_post_message",
+    "slack_add_reaction", "slack_reply_to_thread", "slack_lookup_user",
+    // Linear list/update
     "linear_list_issues", "linear_update_issue",
-    // Calendly: view bookings + create booking links for leads
+    // Calendly
     "calendly_list_event_types", "calendly_list_scheduled_events",
     "calendly_create_scheduling_link",
+    // Jira basics (for cross-team visibility)
+    "jira_list_projects", "jira_list_issues", "jira_get_issue",
+    // Stripe read-only
+    "stripe_get_revenue", "stripe_list_customers", "stripe_get_customer",
     // Browser: all 5
     "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
+    // Channel messaging
+    "channel_send_message", "channel_reply", "channel_list_conversations",
+    // Agent-to-agent communication
+    "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
   ],
   CUSTOMER_SUCCESS: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
     "send_email", "list_inbox_items", "delegate_task", "call_webhook",
-    // HubSpot search/update/note + Slack
+    // HubSpot expanded
     "hubspot_search_contacts", "hubspot_update_contact", "hubspot_create_note",
+    "hubspot_get_deal", "hubspot_list_activities", "hubspot_get_custom_properties",
+    // Slack expanded
     "slack_list_channels", "slack_post_message",
-    // Calendly: view upcoming client bookings
+    "slack_add_reaction", "slack_reply_to_thread", "slack_lookup_user",
+    // Calendly
     "calendly_list_event_types", "calendly_list_scheduled_events",
     "calendly_get_event_invitees",
-    // Browser: navigate/content/screenshot only (no click/type)
+    // Jira read
+    "jira_list_issues", "jira_get_issue",
+    // Browser: navigate/content/screenshot only
     "browser_navigate", "browser_get_content", "browser_screenshot",
+    // Channel messaging
+    "channel_send_message", "channel_reply", "channel_list_conversations",
+    // Agent-to-agent communication
+    "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
   ],
   FINANCE_ANALYST: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
@@ -1092,25 +2083,48 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     // Xero
     "xero_get_profit_loss", "xero_get_balance_sheet",
     "xero_get_trial_balance", "xero_list_invoices",
-    // Stripe
-    "stripe_get_revenue", "stripe_list_customers",
-    "stripe_list_subscriptions", "stripe_list_invoices",
+    // Stripe full
+    "stripe_get_revenue", "stripe_list_customers", "stripe_list_subscriptions", "stripe_list_invoices",
+    "stripe_get_customer", "stripe_create_customer", "stripe_get_invoice", "stripe_create_invoice",
+    "stripe_get_subscription", "stripe_list_charges", "stripe_get_balance_transactions",
+    "stripe_list_products", "stripe_list_prices",
+    // Agent-to-agent communication
+    "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
   ],
   OPERATIONS_MANAGER: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
     "web_fetch", "send_email", "call_webhook", "delegate_task", "list_inbox_items",
     "schedule_followup", "sql_query", "generate_pdf", "agent_performance",
-    // Linear all 3 + Slack
+    // Linear full
     "linear_list_issues", "linear_create_issue", "linear_update_issue",
+    "linear_list_projects", "linear_create_project", "linear_list_labels",
+    "linear_create_comment", "linear_list_cycles", "linear_get_roadmap",
+    "linear_update_project", "linear_get_issue_history",
+    // Slack expanded
     "slack_list_channels", "slack_post_message",
-    // GitHub
+    "slack_add_reaction", "slack_reply_to_thread", "slack_create_channel",
+    "slack_invite_to_channel", "slack_list_users", "slack_set_channel_topic",
+    // GitHub full
     "github_list_repos", "github_list_issues", "github_create_issue", "github_list_prs",
-    // Notion
+    "github_create_pr", "github_merge_pr", "github_list_workflow_runs",
+    "github_trigger_workflow", "github_add_label", "github_update_issue",
+    "github_create_comment", "github_list_branches", "github_get_commit", "github_compare_commits",
+    // Notion expanded
     "notion_search", "notion_read_page", "notion_create_page", "notion_append_block",
+    "notion_query_database", "notion_create_database_entry",
+    "notion_update_page", "notion_delete_page", "notion_list_databases",
+    // Jira full
+    "jira_list_projects", "jira_list_issues", "jira_get_issue",
+    "jira_create_issue", "jira_update_issue", "jira_add_comment",
+    "jira_transition_issue", "jira_list_transitions", "jira_assign_issue", "jira_search_users",
     // Google Docs
     "google_create_doc", "google_append_doc", "google_create_sheet", "google_append_sheet_rows",
     // Browser: all 5
     "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
+    // Channel messaging
+    "channel_send_message", "channel_reply", "channel_list_conversations",
+    // Agent-to-agent communication
+    "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
   ],
   EXECUTIVE_ASSISTANT: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
@@ -1120,33 +2134,53 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "google_list_calendar_events", "google_create_calendar_event",
     "google_list_drive_files", "google_read_drive_file",
     "google_create_doc", "google_append_doc",
-    // Slack
-    "slack_list_channels",
-    // Notion
+    // Slack expanded
+    "slack_list_channels", "slack_post_message",
+    "slack_reply_to_thread", "slack_lookup_user", "slack_list_users", "slack_schedule_message",
+    // Notion expanded
     "notion_search", "notion_read_page", "notion_create_page", "notion_append_block",
+    "notion_query_database", "notion_list_databases",
     // Calendly all 4
     "calendly_list_event_types", "calendly_list_scheduled_events",
     "calendly_get_event_invitees", "calendly_create_scheduling_link",
+    // Jira read
+    "jira_list_projects", "jira_list_issues", "jira_get_issue",
     // Browser: all 5
     "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
+    // Channel messaging
+    "channel_send_message", "channel_reply", "channel_list_conversations",
+    // Agent-to-agent communication
+    "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
   ],
   RESEARCH_ANALYST: [
     "web_search", "extract_content", "quality_review",
     "search_business_logs", "create_business_log",
     "list_files", "read_file", "delegate_task", "list_inbox_items",
     "sql_query", "generate_pdf", "semantic_search_files",
+    // Notion expanded
     "notion_search", "notion_read_page", "notion_create_page",
+    "notion_query_database", "notion_list_databases",
+    // Google Drive + Docs
     "google_list_drive_files", "google_read_drive_file",
     "google_create_doc", "google_append_doc",
+    // GitHub read-only
+    "github_list_repos", "github_list_issues", "github_list_prs",
+    "github_list_branches", "github_get_commit", "github_compare_commits",
     // Browser: all 5
     "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
+    // Agent-to-agent communication
+    "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
   ],
   SEO_SPECIALIST: [
     "web_search", "extract_content", "web_fetch", "quality_review",
     "search_business_logs", "create_business_log",
     "list_files", "read_file", "delegate_task", "list_inbox_items",
+    // Notion read
+    "notion_search", "notion_read_page", "notion_query_database",
     // Browser: all 5
     "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
+    // Agent-to-agent communication (read-only)
+    "read_agent_messages", "read_workspace",
   ],
 };
 

@@ -633,5 +633,25 @@ export async function getEnabledSkillContents(userId: string): Promise<SkillInje
     });
   }
 
+  // Merge user-created custom skills from DB
+  try {
+    const { getEnabledCustomSkills } = await import("@/lib/custom-skills-store");
+    const customSkills = await getEnabledCustomSkills(userId);
+    for (const cs of customSkills) {
+      const content = cs.content.length > MAX_PER_SKILL
+        ? cs.content.slice(0, MAX_PER_SKILL) + "\n[...truncated]"
+        : cs.content;
+      results.push({
+        name: `custom:${cs.name}`,
+        content,
+        skillDir: "(custom skill)",
+        scripts: [],
+        envReady: [],
+      });
+    }
+  } catch {
+    // custom skills not available
+  }
+
   return results;
 }

@@ -72,3 +72,80 @@ export async function updateIssue(
     { id: issueId, input },
   );
 }
+
+export async function listProjects(token: string, first = 20) {
+  return linearQuery(
+    token,
+    `query { projects(first: ${first}) { nodes { id name description state startDate targetDate lead { name } teams { nodes { name } } } } }`,
+  );
+}
+
+export async function createProject(token: string, teamIds: string[], name: string, description?: string) {
+  return linearQuery(
+    token,
+    `mutation CreateProject($input: ProjectCreateInput!) { projectCreate(input: $input) { success project { id name url } } }`,
+    { input: { name, teamIds, ...(description ? { description } : {}) } },
+  );
+}
+
+export async function listLabels(token: string, first = 50) {
+  return linearQuery(
+    token,
+    `query { issueLabels(first: ${first}) { nodes { id name color } } }`,
+  );
+}
+
+export async function createComment(token: string, issueId: string, body: string) {
+  return linearQuery(
+    token,
+    `mutation CreateComment($input: CommentCreateInput!) { commentCreate(input: $input) { success comment { id body createdAt } } }`,
+    { input: { issueId, body } },
+  );
+}
+
+export async function addAttachment(token: string, issueId: string, url: string, title: string) {
+  return linearQuery(
+    token,
+    `mutation AddAttachment($input: AttachmentCreateInput!) { attachmentCreate(input: $input) { success attachment { id title url } } }`,
+    { input: { issueId, url, title } },
+  );
+}
+
+export async function listCycles(token: string, teamId: string, first = 10) {
+  return linearQuery(
+    token,
+    `query($teamId: String!) { cycles(filter: { team: { id: { eq: $teamId } } }, first: ${first}, orderBy: createdAt) { nodes { id number name startsAt endsAt completedAt } } }`,
+    { teamId },
+  );
+}
+
+export async function createCycle(token: string, teamId: string, name: string, startsAt: string, endsAt: string) {
+  return linearQuery(
+    token,
+    `mutation CreateCycle($input: CycleCreateInput!) { cycleCreate(input: $input) { success cycle { id number name } } }`,
+    { input: { teamId, name, startsAt, endsAt } },
+  );
+}
+
+export async function getRoadmap(token: string, first = 10) {
+  return linearQuery(
+    token,
+    `query { roadmaps(first: ${first}) { nodes { id name description projects { nodes { id name state } } } } }`,
+  );
+}
+
+export async function updateProject(token: string, projectId: string, input: Record<string, unknown>) {
+  return linearQuery(
+    token,
+    `mutation UpdateProject($id: String!, $input: ProjectUpdateInput!) { projectUpdate(id: $id, input: $input) { success project { id name state } } }`,
+    { id: projectId, input },
+  );
+}
+
+export async function getIssueHistory(token: string, issueId: string) {
+  return linearQuery(
+    token,
+    `query($id: String!) { issue(id: $id) { id title history(first: 20) { nodes { id createdAt fromState { name } toState { name } actor { name } } } } }`,
+    { id: issueId },
+  );
+}

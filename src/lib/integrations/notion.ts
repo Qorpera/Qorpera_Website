@@ -168,3 +168,67 @@ export async function appendBlocks(token: string, pageId: string, content: strin
 
   return { success: true, blocksAdded: children.length };
 }
+
+export async function queryDatabase(token: string, databaseId: string, filter?: Record<string, unknown>, sorts?: unknown[], pageSize = 20) {
+  const body: Record<string, unknown> = { page_size: Math.min(pageSize, 100) };
+  if (filter) body.filter = filter;
+  if (sorts?.length) body.sorts = sorts;
+
+  return notionFetch(token, `/databases/${databaseId}/query`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function createDatabaseEntry(token: string, databaseId: string, properties: Record<string, unknown>) {
+  return notionFetch(token, "/pages", {
+    method: "POST",
+    body: JSON.stringify({
+      parent: { database_id: databaseId },
+      properties,
+    }),
+  }) as Promise<{ id: string; url?: string }>;
+}
+
+export async function updatePage(token: string, pageId: string, properties: Record<string, unknown>) {
+  return notionFetch(token, `/pages/${pageId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ properties }),
+  });
+}
+
+export async function deletePage(token: string, pageId: string) {
+  return notionFetch(token, `/pages/${pageId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ archived: true }),
+  });
+}
+
+export async function listDatabases(token: string, pageSize = 20) {
+  const data = (await notionFetch(token, "/search", {
+    method: "POST",
+    body: JSON.stringify({ filter: { value: "database", property: "object" }, page_size: Math.min(pageSize, 100) }),
+  })) as { results: Array<{ id: string; title?: NotionRichText; url?: string; created_time: string }> };
+
+  return data.results.map((db) => ({
+    id: db.id,
+    title: extractPlainText(db.title),
+    url: db.url,
+    createdAt: db.created_time,
+  }));
+}
+
+export async function getBlock(token: string, blockId: string) {
+  return notionFetch(token, `/blocks/${blockId}`);
+}
+
+export async function updateBlock(token: string, blockId: string, content: Record<string, unknown>) {
+  return notionFetch(token, `/blocks/${blockId}`, {
+    method: "PATCH",
+    body: JSON.stringify(content),
+  });
+}
+
+export async function deleteBlock(token: string, blockId: string) {
+  return notionFetch(token, `/blocks/${blockId}`, { method: "DELETE" });
+}

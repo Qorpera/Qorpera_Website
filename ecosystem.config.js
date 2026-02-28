@@ -52,5 +52,18 @@ module.exports = {
         NODE_ENV: "production",
       },
     },
+
+    // ── Agent daemon (always-on agents) ───────────────────────────
+    {
+      name: "qorpera-agent-daemon",
+      script: "runner/agent-daemon.mjs",
+      instances: 1,
+      exec_mode: "fork",
+      max_memory_restart: "256M",
+      restart_delay: 5000,
+      env: {
+        NODE_ENV: "production",
+      },
+    },
   ],
 };

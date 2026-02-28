@@ -9,7 +9,7 @@ import { getToolsForAgentKind } from "@/lib/tool-registry";
 import { runAgenticLoop, type AgenticStreamEvent } from "@/lib/agentic-loop";
 import { getEnabledSkillContents } from "@/lib/skills-store";
 import { getAppPreferences } from "@/lib/settings-store";
-import { getAgentMemoryIndex, ingestTaskCompletion } from "@/lib/agent-memory-store";
+import { getRelevantMemories, ingestTaskCompletion } from "@/lib/agent-memory-store";
 import { notifyApprovalNeeded, notifySubmissionReady, notifyTaskCompleted, notifyTaskFailed } from "@/lib/notifications";
 import { runOptimizerIfDue } from "@/lib/optimizer";
 import { getAppliedPatches } from "@/lib/optimizer/optimizer-store";
@@ -44,6 +44,7 @@ export type AgentAutomationConfigView = {
   maxRuntimeSeconds: number;
   requireApprovalForExternalActions: boolean;
   allowAgentDelegation: boolean;
+  alwaysOn: boolean;
   integrations: string[];
   notes: string;
   updatedAt: string | null;
@@ -63,6 +64,10 @@ export type DelegatedTaskView = {
   inputFromTaskId: string | null;
   chainDepth: number;
   webhookEventId: string | null;
+  isLongRunning: boolean;
+  progressPct: number;
+  currentPhase: number;
+  totalPhases: number;
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
@@ -95,6 +100,7 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     maxRuntimeSeconds: 300,
     requireApprovalForExternalActions: true,
     allowAgentDelegation: true,
+    alwaysOn: false,
     integrations: ["business_files", "business_logs", "review_queue", "projects"],
     notes: "Primary advisor with broad business memory. Reviews company state before delegating.",
     updatedAt: null,
@@ -115,6 +121,7 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     maxRuntimeSeconds: 300,
     requireApprovalForExternalActions: true,
     allowAgentDelegation: true,
+    alwaysOn: false,
     integrations: ["email", "crm", "browser", "files"],
     notes: "Handles support/admin work and wakes on delegated queue items.",
     updatedAt: null,
@@ -135,6 +142,7 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     maxRuntimeSeconds: 300,
     requireApprovalForExternalActions: true,
     allowAgentDelegation: true,
+    alwaysOn: false,
     integrations: ["email", "crm", "browser", "business_logs"],
     notes: "Handles outbound prospecting, research, and pipeline updates. Requires approval before sending outreach.",
     updatedAt: null,
@@ -155,6 +163,7 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     maxRuntimeSeconds: 300,
     requireApprovalForExternalActions: true,
     allowAgentDelegation: true,
+    alwaysOn: false,
     integrations: ["email", "crm", "files", "business_logs"],
     notes: "Monitors customer health, preps check-ins and renewal briefs, escalates at-risk accounts.",
     updatedAt: null,
@@ -175,6 +184,7 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     maxRuntimeSeconds: 300,
     requireApprovalForExternalActions: true,
     allowAgentDelegation: true,
+    alwaysOn: false,
     integrations: ["email", "browser", "files", "business_logs"],
     notes: "Produces content drafts, campaign summaries, and email sequences. Nothing goes live without approval.",
     updatedAt: null,
@@ -195,6 +205,7 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     maxRuntimeSeconds: 300,
     requireApprovalForExternalActions: true,
     allowAgentDelegation: false,
+    alwaysOn: false,
     integrations: ["files", "business_logs", "sheets"],
     notes: "Runs financial reports, categorizes expenses, and prepares invoice drafts on schedule.",
     updatedAt: null,
@@ -215,6 +226,7 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     maxRuntimeSeconds: 300,
     requireApprovalForExternalActions: true,
     allowAgentDelegation: true,
+    alwaysOn: false,
     integrations: ["files", "business_logs", "email", "browser"],
     notes: "Maintains process docs, coordinates vendor comms, and surfaces operational blockers.",
     updatedAt: null,
@@ -235,6 +247,7 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     maxRuntimeSeconds: 300,
     requireApprovalForExternalActions: true,
     allowAgentDelegation: false,
+    alwaysOn: false,
     integrations: ["email", "files", "business_logs", "review_queue"],
     notes: "Triages inbox, preps meeting notes, tracks action items, and drafts communications.",
     updatedAt: null,
@@ -255,6 +268,7 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     maxRuntimeSeconds: 600,
     requireApprovalForExternalActions: true,
     allowAgentDelegation: false,
+    alwaysOn: false,
     integrations: ["browser", "business_logs", "files"],
     notes: "Searches the web, validates findings, and produces structured research reports. Uses cloud model for quality review.",
     updatedAt: null,
@@ -275,6 +289,7 @@ const DEFAULT_CONFIGS: Record<AgentTarget, AgentAutomationConfigView> = {
     maxRuntimeSeconds: 600,
     requireApprovalForExternalActions: true,
     allowAgentDelegation: false,
+    alwaysOn: false,
     integrations: ["browser", "business_logs", "files"],
     notes: "Crawls and audits pages, researches keywords, analyzes competitors, and produces SEO optimization recommendations.",
     updatedAt: null,
@@ -322,6 +337,7 @@ function toConfigView(row: {
   maxRuntimeSeconds: number;
   requireApprovalForExternalActions: boolean;
   allowAgentDelegation: boolean;
+  alwaysOn: boolean;
   integrationsCsv: string;
   notes: string;
   updatedAt: Date;
@@ -342,6 +358,7 @@ function toConfigView(row: {
     maxRuntimeSeconds: row.maxRuntimeSeconds,
     requireApprovalForExternalActions: row.requireApprovalForExternalActions,
     allowAgentDelegation: row.allowAgentDelegation,
+    alwaysOn: row.alwaysOn,
     integrations: parseCsv(row.integrationsCsv),
     notes: row.notes,
     updatedAt: row.updatedAt.toISOString(),
@@ -362,6 +379,10 @@ function toTaskView(row: {
   inputFromTaskId: string | null;
   chainDepth: number;
   webhookEventId: string | null;
+  isLongRunning: boolean;
+  progressPct: number;
+  currentPhase: number;
+  totalPhases: number;
   createdAt: Date;
   updatedAt: Date;
   completedAt: Date | null;
@@ -390,6 +411,10 @@ function toTaskView(row: {
     inputFromTaskId: row.inputFromTaskId,
     chainDepth: row.chainDepth,
     webhookEventId: row.webhookEventId,
+    isLongRunning: row.isLongRunning,
+    progressPct: row.progressPct,
+    currentPhase: row.currentPhase,
+    totalPhases: row.totalPhases,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     completedAt: row.completedAt?.toISOString() ?? null,
@@ -446,6 +471,7 @@ export async function upsertAgentAutomationConfig(
       maxRuntimeSeconds: Math.max(15, Math.min(14400, Number(next.maxRuntimeSeconds ?? 120) || 120)),
       requireApprovalForExternalActions: Boolean(next.requireApprovalForExternalActions ?? true),
       allowAgentDelegation: Boolean(next.allowAgentDelegation ?? true),
+      alwaysOn: Boolean(next.alwaysOn ?? false),
       integrationsCsv: (next.integrations ?? []).join(","),
       notes: (next.notes ?? "").slice(0, 2000),
     },
@@ -466,6 +492,7 @@ export async function upsertAgentAutomationConfig(
       maxRuntimeSeconds: Math.max(15, Math.min(14400, Number(next.maxRuntimeSeconds ?? 120) || 120)),
       requireApprovalForExternalActions: Boolean(next.requireApprovalForExternalActions ?? true),
       allowAgentDelegation: Boolean(next.allowAgentDelegation ?? true),
+      alwaysOn: Boolean(next.alwaysOn ?? false),
       integrationsCsv: (next.integrations ?? []).join(","),
       notes: (next.notes ?? "").slice(0, 2000),
     },
@@ -524,6 +551,8 @@ export async function createDelegatedTask(
     chainDepth?: number;
     webhookEventId?: string | null;
     escalatedFromId?: string | null;
+    isLongRunning?: boolean;
+    taskGroupId?: string | null;
   },
 ) {
   const title = input.title.trim().slice(0, 240);
@@ -558,6 +587,12 @@ export async function createDelegatedTask(
     }
   }
 
+  // Auto-detect long-running tasks: explicit flag, or instructions > 4000 chars
+  // with multi-step keywords, or instructions containing phase/step-related markers.
+  const longRunningKeywords = /\b(phase|multi[- ]?step|over the next|days?|week|research.*report|comprehensive|end[- ]?to[- ]?end|full audit|migration|onboard)\b/i;
+  const isLongRunning = input.isLongRunning ??
+    (instructions.length > 4000 && longRunningKeywords.test(instructions));
+
   const row = await prisma.delegatedTask.create({
     data: {
       userId,
@@ -573,6 +608,8 @@ export async function createDelegatedTask(
       chainDepth: input.chainDepth ?? 0,
       webhookEventId: input.webhookEventId ?? null,
       escalatedFromId: input.escalatedFromId ?? null,
+      isLongRunning,
+      taskGroupId: input.taskGroupId ?? null,
       status: DelegatedTaskStatus.QUEUED,
     },
   });
@@ -650,9 +687,22 @@ function minutesUtcNow() {
 }
 
 export async function runSchedulerTick(userId: string) {
+  // Advisory lock prevents concurrent ticks for the same user from creating
+  // duplicate tasks. Lock key is derived from a stable hash of the userId.
+  const lockKey = Math.abs(userId.split("").reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0));
+  const [lockResult] = await prisma.$queryRawUnsafe<[{ pg_try_advisory_lock: boolean }]>(
+    `SELECT pg_try_advisory_lock($1)`,
+    lockKey,
+  );
+  if (!lockResult.pg_try_advisory_lock) {
+    // Another tick is already running for this user — skip
+    return { utcTime: minutesUtcNow(), created: [], skipped: "concurrent_tick_in_progress" };
+  }
+
+  try {
   const nowKey = minutesUtcNow();
   const configs = await prisma.agentAutomationConfig.findMany({
-    where: { userId, scheduleEnabled: true, triggerMode: { in: [AgentTriggerMode.SCHEDULED, AgentTriggerMode.HYBRID] } },
+    where: { userId, scheduleEnabled: true, alwaysOn: false, triggerMode: { in: [AgentTriggerMode.SCHEDULED, AgentTriggerMode.HYBRID] } },
   });
   const created: DelegatedTaskView[] = [];
 
@@ -745,6 +795,16 @@ export async function runSchedulerTick(userId: string) {
     const dueSchedules = await getSchedulesDue(userId);
     for (const sched of dueSchedules) {
       try {
+        // Check if this schedule is linked to a workflow
+        const linkedWorkflow = await prisma.workflow.findFirst({
+          where: { scheduleId: sched.id, userId, status: "ACTIVE" },
+        });
+        if (linkedWorkflow) {
+          const { executeWorkflow } = await import("@/lib/workflow-engine");
+          await executeWorkflow(linkedWorkflow.id, userId, { trigger: "schedule", scheduleId: sched.id });
+          await markScheduleRan(sched.id);
+          continue;
+        }
         await createDelegatedTask(userId, {
           fromAgent: "SYSTEM",
           toAgentTarget: sched.agentKind as AgentTarget,
@@ -773,7 +833,44 @@ export async function runSchedulerTick(userId: string) {
     console.error("[scheduler] schedule-store error:", e);
   }
 
+  // Always-on agents: create a wake task if the agent has no active work.
+  // This replaces the need for a separate daemon process — the scheduler
+  // tick (every 60s) keeps always-on agents continuously fed with work.
+  try {
+    const alwaysOnConfigs = await prisma.agentAutomationConfig.findMany({
+      where: { userId, alwaysOn: true },
+      orderBy: { daemonPriorityOrder: "asc" },
+    });
+    for (const aoCfg of alwaysOnConfigs) {
+      // Skip if there's already an active task for this agent (QUEUED or RUNNING)
+      const activeTask = await prisma.delegatedTask.findFirst({
+        where: {
+          userId,
+          toAgentTarget: aoCfg.agentTarget,
+          status: { in: [DelegatedTaskStatus.QUEUED, DelegatedTaskStatus.RUNNING] },
+        },
+      });
+      if (activeTask) continue;
+      try {
+        const task = await createDelegatedTask(userId, {
+          fromAgent: "DAEMON",
+          toAgentTarget: aoCfg.agentTarget as AgentTarget,
+          title: `${aoCfg.agentTarget.replaceAll("_", " ")} always-on wake`,
+          instructions: "Always-on wake: review inbox, delegated queue, and active projects. Continue existing work, respond to agent messages, or propose next actions.",
+          triggerSource: "DAEMON",
+        });
+        created.push(task);
+      } catch { /* agent not hired or other error, skip */ }
+    }
+  } catch (e) {
+    console.error("[scheduler] always-on daemon error:", e);
+  }
+
   return { utcTime: nowKey, created };
+  } finally {
+    // Release the advisory lock so it doesn't leak across pooled connections
+    await prisma.$queryRawUnsafe(`SELECT pg_advisory_unlock($1)`, lockKey).catch(() => {});
+  }
 }
 
 export async function runHeartbeatTick(userId: string): Promise<DelegatedTaskView[]> {
@@ -1399,7 +1496,7 @@ async function _executeClaimedTask(
       getCompanySoul(userId),
       listBusinessLogs(userId, 30),
       getTaskDigestsForAgent(userId, row.toAgentTarget),
-      getAgentMemoryIndex(userId, row.toAgentTarget),
+      getRelevantMemories(userId, row.toAgentTarget, { taskTitle: row.title, taskInstructions: row.instructions }),
     ]);
     const logSummaries = recentLogs
       .filter((l) => !String(l.relatedRef ?? "").startsWith("CHAT_LOG:"))
@@ -1436,34 +1533,86 @@ async function _executeClaimedTask(
       agenticSystemPrompt += `\n\nAPPLIED_OPTIMIZATIONS\nEvidence-based improvements active for this agent:\n${optimizerPatches}`;
     }
 
-    const agenticResult = await runAgenticLoop({
-      userId,
-      delegatedTaskId: row.id,
-      agentKind: row.toAgentTarget,
-      systemPrompt: agenticSystemPrompt,
-      userMessage: chainedInput
-        ? `Task: ${row.title}\n\n${chainedInput}\nInstructions: ${row.instructions}`
-        : `Task: ${row.title}\n\nInstructions: ${row.instructions}`,
-      tools: agenticTools,
-      config: {
-        maxTurns: config.maxLoopIterations,
-        maxRuntimeMs: config.maxRuntimeSeconds * 1000,
-        maxParallelCalls: config.maxAgentCallsPerRun,
-        maxToolRetries: config.maxToolRetries,
-        requireApproval: config.requireApprovalForExternalActions,
-        maxOutputTokens: userPrefs.maxAgentOutputTokens,
-      },
-      onEvent,
-    });
+    // A/B test variant assignment (Phase 3C) — inject variant patch if active test exists
+    try {
+      const { assignVariant } = await import("@/lib/optimizer/ab-test-store");
+      const variant = await assignVariant(userId, row.toAgentTarget, row.id);
+      if (variant?.patchText) {
+        agenticSystemPrompt += `\n\n${variant.patchText}`;
+      }
+    } catch { /* no active test or module error, continue */ }
 
-    output = agenticResult.finalText;
-    terminationReason = agenticResult.terminationReason;
-    iterationsCompleted = agenticResult.turns;
-    loopTraces.push(...agenticResult.traces);
-    if (agenticResult.approvalRequired.length > 0) {
-      needsReview = true;
-      approvalRequired = true;
-      pendingActions = agenticResult.approvalRequired;
+    // Task group context (Phase 3B) — inject recent group messages if task belongs to a group
+    if (row.taskGroupId) {
+      try {
+        const { getMessagesForAgent } = await import("@/lib/task-group-store");
+        const groupMessages = await getMessagesForAgent(row.taskGroupId, row.toAgentTarget, 10);
+        if (groupMessages.length > 0) {
+          const groupContext = groupMessages.reverse().map((m) =>
+            `[${m.fromAgent}→${m.toAgent}] (${m.messageType}): ${m.content.slice(0, 500)}`
+          ).join("\n");
+          agenticSystemPrompt += `\n\nAGENT_GROUP_MESSAGES\nRecent messages from collaborating agents in this task group:\n${groupContext}`;
+        }
+      } catch { /* group module error, continue */ }
+    }
+
+    // Route long-running tasks through the multi-phase checkpoint engine (Phase 1C)
+    if (row.isLongRunning) {
+      const { executeLongRunningTask } = await import("@/lib/long-running-task");
+      const lrResult = await executeLongRunningTask({
+        userId,
+        delegatedTaskId: row.id,
+        agentKind: row.toAgentTarget,
+        systemPrompt: agenticSystemPrompt,
+        taskTitle: row.title,
+        taskInstructions: chainedInput
+          ? `${chainedInput}\n${row.instructions}`
+          : row.instructions,
+        tools: agenticTools,
+        config: {
+          maxTurns: config.maxLoopIterations,
+          maxRuntimeMs: config.maxRuntimeSeconds * 1000,
+          maxParallelCalls: config.maxAgentCallsPerRun,
+          maxToolRetries: config.maxToolRetries,
+          requireApproval: config.requireApprovalForExternalActions,
+          maxOutputTokens: userPrefs.maxAgentOutputTokens,
+        },
+        onEvent,
+      });
+
+      output = lrResult.finalOutput;
+      terminationReason = lrResult.terminationReason === "completed" ? "final_answer" : lrResult.terminationReason;
+      iterationsCompleted = lrResult.totalTurns;
+    } else {
+      const agenticResult = await runAgenticLoop({
+        userId,
+        delegatedTaskId: row.id,
+        agentKind: row.toAgentTarget,
+        systemPrompt: agenticSystemPrompt,
+        userMessage: chainedInput
+          ? `Task: ${row.title}\n\n${chainedInput}\nInstructions: ${row.instructions}`
+          : `Task: ${row.title}\n\nInstructions: ${row.instructions}`,
+        tools: agenticTools,
+        config: {
+          maxTurns: config.maxLoopIterations,
+          maxRuntimeMs: config.maxRuntimeSeconds * 1000,
+          maxParallelCalls: config.maxAgentCallsPerRun,
+          maxToolRetries: config.maxToolRetries,
+          requireApproval: config.requireApprovalForExternalActions,
+          maxOutputTokens: userPrefs.maxAgentOutputTokens,
+        },
+        onEvent,
+      });
+
+      output = agenticResult.finalText;
+      terminationReason = agenticResult.terminationReason;
+      iterationsCompleted = agenticResult.turns;
+      loopTraces.push(...agenticResult.traces);
+      if (agenticResult.approvalRequired.length > 0) {
+        needsReview = true;
+        approvalRequired = true;
+        pendingActions = agenticResult.approvalRequired;
+      }
     }
 
     // Create a synthetic adapterResult for the transaction below
@@ -1496,7 +1645,7 @@ async function _executeClaimedTask(
         getCompanySoul(userId),
         listBusinessLogs(userId, 30),
         getTaskDigestsForAgent(userId, row.toAgentTarget),
-        getAgentMemoryIndex(userId, row.toAgentTarget),
+        getRelevantMemories(userId, row.toAgentTarget, { taskTitle: row.title, taskInstructions: row.instructions }),
       ]);
       const fallbackLogSummaries = fallbackLogs
         .filter((l) => !String(l.relatedRef ?? "").startsWith("CHAT_LOG:"))
@@ -1801,6 +1950,34 @@ async function _executeClaimedTask(
 
   if (digest) {
     ingestTaskCompletion(userId, row.toAgentTarget, digest).catch(() => {});
+  }
+
+  // A/B variant outcome recording (Phase 3C)
+  try {
+    const { recordVariantOutcome } = await import("@/lib/optimizer/ab-test-store");
+    const accepted = finalStatus === "DONE";
+    await recordVariantOutcome(row.id, null, accepted);
+  } catch { /* no assignment for this task, ignore */ }
+
+  // Task group completion check (Phase 3B)
+  if (row.taskGroupId) {
+    try {
+      const { sendAgentMessage } = await import("@/lib/task-group-store");
+      await sendAgentMessage({
+        taskGroupId: row.taskGroupId,
+        fromAgent: row.toAgentTarget,
+        toAgent: "*",
+        messageType: "RESULT",
+        content: digest?.slice(0, 4000) ?? `Task ${finalStatus}`,
+      });
+    } catch { /* group module error, ignore */ }
+  }
+
+  // Workflow engine: advance workflow if this task belongs to a workflow run
+  if (row.workflowRunId && row.workflowNodeId) {
+    import("@/lib/workflow-engine")
+      .then((mod) => mod.onTaskCompleted(row.id, row.workflowRunId!, row.workflowNodeId!, digest, finalStatus))
+      .catch((e) => console.error("[workflow-engine] onTaskCompleted error:", e));
   }
 
   const agentDisplayName =

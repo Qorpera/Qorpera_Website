@@ -26,7 +26,9 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/projects", label: "Projects" },
       { href: "/metrics", label: "Metrics" },
       { href: "/schedules", label: "Schedules" },
+      { href: "/workflows", label: "Workflows" },
       { href: "/agents", label: "Agents", dataTour: "nav-agents" },
+      { href: "/optimizer", label: "Optimizer" },
     ],
   },
   {
@@ -41,6 +43,8 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/settings/connectors", label: "Connectors" },
       { href: "/settings/integrations", label: "Integrations" },
+      { href: "/settings/channels", label: "Channels" },
+      { href: "/conversations", label: "Conversations" },
       { href: "/settings/automations", label: "Automations" },
       { href: "/settings", label: "Settings", dataTour: "nav-settings" },
     ],

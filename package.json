@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "runner": "node runner/daemon.mjs",
     "scheduler": "node runner/scheduler.mjs",
+    "agent-daemon": "node runner/agent-daemon.mjs",
     "stripe:setup": "tsx scripts/stripe-setup.ts --write"
   },
   "dependencies": {
@@ -23,6 +24,7 @@
     "@types/qrcode": "^1.5.6",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.3",
+    "@xyflow/react": "^12.10.1",
     "bcryptjs": "^3.0.3",
     "mammoth": "^1.11.0",
     "next": "16.1.6",
