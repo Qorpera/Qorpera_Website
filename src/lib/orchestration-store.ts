@@ -719,6 +719,40 @@ export async function runSchedulerTick(userId: string) {
     }
   })();
 
+  // Fire due user-defined schedules
+  try {
+    const { getSchedulesDue, markScheduleRan } = await import("@/lib/schedule-store");
+    const dueSchedules = await getSchedulesDue(userId);
+    for (const sched of dueSchedules) {
+      try {
+        await createDelegatedTask(userId, {
+          fromAgent: "SYSTEM",
+          toAgentTarget: sched.agentKind as AgentTarget,
+          title: sched.title,
+          instructions: sched.instructions,
+          triggerSource: "SCHEDULED",
+        });
+        await markScheduleRan(sched.id);
+      } catch (e: unknown) {
+        await prisma.auditLog.create({
+          data: {
+            userId,
+            scope: "SCHEDULER",
+            entityId: sched.id,
+            action: "SCHEDULE_SKIP",
+            summary:
+              e instanceof Error && /not hired/i.test(e.message)
+                ? `Skipped schedule "${sched.title}" for ${sched.agentKind} (agent not hired)`
+                : `Skipped schedule "${sched.title}" for ${sched.agentKind}`,
+            metadata: JSON.stringify({ reason: e instanceof Error ? e.message : "unknown" }),
+          },
+        });
+      }
+    }
+  } catch (e) {
+    console.error("[scheduler] schedule-store error:", e);
+  }
+
   return { utcTime: nowKey, created };
 }
 

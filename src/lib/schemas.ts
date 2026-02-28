@@ -86,7 +86,7 @@ export const CompanySoulBody = z.object({
 
 // Connectors
 export const CloudConnectorBody = z.object({
-  mode: z.enum(["MANAGED", "BYOK"]).optional(),
+  mode: z.enum(["MANAGED"]).optional(),
   provider: z.enum(["OPENAI", "ANTHROPIC", "GOOGLE"]).optional(),
   apiKey: z.string().optional(),
   label: z.string().max(200).optional(),
@@ -97,7 +97,7 @@ export const CloudConnectorBody = z.object({
 // Models
 export const SetModelRouteBody = z.object({
   target: z.enum(["ADVISOR", "ASSISTANT"]),
-  provider: z.enum(["OPENAI", "OLLAMA", "ANTHROPIC", "GOOGLE"]).optional().default("OPENAI"),
+  provider: z.enum(["OPENAI", "ANTHROPIC", "GOOGLE"]).optional().default("OPENAI"),
   modelName: z.string().max(120).optional(),
 });
 
@@ -184,4 +184,26 @@ export const SubmitFeedbackBody = z.object({
   agentKind: z.string().min(1).max(80),
   message: z.string().min(1).max(5000),
   sourceRef: z.string().max(240).optional(),
+});
+
+// Schedules
+const ScheduleAgentKind = z.enum([
+  "CHIEF_ADVISOR", "ASSISTANT", "SALES_REP", "CUSTOMER_SUCCESS",
+  "MARKETING_COORDINATOR", "FINANCE_ANALYST", "OPERATIONS_MANAGER",
+  "EXECUTIVE_ASSISTANT", "RESEARCH_ANALYST", "SEO_SPECIALIST",
+]);
+
+export const CreateScheduleBody = z.object({
+  agentKind: ScheduleAgentKind,
+  title: z.string().min(1).max(240),
+  instructions: z.string().min(1).max(12000),
+  frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY"]),
+  dayOfWeek: z.number().int().min(0).max(6).optional().nullable(),
+  dayOfMonth: z.number().int().min(1).max(31).optional().nullable(),
+  timeOfDay: z.string().regex(/^\d{2}:\d{2}$/),
+  timezone: z.string().max(80).optional(),
+});
+
+export const UpdateScheduleBody = CreateScheduleBody.partial().extend({
+  enabled: z.boolean().optional(),
 });
