@@ -6,12 +6,18 @@ import { ensureBaseAgents } from "@/lib/seed";
 import { sendEmail } from "@/lib/email-sender";
 import { SignupBody } from "@/lib/schemas";
 import { verifySameOrigin } from "@/lib/request-security";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const VERIFY_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
 
 export async function POST(req: Request) {
   const sameOrigin = verifySameOrigin(req);
   if (!sameOrigin.ok) return sameOrigin.response;
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = await checkRateLimit(ip, "signup");
+  if (!rl.allowed) return rl.response!;
+
   const json = await req.json().catch(() => null);
   const parsed = SignupBody.safeParse(json);
   if (!parsed.success) {

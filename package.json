@@ -14,9 +14,13 @@
     "stripe:setup": "tsx scripts/stripe-setup.ts --write"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1000.0",
+    "@aws-sdk/s3-request-presigner": "^3.1000.0",
     "@prisma/client": "^6.19.2",
     "@types/pg": "^8.16.0",
     "@types/qrcode": "^1.5.6",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.36.3",
     "bcryptjs": "^3.0.3",
     "mammoth": "^1.11.0",
     "next": "16.1.6",

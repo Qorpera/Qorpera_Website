@@ -5,6 +5,7 @@ import { appendAdvisorMessage, ensureAdvisorSession, syncAdvisorSessionToBusines
 import { verifySameOrigin } from "@/lib/request-security";
 import { createDelegatedTask, executeDelegatedTask, type AgentTarget } from "@/lib/orchestration-store";
 import { hireAgentWithinPlan, type HireAgentKind } from "@/lib/agent-hiring";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -97,6 +98,9 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const rl = await checkRateLimit(userId, "chat");
+  if (!rl.allowed) return rl.response!;
 
   const body = (await request.json().catch(() => ({}))) as Body;
   const mode = body.mode === "new_project" ? "new_project" : "home";

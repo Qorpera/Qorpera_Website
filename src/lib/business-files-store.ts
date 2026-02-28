@@ -4,6 +4,7 @@ import { BusinessFileCategory, BusinessLogSource } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { eventBus } from "@/lib/event-bus";
 import { extractTextFromBuffer } from "@/lib/text-extraction";
+import { isStorageConfigured, isCloudKey, uploadToStorage, downloadFromStorage, deleteFromStorage } from "@/lib/storage";
 
 const STORAGE_ROOT = path.join(process.cwd(), ".data", "business-files");
 const MAX_STORED_FILE_BYTES = 15 * 1024 * 1024;
@@ -122,11 +123,21 @@ export async function createBusinessFileFromUpload(input: {
     throw new Error("File type is not allowed");
   }
 
-  const folder = path.join(STORAGE_ROOT, input.userId);
-  await mkdir(folder, { recursive: true });
   const stamped = `${Date.now()}-${safeName(input.fileName)}`;
-  const absPath = path.join(folder, stamped);
-  await writeFile(absPath, input.bytes);
+  const buffer = Buffer.from(input.bytes);
+
+  let storagePath: string;
+  if (isStorageConfigured()) {
+    const key = `business-files/${input.userId}/${stamped}`;
+    await uploadToStorage(key, buffer, input.mimeType ?? "application/octet-stream");
+    storagePath = key;
+  } else {
+    const folder = path.join(STORAGE_ROOT, input.userId);
+    await mkdir(folder, { recursive: true });
+    const absPath = path.join(folder, stamped);
+    await writeFile(absPath, input.bytes);
+    storagePath = absPath;
+  }
 
   const textExtract = await extractTextFromBuffer(input.fileName, input.bytes);
 
@@ -144,7 +155,7 @@ export async function createBusinessFileFromUpload(input: {
       category,
       mimeType: clean(input.mimeType, 200) || null,
       sizeBytes: input.bytes.byteLength,
-      storagePath: absPath,
+      storagePath,
       textExtract,
       source,
       authorLabel: clean(input.authorLabel, 160) || null,
@@ -181,9 +192,13 @@ export async function deleteBusinessFile(userId: string, fileId: string) {
   if (!row) throw new Error("File not found");
 
   try {
-    await unlink(row.storagePath);
+    if (isCloudKey(row.storagePath)) {
+      await deleteFromStorage(row.storagePath);
+    } else {
+      await unlink(row.storagePath);
+    }
   } catch {
-    // file already gone from disk — fine
+    // object/file already gone — fine
   }
 
   await prisma.businessFile.delete({ where: { id: fileId } });
@@ -197,6 +212,14 @@ export async function deleteBusinessFile(userId: string, fileId: string) {
       summary: `Deleted business file: ${row.name}`,
     },
   });
+}
+
+/**
+ * Read a stored file's bytes, transparently handling both cloud keys and local paths.
+ */
+export async function getFileBuffer(storagePath: string): Promise<Buffer> {
+  if (isCloudKey(storagePath)) return downloadFromStorage(storagePath);
+  return readFile(storagePath);
 }
 
 const EXTRACTABLE_EXTENSIONS = new Set([

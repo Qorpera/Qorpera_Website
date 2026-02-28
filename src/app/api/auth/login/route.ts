@@ -3,10 +3,16 @@ import { prisma } from "@/lib/db";
 import { setSession, verifyPassword, set2faPendingCookie } from "@/lib/auth";
 import { LoginBody } from "@/lib/schemas";
 import { verifySameOrigin } from "@/lib/request-security";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   const sameOrigin = verifySameOrigin(req);
   if (!sameOrigin.ok) return sameOrigin.response;
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = await checkRateLimit(ip, "auth");
+  if (!rl.allowed) return rl.response!;
+
   const json = await req.json().catch(() => null);
   const parsed = LoginBody.safeParse(json);
   if (!parsed.success) {

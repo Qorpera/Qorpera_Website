@@ -1,9 +1,9 @@
-import { readFile, mkdir } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { getOrCreateSession, extractPageState } from "@/lib/browser-session";
 import { prisma } from "@/lib/db";
 import { extractTextFromBuffer } from "@/lib/text-extraction";
-import { listBusinessFiles } from "@/lib/business-files-store";
+import { listBusinessFiles, getFileBuffer } from "@/lib/business-files-store";
 import { listBusinessLogs, createBusinessLog } from "@/lib/business-logs-store";
 import { getProjectsForUser } from "@/lib/workspace-store";
 import { getInboxItems } from "@/lib/inbox-store";
@@ -66,7 +66,7 @@ async function handleReadFile(args: Record<string, unknown>, ctx: ToolExecutionC
   const ext = path.extname(file.name).toLowerCase();
   if (ext === ".docx" || ext === ".pdf") {
     try {
-      const bytes = await readFile(file.storagePath);
+      const bytes = await getFileBuffer(file.storagePath);
       const extracted = await extractTextFromBuffer(file.name, bytes);
       if (extracted) return extracted.slice(0, 8000);
     } catch {
@@ -75,8 +75,8 @@ async function handleReadFile(args: Record<string, unknown>, ctx: ToolExecutionC
   }
 
   try {
-    const content = await readFile(file.storagePath, "utf8");
-    return content.slice(0, 8000);
+    const bytes = await getFileBuffer(file.storagePath);
+    return bytes.toString("utf8").slice(0, 8000);
   } catch {
     return `File "${file.name}" exists but could not read content (binary or inaccessible)`;
   }
