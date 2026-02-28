@@ -86,7 +86,7 @@ export function InboxList({ initialItems }: { initialItems: InboxItem[] }) {
       };
       if (!res.ok || !payload.review) throw new Error(payload.error || "AI review failed");
       const reviewText = payload.review;
-      const reviewModel = payload.model ?? "ollama";
+      const reviewModel = payload.model ?? "ai";
       setAiReviews((curr) => ({
         ...curr,
         [item.id]: { model: reviewModel, text: reviewText },

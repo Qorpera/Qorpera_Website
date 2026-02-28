@@ -5,7 +5,7 @@ import crypto from "node:crypto";
 
 export const runtime = "nodejs";
 
-const VALID_PROVIDERS = ["hubspot", "slack", "google", "linear", "calendly"] as const;
+const VALID_PROVIDERS = ["hubspot", "slack", "google", "linear", "calendly", "quickbooks", "xero", "github", "notion"] as const;
 type Provider = (typeof VALID_PROVIDERS)[number];
 
 function isValidProvider(p: string): p is Provider {
@@ -42,6 +42,8 @@ function buildAuthUrl(provider: Provider, state: string, redirectUri: string): s
         "https://www.googleapis.com/auth/gmail.modify",
         "https://www.googleapis.com/auth/calendar",
         "https://www.googleapis.com/auth/drive.readonly",
+        "https://www.googleapis.com/auth/documents",
+        "https://www.googleapis.com/auth/spreadsheets",
       ].join(" "),
       response_type: "code",
       access_type: "offline",
@@ -71,6 +73,49 @@ function buildAuthUrl(provider: Provider, state: string, redirectUri: string): s
       state,
     });
     return `https://calendly.com/oauth/authorize?${params.toString()}`;
+  }
+
+  if (provider === "quickbooks") {
+    const params = new URLSearchParams({
+      client_id: process.env.QUICKBOOKS_CLIENT_ID ?? "",
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope: "com.intuit.quickbooks.accounting",
+      state,
+    });
+    return `https://appcenter.intuit.com/connect/oauth2?${params.toString()}`;
+  }
+
+  if (provider === "xero") {
+    const params = new URLSearchParams({
+      client_id: process.env.XERO_CLIENT_ID ?? "",
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope: "accounting.transactions.read accounting.reports.read accounting.contacts.read offline_access",
+      state,
+    });
+    return `https://login.xero.com/identity/connect/authorize?${params.toString()}`;
+  }
+
+  if (provider === "github") {
+    const params = new URLSearchParams({
+      client_id: process.env.GITHUB_CLIENT_ID ?? "",
+      redirect_uri: redirectUri,
+      scope: "repo read:user read:org",
+      state,
+    });
+    return `https://github.com/login/oauth/authorize?${params.toString()}`;
+  }
+
+  if (provider === "notion") {
+    const params = new URLSearchParams({
+      client_id: process.env.NOTION_CLIENT_ID ?? "",
+      redirect_uri: redirectUri,
+      response_type: "code",
+      owner: "user",
+      state,
+    });
+    return `https://api.notion.com/v1/oauth/authorize?${params.toString()}`;
   }
 
   throw new Error(`Unknown provider: ${provider}`);

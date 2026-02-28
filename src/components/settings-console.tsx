@@ -222,8 +222,7 @@ export function SettingsConsole({ initial, connector }: { initial: AppPreference
                     </div>
                     <div className="space-y-2.5 text-sm">
                       {[
-                        ["Mode", c.mode === "MANAGED" ? "Server key" : "BYOK"],
-                        ["Cloud key", c.keyLast4 ? `••••${c.keyLast4}` : "Not stored"],
+                        ["Mode", "Managed by Qorpera"],
                         ["Last test", c.lastTestStatus ?? "Not tested"],
                       ].map(([label, val]) => (
                         <div key={label} className="flex items-center justify-between gap-2">

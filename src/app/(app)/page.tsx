@@ -62,7 +62,7 @@ export default async function HomePage({
     id: m.id,
     role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
     content: m.content,
-    source: (m.source as "openai" | "ollama" | "fallback" | null) ?? undefined,
+    source: (m.source as "openai" | "fallback" | null) ?? undefined,
     model: m.modelName ?? undefined,
   }));
   return (

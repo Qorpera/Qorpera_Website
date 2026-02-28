@@ -1,10 +1,12 @@
 /**
  * Executes pending actions stored in an InboxItem after the user approves them.
- * Currently handles: send_email, call_webhook.
+ * Handles: send_email, call_webhook, google_send_email, google_create_calendar_event,
+ *          slack_post_message, linear_create_issue.
  */
 
 import { sendEmail } from "@/lib/email-sender";
 import { isUrlAllowedForServerFetch } from "@/lib/network-policy";
+import { getAccessToken } from "@/lib/integrations/token-store";
 
 export type PendingAction = {
   toolName: string;
@@ -88,6 +90,101 @@ async function executeCallWebhook(args: Record<string, unknown>): Promise<Action
   }
 }
 
+async function executeGoogleSendEmail(args: Record<string, unknown>, userId?: string): Promise<ActionExecutionResult> {
+  if (!userId) return { toolName: "google_send_email", ok: false, output: "No userId — cannot retrieve OAuth token" };
+  const token = await getAccessToken(userId, "google");
+  if (!token) return { toolName: "google_send_email", ok: false, output: "Google account not connected. Connect it in Settings → Integrations." };
+
+  const to = String(args.to ?? "").trim();
+  const subject = String(args.subject ?? "").trim();
+  const body = String(args.body ?? "").trim();
+  if (!to || !subject || !body) return { toolName: "google_send_email", ok: false, output: "Missing required fields: to, subject, body" };
+
+  const threadId = args.thread_id ? String(args.thread_id) : undefined;
+  const inReplyTo = args.in_reply_to ? String(args.in_reply_to) : undefined;
+
+  try {
+    const { sendEmail: gmailSend } = await import("@/lib/integrations/google");
+    await gmailSend(token, to, subject, body, threadId, inReplyTo);
+    return { toolName: "google_send_email", ok: true, output: `Email sent to ${to}: "${subject}"` };
+  } catch (e) {
+    return { toolName: "google_send_email", ok: false, output: `Gmail error: ${e instanceof Error ? e.message : "unknown"}` };
+  }
+}
+
+async function executeGoogleCreateCalendarEvent(args: Record<string, unknown>, userId?: string): Promise<ActionExecutionResult> {
+  if (!userId) return { toolName: "google_create_calendar_event", ok: false, output: "No userId — cannot retrieve OAuth token" };
+  const token = await getAccessToken(userId, "google");
+  if (!token) return { toolName: "google_create_calendar_event", ok: false, output: "Google account not connected. Connect it in Settings → Integrations." };
+
+  const summary = String(args.summary ?? "").trim();
+  const startDateTime = String(args.start_datetime ?? "").trim();
+  const endDateTime = String(args.end_datetime ?? "").trim();
+  if (!summary || !startDateTime || !endDateTime) return { toolName: "google_create_calendar_event", ok: false, output: "Missing required fields: summary, start_datetime, end_datetime" };
+
+  try {
+    const { createCalendarEvent } = await import("@/lib/integrations/google");
+    const result = await createCalendarEvent(
+      token,
+      summary,
+      startDateTime,
+      endDateTime,
+      args.description ? String(args.description) : undefined,
+    );
+    const evt = result as Record<string, unknown>;
+    return {
+      toolName: "google_create_calendar_event",
+      ok: true,
+      output: `Calendar event created: "${summary}" (${startDateTime} → ${endDateTime})${evt.id ? ` — ID: ${evt.id}` : ""}`,
+    };
+  } catch (e) {
+    return { toolName: "google_create_calendar_event", ok: false, output: `Google Calendar error: ${e instanceof Error ? e.message : "unknown"}` };
+  }
+}
+
+async function executeSlackPostMessage(args: Record<string, unknown>, userId?: string): Promise<ActionExecutionResult> {
+  if (!userId) return { toolName: "slack_post_message", ok: false, output: "No userId — cannot retrieve OAuth token" };
+  const token = await getAccessToken(userId, "slack");
+  if (!token) return { toolName: "slack_post_message", ok: false, output: "Slack not connected. Connect it in Settings → Integrations." };
+
+  const channel = String(args.channel ?? "").trim();
+  const text = String(args.text ?? "").trim();
+  if (!channel || !text) return { toolName: "slack_post_message", ok: false, output: "Missing required fields: channel, text" };
+
+  try {
+    const { postMessage } = await import("@/lib/integrations/slack");
+    await postMessage(token, channel, text);
+    return { toolName: "slack_post_message", ok: true, output: `Slack message sent to ${channel}.` };
+  } catch (e) {
+    return { toolName: "slack_post_message", ok: false, output: `Slack error: ${e instanceof Error ? e.message : "unknown"}` };
+  }
+}
+
+async function executeLinearCreateIssue(args: Record<string, unknown>, userId?: string): Promise<ActionExecutionResult> {
+  if (!userId) return { toolName: "linear_create_issue", ok: false, output: "No userId — cannot retrieve OAuth token" };
+  const token = await getAccessToken(userId, "linear");
+  if (!token) return { toolName: "linear_create_issue", ok: false, output: "Linear not connected. Connect it in Settings → Integrations." };
+
+  const teamId = String(args.team_id ?? "").trim();
+  const title = String(args.title ?? "").trim();
+  if (!teamId || !title) return { toolName: "linear_create_issue", ok: false, output: "Missing required fields: team_id, title" };
+
+  try {
+    const { createIssue } = await import("@/lib/integrations/linear");
+    const result = await createIssue(
+      token,
+      teamId,
+      title,
+      args.description ? String(args.description) : undefined,
+      args.priority != null ? Number(args.priority) : undefined,
+      args.assignee_id ? String(args.assignee_id) : undefined,
+    );
+    return { toolName: "linear_create_issue", ok: true, output: `Linear issue created: "${title}" — ${JSON.stringify(result).slice(0, 200)}` };
+  } catch (e) {
+    return { toolName: "linear_create_issue", ok: false, output: `Linear error: ${e instanceof Error ? e.message : "unknown"}` };
+  }
+}
+
 export async function executePendingActions(actions: PendingAction[], userId?: string): Promise<ActionExecutionResult[]> {
   const results: ActionExecutionResult[] = [];
 
@@ -107,6 +204,18 @@ export async function executePendingActions(actions: PendingAction[], userId?: s
         break;
       case "call_webhook":
         results.push(await executeCallWebhook(args));
+        break;
+      case "google_send_email":
+        results.push(await executeGoogleSendEmail(args, userId));
+        break;
+      case "google_create_calendar_event":
+        results.push(await executeGoogleCreateCalendarEvent(args, userId));
+        break;
+      case "slack_post_message":
+        results.push(await executeSlackPostMessage(args, userId));
+        break;
+      case "linear_create_issue":
+        results.push(await executeLinearCreateIssue(args, userId));
         break;
       default:
         results.push({ toolName: action.toolName, ok: false, output: `No executor registered for tool "${action.toolName}"` });

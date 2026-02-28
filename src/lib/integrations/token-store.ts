@@ -189,6 +189,82 @@ export async function getAccessToken(userId: string, provider: string): Promise<
     }
   }
 
+  // QuickBooks: auto-refresh when within 5 minutes of expiry
+  if (provider === "quickbooks" && row.tokenExpiresAt && row.encryptedRefreshToken) {
+    const fiveMinFromNow = new Date(Date.now() + 5 * 60 * 1000);
+    if (row.tokenExpiresAt <= fiveMinFromNow) {
+      try {
+        const refreshToken = decryptSecret(row.encryptedRefreshToken);
+        const credentials = Buffer.from(
+          `${process.env.QUICKBOOKS_CLIENT_ID ?? ""}:${process.env.QUICKBOOKS_CLIENT_SECRET ?? ""}`,
+        ).toString("base64");
+        const res = await fetch("https://oauth2.platform.intuit.com/oauth2/v1/tokens/bearer", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: `Basic ${credentials}`,
+          },
+          body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: refreshToken }).toString(),
+          signal: AbortSignal.timeout(10000),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as {
+            access_token: string;
+            refresh_token?: string;
+            expires_in?: number;
+          };
+          await saveConnection(userId, provider, {
+            accessToken: data.access_token,
+            refreshToken: data.refresh_token,
+            expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : null,
+            scopes: row.scopes,
+          });
+          return data.access_token;
+        }
+      } catch {
+        // Fall through to return existing token
+      }
+    }
+  }
+
+  // Xero: auto-refresh when within 5 minutes of expiry
+  if (provider === "xero" && row.tokenExpiresAt && row.encryptedRefreshToken) {
+    const fiveMinFromNow = new Date(Date.now() + 5 * 60 * 1000);
+    if (row.tokenExpiresAt <= fiveMinFromNow) {
+      try {
+        const refreshToken = decryptSecret(row.encryptedRefreshToken);
+        const credentials = Buffer.from(
+          `${process.env.XERO_CLIENT_ID ?? ""}:${process.env.XERO_CLIENT_SECRET ?? ""}`,
+        ).toString("base64");
+        const res = await fetch("https://identity.xero.com/connect/token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: `Basic ${credentials}`,
+          },
+          body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: refreshToken }).toString(),
+          signal: AbortSignal.timeout(10000),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as {
+            access_token: string;
+            refresh_token?: string;
+            expires_in?: number;
+          };
+          await saveConnection(userId, provider, {
+            accessToken: data.access_token,
+            refreshToken: data.refresh_token,
+            expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : null,
+            scopes: row.scopes,
+          });
+          return data.access_token;
+        }
+      } catch {
+        // Fall through to return existing token
+      }
+    }
+  }
+
   try {
     return decryptSecret(row.encryptedAccessToken);
   } catch {

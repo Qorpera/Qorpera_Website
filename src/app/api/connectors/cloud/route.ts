@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireUserId } from "@/lib/auth";
 import {
-  clearByokConnector,
   getCloudConnector,
   getCloudConnectors,
-  setByokConnector,
   setManagedConnector,
   updateConnectorGuardrails,
   type SupportedProvider,
@@ -56,27 +54,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, connector });
   }
 
-  if (body.mode === "BYOK") {
-    if (!body.apiKey?.trim()) return NextResponse.json({ error: "API key is required" }, { status: 400 });
-    const connector = await setByokConnector(userId, body.apiKey, body.label, provider);
-    return NextResponse.json({ ok: true, connector });
-  }
-
   const connector = await setManagedConnector(userId, body.label, provider);
-  return NextResponse.json({ ok: true, connector });
-}
-
-export async function DELETE(request: Request) {
-  const sameOrigin = verifySameOrigin(request);
-  if (!sameOrigin.ok) return sameOrigin.response;
-  let userId: string;
-  try {
-    userId = await requireUserId();
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const url = new URL(request.url);
-  const provider = ((url.searchParams.get("provider") as SupportedProvider | null) ?? "OPENAI") as SupportedProvider;
-  const connector = await clearByokConnector(userId, provider);
   return NextResponse.json({ ok: true, connector });
 }

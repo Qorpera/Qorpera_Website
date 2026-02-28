@@ -14,11 +14,6 @@ export const FLAG_CATALOG: FlagCatalogEntry[] = [
     description: "Enable the AI agent optimizer with research + prompt patching.",
   },
   {
-    key: "LOCAL_AI_ENABLED",
-    label: "Local AI (Ollama) Support",
-    description: "Allow users to route agents through a local Ollama instance.",
-  },
-  {
     key: "RUNNER_ENABLED",
     label: "Local Runner Nodes",
     description: "Show the runner node registration and approval workflow.",

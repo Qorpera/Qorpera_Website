@@ -8,7 +8,6 @@ import {
   type ModelRouteProvider,
   type ModelRouteTarget,
 } from "@/lib/model-routing-store";
-import { listOllamaModels } from "@/lib/ollama";
 import { listUsableOpenAiModelsForApiKey } from "@/lib/openai-model-catalog";
 import { SetModelRouteBody } from "@/lib/schemas";
 import { verifySameOrigin } from "@/lib/request-security";
@@ -45,30 +44,6 @@ export async function POST(request: Request) {
   const cleanModelName = (parsed.data.modelName ?? "").trim();
   if (!cleanModelName) return NextResponse.json({ error: "Model name required" }, { status: 400 });
 
-  if (provider === "OLLAMA") {
-    const installed = await listOllamaModels();
-    if (installed === null) {
-      return NextResponse.json(
-        { error: "Ollama is not reachable. Start Ollama (`ollama serve`) and try again." },
-        { status: 503 },
-      );
-    }
-    if (installed.length === 0) {
-      return NextResponse.json(
-        { error: "Ollama is running but no models are installed. Pull one first (e.g. `ollama pull llama3.1:8b`)." },
-        { status: 400 },
-      );
-    }
-    if (!installed.includes(cleanModelName)) {
-      return NextResponse.json(
-        {
-          error: `Ollama model "${cleanModelName}" is not installed locally. Pull it first or choose one from the list.`,
-          installedModels: installed,
-        },
-        { status: 400 },
-      );
-    }
-  }
   if (provider === "OPENAI") {
     const runtime = await getProviderApiKeyRuntime(userId, "OPENAI");
     if (runtime.apiKey) {

@@ -2,7 +2,7 @@ import { ModelProvider } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 export type ModelRouteTarget = "ADVISOR" | "ASSISTANT";
-export type ModelRouteProvider = "OPENAI" | "OLLAMA" | "ANTHROPIC" | "GOOGLE";
+export type ModelRouteProvider = "OPENAI" | "ANTHROPIC" | "GOOGLE";
 
 export type ModelRoute = {
   target: ModelRouteTarget;
@@ -109,14 +109,8 @@ export async function getModelRouteForAgentKind(
 }
 
 export function getAvailableModelCatalog() {
-  const ollamaFromEnv = (process.env.OLLAMA_MODEL_OPTIONS ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-
   return {
-    OPENAI: ["gpt-4.1-mini", "gpt-4.1", "gpt-5.2"].filter(Boolean),
-    OLLAMA: ollamaFromEnv.length ? ollamaFromEnv : ["glm-5", "llama3.1:8b", "qwen2.5:14b", "mistral:7b"],
+    OPENAI: ["gpt-4.1-mini", "gpt-4.1", "gpt-5.2"],
     ANTHROPIC: ["claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5-20251001"],
     GOOGLE: ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro"],
   } satisfies Record<ModelRouteProvider, string[]>;

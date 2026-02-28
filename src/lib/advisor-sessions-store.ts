@@ -1,33 +1,9 @@
 import { prisma } from "@/lib/db";
-import { getModelRoute } from "@/lib/model-routing-store";
-import { postOllamaJson } from "@/lib/ollama";
 
 function fallbackTitle(input: string) {
   const clean = input.trim().replace(/\s+/g, " ");
   if (!clean) return "New session";
   return clean.length > 52 ? `${clean.slice(0, 52)}…` : clean;
-}
-
-async function tryOllamaTitle(userId: string, firstUserMessage: string) {
-  try {
-    const route = await getModelRoute(userId, "ADVISOR");
-    if (route.provider !== "OLLAMA") return null;
-    const result = await postOllamaJson<{ response?: string }>(
-      "/api/generate",
-      {
-        model: route.modelName,
-        stream: false,
-        prompt: `Create a short session title (3-6 words) for this business advisor request. Return only the title.\n\n${firstUserMessage}`,
-      },
-      { timeoutMs: 12000 },
-    );
-    if (!result.ok) return null;
-    const title = result.data.response?.trim();
-    if (!title) return null;
-    return title.replace(/^["']|["']$/g, "").slice(0, 80);
-  } catch {
-    return null;
-  }
 }
 
 export async function listAdvisorSessions(userId: string, limit = 30) {
@@ -50,7 +26,7 @@ export async function ensureAdvisorSession(userId: string, sessionId?: string | 
     const existing = await prisma.advisorSession.findFirst({ where: { id: sessionId, userId } });
     if (existing) return existing;
   }
-  const title = (firstUserMessage ? await tryOllamaTitle(userId, firstUserMessage) : null) ?? fallbackTitle(firstUserMessage ?? "");
+  const title = fallbackTitle(firstUserMessage ?? "");
   return prisma.advisorSession.create({
     data: { userId, title },
   });

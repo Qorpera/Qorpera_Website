@@ -49,6 +49,20 @@ const PROVIDERS: ProviderConfig[] = [
     icon: "C",
     metadataLabel: (m) => m.user_name ?? "",
   },
+  {
+    key: "quickbooks",
+    label: "QuickBooks Online",
+    description: "Pull Profit & Loss, Balance Sheet, Cash Flow reports, and invoice lists directly from QuickBooks.",
+    icon: "Q",
+    metadataLabel: (m) => m.company_name ?? (m.realm_id ? `Company ${m.realm_id}` : ""),
+  },
+  {
+    key: "xero",
+    label: "Xero",
+    description: "Access Profit & Loss, Balance Sheet, Trial Balance, and invoice data from Xero.",
+    icon: "X",
+    metadataLabel: (m) => m.tenant_name ?? "",
+  },
 ];
 
 type Props = {

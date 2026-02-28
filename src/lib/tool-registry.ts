@@ -150,6 +150,55 @@ const INTEGRATION_TO_TOOL_MAPPING: Record<string, string[]> = {
   docs: ["google_list_drive_files", "google_read_drive_file", "read_file", "list_files"],
   excel: ["read_file", "list_files"],
   word: ["read_file", "list_files"],
+  quickbooks: [
+    "quickbooks_get_profit_loss", "quickbooks_get_balance_sheet",
+    "quickbooks_get_cash_flow", "quickbooks_list_invoices",
+  ],
+  xero: [
+    "xero_get_profit_loss", "xero_get_balance_sheet",
+    "xero_get_trial_balance", "xero_list_invoices",
+  ],
+  accounting: [
+    "quickbooks_get_profit_loss", "quickbooks_get_balance_sheet",
+    "quickbooks_get_cash_flow", "quickbooks_list_invoices",
+    "xero_get_profit_loss", "xero_get_balance_sheet",
+    "xero_get_trial_balance", "xero_list_invoices",
+  ],
+  finance: [
+    "quickbooks_get_profit_loss", "quickbooks_get_balance_sheet",
+    "quickbooks_get_cash_flow", "quickbooks_list_invoices",
+    "xero_get_profit_loss", "xero_get_balance_sheet",
+    "xero_get_trial_balance", "xero_list_invoices",
+    "stripe_get_revenue", "stripe_list_customers",
+    "stripe_list_subscriptions", "stripe_list_invoices",
+  ],
+  stripe: [
+    "stripe_get_revenue", "stripe_list_customers",
+    "stripe_list_subscriptions", "stripe_list_invoices",
+  ],
+  revenue: [
+    "stripe_get_revenue", "stripe_list_customers",
+    "stripe_list_subscriptions", "stripe_list_invoices",
+  ],
+  github: [
+    "github_list_repos", "github_list_issues",
+    "github_create_issue", "github_list_prs",
+  ],
+  notion: [
+    "notion_search", "notion_read_page",
+    "notion_create_page", "notion_append_block",
+  ],
+  wiki: ["notion_search", "notion_read_page"],
+  knowledge: ["notion_search", "notion_read_page"],
+  google_docs: [
+    "google_create_doc", "google_append_doc",
+    "google_create_sheet", "google_append_sheet_rows",
+    "google_list_drive_files", "google_read_drive_file",
+  ],
+  sql: ["sql_query"],
+  database: ["sql_query"],
+  schedule: ["schedule_followup"],
+  followup: ["schedule_followup"],
 };
 
 export function getIntegrationToToolMapping(): Record<string, string[]> {

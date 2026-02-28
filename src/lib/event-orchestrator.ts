@@ -7,9 +7,7 @@
 
 import { prisma } from "@/lib/db";
 import { getModelRoute } from "@/lib/model-routing-store";
-import { postOllamaJson } from "@/lib/ollama";
 import { getProviderApiKeyRuntime } from "@/lib/connectors-store";
-import { recordOllamaUsage } from "@/lib/ollama-usage-store";
 import { summarizeCalendlyEvent, summarizeHubspotEvent } from "@/lib/webhook-validators";
 import { createDelegatedTask, type AgentTarget } from "@/lib/orchestration-store";
 
@@ -71,36 +69,6 @@ async function callEventLlm(
   try {
     const route = await getModelRoute(userId, "ADVISOR");
 
-    if (route.provider === "OLLAMA") {
-      const result = await postOllamaJson<{
-        message?: { content?: string };
-        response?: string;
-        eval_count?: number;
-        prompt_eval_count?: number;
-      }>(
-        "/api/chat",
-        {
-          model: route.modelName,
-          stream: false,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          options: { temperature: 0.2, num_predict: 600 },
-        },
-        { timeoutMs: 60000 },
-      );
-      if (result.ok) {
-        recordOllamaUsage(userId, {
-          promptTokens: result.data.prompt_eval_count ?? 0,
-          completionTokens: result.data.eval_count ?? 0,
-        }).catch(() => {});
-        return result.data.message?.content ?? result.data.response ?? null;
-      }
-      return null;
-    }
-
-    // OpenAI Responses API
     const runtime = await getProviderApiKeyRuntime(userId, "OPENAI");
     const apiKey = runtime.apiKey;
     if (!apiKey) return null;

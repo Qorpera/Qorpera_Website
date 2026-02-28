@@ -1,5 +1,6 @@
-import { readFile } from "node:fs/promises";
+import { readFile, mkdir } from "node:fs/promises";
 import path from "node:path";
+import { getOrCreateSession, extractPageState } from "@/lib/browser-session";
 import { prisma } from "@/lib/db";
 import { extractTextFromBuffer } from "@/lib/text-extraction";
 import { listBusinessFiles } from "@/lib/business-files-store";
@@ -541,6 +542,103 @@ async function handleFigmaGetImage(args: Record<string, unknown>, ctx: ToolExecu
   }
 }
 
+// --- Browser automation handlers ---
+
+async function handleBrowserNavigate(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const url = String(args.url ?? "").trim();
+  if (!url) return "Error: url is required";
+
+  try {
+    const page = await getOrCreateSession(ctx.delegatedTaskId || ctx.userId);
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    await page.waitForTimeout(500);
+    const state = await extractPageState(page);
+    return JSON.stringify(state);
+  } catch (e: unknown) {
+    return `Error: browser_navigate failed - ${e instanceof Error ? e.message : "unknown error"}`;
+  }
+}
+
+async function handleBrowserGetContent(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const format = String(args.format ?? "text");
+
+  try {
+    const page = await getOrCreateSession(ctx.delegatedTaskId || ctx.userId);
+    const state = await extractPageState(page);
+
+    if (format === "links") return JSON.stringify({ url: state.url, title: state.title, links: state.links });
+    if (format === "inputs") return JSON.stringify({ url: state.url, title: state.title, inputs: state.inputs });
+    if (format === "full") return JSON.stringify(state);
+    // default: "text"
+    return JSON.stringify({ url: state.url, title: state.title, text: state.text });
+  } catch (e: unknown) {
+    return `Error: browser_get_content failed - ${e instanceof Error ? e.message : "unknown error"}`;
+  }
+}
+
+async function handleBrowserScreenshot(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  try {
+    const page = await getOrCreateSession(ctx.delegatedTaskId || ctx.userId);
+    const dir = path.join(process.cwd(), ".data", "screenshots");
+    await mkdir(dir, { recursive: true });
+    const filename = `${(ctx.delegatedTaskId || ctx.userId).slice(0, 16)}-${Date.now()}.png`;
+    await page.screenshot({ path: path.join(dir, filename), fullPage: false });
+    const state = await extractPageState(page);
+    return JSON.stringify({ screenshot_saved: filename, ...state });
+  } catch (e: unknown) {
+    return `Error: browser_screenshot failed - ${e instanceof Error ? e.message : "unknown error"}`;
+  }
+}
+
+async function handleBrowserClick(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const selector = typeof args.selector === "string" ? args.selector.trim() : "";
+  const text = typeof args.text === "string" ? args.text.trim() : "";
+
+  if (!selector && !text) return "Error: either text or selector is required";
+
+  try {
+    const page = await getOrCreateSession(ctx.delegatedTaskId || ctx.userId);
+
+    if (selector) {
+      await page.locator(selector).first().click({ timeout: 10_000 });
+    } else {
+      await page.getByText(text, { exact: false }).first().click({ timeout: 10_000 });
+    }
+
+    // Wait for navigation/load after click, but don't throw if it times out
+    await page.waitForLoadState("domcontentloaded", { timeout: 5_000 }).catch(() => {});
+
+    const state = await extractPageState(page);
+    return JSON.stringify(state);
+  } catch (e: unknown) {
+    return `Error: browser_click failed - ${e instanceof Error ? e.message : "unknown error"}`;
+  }
+}
+
+async function handleBrowserType(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const selector = typeof args.selector === "string" ? args.selector.trim() : "";
+  const text = String(args.text ?? "");
+  const submit = args.submit === true;
+
+  if (!text) return "Error: text is required";
+
+  try {
+    const page = await getOrCreateSession(ctx.delegatedTaskId || ctx.userId);
+    const locator = page.locator(selector || "input:visible, textarea:visible").first();
+    await locator.fill(text, { timeout: 10_000 });
+
+    if (submit) {
+      await locator.press("Enter");
+      await page.waitForLoadState("domcontentloaded", { timeout: 5_000 }).catch(() => {});
+    }
+
+    const state = await extractPageState(page);
+    return JSON.stringify(state);
+  } catch (e: unknown) {
+    return `Error: browser_type failed - ${e instanceof Error ? e.message : "unknown error"}`;
+  }
+}
+
 // --- Runner-dispatched handlers ---
 
 /**
@@ -741,10 +839,18 @@ async function handleSlackListChannels(args: Record<string, unknown>, ctx: ToolE
 }
 
 async function handleSlackPostMessage(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "slack");
+  if (!token) return integrationNotConnected("slack");
   const channel = String(args.channel ?? "");
   const text = String(args.text ?? "");
   if (!channel || !text) return "Error: channel and text are required";
-  return `Slack message queued for approval.\nChannel: ${channel}\nMessage: ${text.slice(0, 300)}`;
+  try {
+    const { postMessage } = await import("@/lib/integrations/slack");
+    await postMessage(token, channel, text);
+    return `Message sent to ${channel}.`;
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
 }
 
 // -- Google --
@@ -762,12 +868,36 @@ async function handleGoogleListEmails(args: Record<string, unknown>, ctx: ToolEx
   }
 }
 
+async function handleGoogleReadEmail(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "google");
+  if (!token) return integrationNotConnected("google");
+  const messageId = String(args.message_id ?? "");
+  if (!messageId) return "Error: message_id is required";
+  try {
+    const { readEmail } = await import("@/lib/integrations/google");
+    const result = await readEmail(token, messageId);
+    return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
 async function handleGoogleSendEmail(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "google");
+  if (!token) return integrationNotConnected("google");
   const to = String(args.to ?? "");
   const subject = String(args.subject ?? "");
   const body = String(args.body ?? "");
   if (!to || !subject || !body) return "Error: to, subject, and body are required";
-  return `Gmail send queued for approval.\nTo: ${to}\nSubject: ${subject}\nBody preview: ${body.slice(0, 300)}`;
+  const threadId = args.thread_id ? String(args.thread_id) : undefined;
+  const inReplyTo = args.in_reply_to ? String(args.in_reply_to) : undefined;
+  try {
+    const { sendEmail } = await import("@/lib/integrations/google");
+    await sendEmail(token, to, subject, body, threadId, inReplyTo);
+    return `Email sent to ${to}: "${subject}"`;
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
 }
 
 async function handleGoogleListCalendarEvents(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
@@ -786,11 +916,19 @@ async function handleGoogleListCalendarEvents(args: Record<string, unknown>, ctx
 }
 
 async function handleGoogleCreateCalendarEvent(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "google");
+  if (!token) return integrationNotConnected("google");
   const summary = String(args.summary ?? "");
   const startDateTime = String(args.start_datetime ?? "");
   const endDateTime = String(args.end_datetime ?? "");
   if (!summary || !startDateTime || !endDateTime) return "Error: summary, start_datetime, and end_datetime are required";
-  return `Calendar event creation queued for approval.\nTitle: ${summary}\nStart: ${startDateTime}\nEnd: ${endDateTime}`;
+  try {
+    const { createCalendarEvent } = await import("@/lib/integrations/google");
+    const result = await createCalendarEvent(token, summary, startDateTime, endDateTime, args.description ? String(args.description) : undefined);
+    return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
 }
 
 async function handleGoogleListDriveFiles(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
@@ -840,10 +978,25 @@ async function handleLinearListIssues(args: Record<string, unknown>, ctx: ToolEx
 }
 
 async function handleLinearCreateIssue(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "linear");
+  if (!token) return integrationNotConnected("linear");
   const teamId = String(args.team_id ?? "");
   const title = String(args.title ?? "");
   if (!teamId || !title) return "Error: team_id and title are required";
-  return `Linear issue creation queued for approval.\nTeam: ${teamId}\nTitle: ${title}\nDescription: ${String(args.description ?? "").slice(0, 300)}`;
+  try {
+    const { createIssue } = await import("@/lib/integrations/linear");
+    const result = await createIssue(
+      token,
+      teamId,
+      title,
+      args.description ? String(args.description) : undefined,
+      args.priority != null ? Number(args.priority) : undefined,
+      args.assignee_id ? String(args.assignee_id) : undefined,
+    );
+    return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
 }
 
 async function handleLinearUpdateIssue(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
@@ -858,6 +1011,139 @@ async function handleLinearUpdateIssue(args: Record<string, unknown>, ctx: ToolE
       : {}) as Record<string, unknown>;
     const result = await updateIssue(token, issueId, input);
     return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+// -- QuickBooks --
+
+async function getQbContext(userId: string): Promise<{ token: string; realmId: string } | null> {
+  const token = await getIntegrationToken(userId, "quickbooks");
+  if (!token) return null;
+  const conn = await (await import("@/lib/integrations/token-store")).getConnection(userId, "quickbooks");
+  const meta = conn?.metadataJson ? (JSON.parse(conn.metadataJson) as Record<string, string>) : {};
+  const realmId = meta.realm_id ?? "";
+  if (!realmId) return null;
+  return { token, realmId };
+}
+
+async function handleQuickbooksGetProfitLoss(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const qb = await getQbContext(ctx.userId);
+  if (!qb) return integrationNotConnected("quickbooks");
+  const today = new Date().toISOString().slice(0, 10);
+  const startDate = args.start_date ? String(args.start_date) : `${today.slice(0, 4)}-01-01`;
+  const endDate = args.end_date ? String(args.end_date) : today;
+  try {
+    const { getProfitAndLoss } = await import("@/lib/integrations/quickbooks");
+    const result = await getProfitAndLoss(qb.token, qb.realmId, startDate, endDate);
+    return JSON.stringify(result, null, 2).slice(0, 12000);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleQuickbooksGetBalanceSheet(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const qb = await getQbContext(ctx.userId);
+  if (!qb) return integrationNotConnected("quickbooks");
+  try {
+    const { getBalanceSheet } = await import("@/lib/integrations/quickbooks");
+    const result = await getBalanceSheet(qb.token, qb.realmId, args.date ? String(args.date) : undefined);
+    return JSON.stringify(result, null, 2).slice(0, 12000);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleQuickbooksGetCashFlow(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const qb = await getQbContext(ctx.userId);
+  if (!qb) return integrationNotConnected("quickbooks");
+  const today = new Date().toISOString().slice(0, 10);
+  const startDate = args.start_date ? String(args.start_date) : `${today.slice(0, 4)}-01-01`;
+  const endDate = args.end_date ? String(args.end_date) : today;
+  try {
+    const { getCashFlow } = await import("@/lib/integrations/quickbooks");
+    const result = await getCashFlow(qb.token, qb.realmId, startDate, endDate);
+    return JSON.stringify(result, null, 2).slice(0, 12000);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleQuickbooksListInvoices(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const qb = await getQbContext(ctx.userId);
+  if (!qb) return integrationNotConnected("quickbooks");
+  const maxResults = Math.min(Number(args.max_results) || 20, 50);
+  try {
+    const { listInvoices } = await import("@/lib/integrations/quickbooks");
+    const result = await listInvoices(qb.token, qb.realmId, maxResults);
+    return JSON.stringify(result, null, 2).slice(0, 12000);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+// -- Xero --
+
+async function getXeroContext(userId: string): Promise<{ token: string; tenantId: string } | null> {
+  const token = await getIntegrationToken(userId, "xero");
+  if (!token) return null;
+  const conn = await (await import("@/lib/integrations/token-store")).getConnection(userId, "xero");
+  const meta = conn?.metadataJson ? (JSON.parse(conn.metadataJson) as Record<string, string>) : {};
+  const tenantId = meta.tenant_id ?? "";
+  if (!tenantId) return null;
+  return { token, tenantId };
+}
+
+async function handleXeroGetProfitLoss(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const xero = await getXeroContext(ctx.userId);
+  if (!xero) return integrationNotConnected("xero");
+  try {
+    const { getProfitAndLoss } = await import("@/lib/integrations/xero");
+    const result = await getProfitAndLoss(
+      xero.token,
+      xero.tenantId,
+      args.from_date ? String(args.from_date) : undefined,
+      args.to_date ? String(args.to_date) : undefined,
+    );
+    return JSON.stringify(result, null, 2).slice(0, 12000);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleXeroGetBalanceSheet(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const xero = await getXeroContext(ctx.userId);
+  if (!xero) return integrationNotConnected("xero");
+  try {
+    const { getBalanceSheet } = await import("@/lib/integrations/xero");
+    const result = await getBalanceSheet(xero.token, xero.tenantId, args.date ? String(args.date) : undefined);
+    return JSON.stringify(result, null, 2).slice(0, 12000);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleXeroGetTrialBalance(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const xero = await getXeroContext(ctx.userId);
+  if (!xero) return integrationNotConnected("xero");
+  try {
+    const { getTrialBalance } = await import("@/lib/integrations/xero");
+    const result = await getTrialBalance(xero.token, xero.tenantId, args.date ? String(args.date) : undefined);
+    return JSON.stringify(result, null, 2).slice(0, 12000);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleXeroListInvoices(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const xero = await getXeroContext(ctx.userId);
+  if (!xero) return integrationNotConnected("xero");
+  const type = args.type === "ACCPAY" ? "ACCPAY" : "ACCREC";
+  try {
+    const { listInvoices } = await import("@/lib/integrations/xero");
+    const result = await listInvoices(xero.token, xero.tenantId, type);
+    return JSON.stringify(result, null, 2).slice(0, 12000);
   } catch (e) {
     return `Error: ${e instanceof Error ? e.message : "unknown"}`;
   }
@@ -928,6 +1214,386 @@ async function handleCalendlyCreateSchedulingLink(args: Record<string, unknown>,
   }
 }
 
+// --- GitHub ---
+
+async function handleGithubListRepos(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "github");
+  if (!token) return integrationNotConnected("github");
+  try {
+    const { listRepos } = await import("@/lib/integrations/github");
+    const limit = Math.min(Number(args.limit) || 20, 50);
+    const repos = await listRepos(token, limit);
+    return JSON.stringify(repos.map((r) => ({
+      fullName: r.full_name, description: r.description, private: r.private,
+      language: r.language, openIssues: r.open_issues_count, defaultBranch: r.default_branch,
+    })), null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleGithubListIssues(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "github");
+  if (!token) return integrationNotConnected("github");
+  const repo = String(args.repo ?? "");
+  if (!repo) return "Error: repo is required (format: owner/repo)";
+  const state = (args.state === "closed" || args.state === "all") ? args.state : "open";
+  try {
+    const { listIssues } = await import("@/lib/integrations/github");
+    const limit = Math.min(Number(args.limit) || 20, 50);
+    const issues = await listIssues(token, repo, state, limit);
+    return JSON.stringify(issues.map((i) => ({
+      number: i.number, title: i.title, state: i.state,
+      labels: i.labels.map((l) => l.name),
+      assignees: i.assignees.map((a) => a.login),
+      createdAt: i.created_at, updatedAt: i.updated_at,
+      body: i.body?.slice(0, 400),
+    })), null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleGithubCreateIssue(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "github");
+  if (!token) return integrationNotConnected("github");
+  const repo = String(args.repo ?? "");
+  const title = String(args.title ?? "");
+  if (!repo || !title) return "Error: repo and title are required";
+  try {
+    const { createIssue } = await import("@/lib/integrations/github");
+    const labels = Array.isArray(args.labels) ? (args.labels as string[]) : undefined;
+    const assignees = Array.isArray(args.assignees) ? (args.assignees as string[]) : undefined;
+    const issue = await createIssue(token, repo, {
+      title, body: args.body ? String(args.body) : undefined, labels, assignees,
+    });
+    return JSON.stringify({ number: issue.number, title: issue.title, url: issue.html_url }, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleGithubListPRs(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "github");
+  if (!token) return integrationNotConnected("github");
+  const repo = String(args.repo ?? "");
+  if (!repo) return "Error: repo is required (format: owner/repo)";
+  const state = (args.state === "closed" || args.state === "all") ? args.state : "open";
+  try {
+    const { listPullRequests } = await import("@/lib/integrations/github");
+    const limit = Math.min(Number(args.limit) || 20, 50);
+    const prs = await listPullRequests(token, repo, state, limit);
+    return JSON.stringify(prs.map((p) => ({
+      number: p.number, title: p.title, state: p.state,
+      author: p.user.login, head: p.head.ref, base: p.base.ref,
+      createdAt: p.created_at, updatedAt: p.updated_at,
+    })), null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+// --- Notion ---
+
+async function handleNotionSearch(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "notion");
+  if (!token) return integrationNotConnected("notion");
+  const query = String(args.query ?? "");
+  try {
+    const { searchPages } = await import("@/lib/integrations/notion");
+    const limit = Math.min(Number(args.limit) || 10, 20);
+    const pages = await searchPages(token, query, limit);
+    return JSON.stringify(pages, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleNotionReadPage(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "notion");
+  if (!token) return integrationNotConnected("notion");
+  const pageId = String(args.page_id ?? "");
+  if (!pageId) return "Error: page_id is required";
+  try {
+    const { readPage } = await import("@/lib/integrations/notion");
+    const page = await readPage(token, pageId);
+    return JSON.stringify(page, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleNotionCreatePage(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "notion");
+  if (!token) return integrationNotConnected("notion");
+  const title = String(args.title ?? "");
+  if (!title) return "Error: title is required";
+  try {
+    const { createPage } = await import("@/lib/integrations/notion");
+    const result = await createPage(token, {
+      parentPageId: args.parent_page_id ? String(args.parent_page_id) : undefined,
+      parentDatabaseId: args.parent_database_id ? String(args.parent_database_id) : undefined,
+      title,
+      content: args.content ? String(args.content) : undefined,
+    });
+    return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleNotionAppendBlock(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "notion");
+  if (!token) return integrationNotConnected("notion");
+  const pageId = String(args.page_id ?? "");
+  const content = String(args.content ?? "");
+  if (!pageId || !content) return "Error: page_id and content are required";
+  try {
+    const { appendBlocks } = await import("@/lib/integrations/notion");
+    const result = await appendBlocks(token, pageId, content);
+    return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+// --- Stripe Finance ---
+
+async function handleStripeGetRevenue(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "STRIPE_SECRET_KEY");
+  if (!apiKey) return "Error: STRIPE_SECRET_KEY not configured. Add it in Settings → Skills.";
+  try {
+    const { getRevenueOverview } = await import("@/lib/integrations/stripe-finance");
+    const data = await getRevenueOverview(apiKey);
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleStripeListCustomers(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "STRIPE_SECRET_KEY");
+  if (!apiKey) return "Error: STRIPE_SECRET_KEY not configured. Add it in Settings → Skills.";
+  try {
+    const { listCustomers } = await import("@/lib/integrations/stripe-finance");
+    const limit = Math.min(Number(args.limit) || 20, 100);
+    const customers = await listCustomers(apiKey, limit);
+    return JSON.stringify(customers, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleStripeListSubscriptions(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "STRIPE_SECRET_KEY");
+  if (!apiKey) return "Error: STRIPE_SECRET_KEY not configured. Add it in Settings → Skills.";
+  try {
+    const { listSubscriptions } = await import("@/lib/integrations/stripe-finance");
+    const status = args.status === "all" ? "all" : "active";
+    const limit = Math.min(Number(args.limit) || 20, 100);
+    const subs = await listSubscriptions(apiKey, status, limit);
+    return JSON.stringify(subs, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleStripeListInvoices(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const apiKey = await getCachedSkillEnvVar(ctx.userId, "STRIPE_SECRET_KEY");
+  if (!apiKey) return "Error: STRIPE_SECRET_KEY not configured. Add it in Settings → Skills.";
+  try {
+    const { listInvoices } = await import("@/lib/integrations/stripe-finance");
+    const limit = Math.min(Number(args.limit) || 20, 100);
+    const invoices = await listInvoices(apiKey, limit);
+    return JSON.stringify(invoices, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+// --- Google Docs / Sheets write ---
+
+async function handleGoogleCreateDoc(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "google");
+  if (!token) return integrationNotConnected("google");
+  const title = String(args.title ?? "");
+  if (!title) return "Error: title is required";
+  try {
+    const { createGoogleDoc } = await import("@/lib/integrations/google");
+    const result = await createGoogleDoc(token, title, args.content ? String(args.content) : undefined);
+    return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleGoogleAppendDoc(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "google");
+  if (!token) return integrationNotConnected("google");
+  const documentId = String(args.document_id ?? "");
+  const content = String(args.content ?? "");
+  if (!documentId || !content) return "Error: document_id and content are required";
+  try {
+    const { appendToGoogleDoc } = await import("@/lib/integrations/google");
+    const result = await appendToGoogleDoc(token, documentId, content);
+    return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleGoogleCreateSheet(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "google");
+  if (!token) return integrationNotConnected("google");
+  const title = String(args.title ?? "");
+  if (!title) return "Error: title is required";
+  const headers = Array.isArray(args.headers) ? (args.headers as string[]) : undefined;
+  try {
+    const { createGoogleSheet } = await import("@/lib/integrations/google");
+    const result = await createGoogleSheet(token, title, headers);
+    return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleGoogleAppendSheetRows(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "google");
+  if (!token) return integrationNotConnected("google");
+  const spreadsheetId = String(args.spreadsheet_id ?? "");
+  const sheetName = String(args.sheet_name ?? "Sheet1");
+  const rows = args.rows as string[][] | undefined;
+  if (!spreadsheetId || !rows?.length) return "Error: spreadsheet_id and rows are required";
+  try {
+    const { appendRowsToSheet } = await import("@/lib/integrations/google");
+    const result = await appendRowsToSheet(token, spreadsheetId, sheetName, rows);
+    return JSON.stringify(result, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+// --- Agent-scheduled follow-up ---
+
+async function handleScheduleFollowup(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const toAgent = String(args.to_agent ?? ctx.agentKind).toUpperCase();
+  const title = String(args.title ?? "");
+  const instructions = String(args.instructions ?? "");
+  const scheduledForStr = String(args.scheduled_for ?? "");
+
+  if (!title || !instructions) return "Error: title and instructions are required";
+
+  let scheduledFor: Date | undefined;
+  if (scheduledForStr) {
+    scheduledFor = new Date(scheduledForStr);
+    if (isNaN(scheduledFor.getTime())) return "Error: scheduled_for must be a valid ISO 8601 datetime";
+    if (scheduledFor < new Date()) return "Error: scheduled_for must be in the future";
+  } else {
+    // Default to 24 hours from now
+    scheduledFor = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  }
+
+  try {
+    const { createDelegatedTask } = await import("@/lib/orchestration-store");
+    const task = await createDelegatedTask(ctx.userId, {
+      fromAgent: ctx.agentKind,
+      toAgentTarget: toAgent as "ASSISTANT" | "CHIEF_ADVISOR",
+      title,
+      instructions,
+      triggerSource: "SCHEDULED",
+      scheduledFor,
+      inputFromTaskId: ctx.delegatedTaskId || undefined,
+    });
+    return `Follow-up scheduled successfully. Task ID: ${task.id}. Scheduled for: ${scheduledFor.toISOString()}`;
+  } catch (e) {
+    return `Error scheduling follow-up: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+// --- SQL query tool ---
+
+async function handleSqlQuery(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const connectionName = String(args.connection_name ?? "");
+  const query = String(args.query ?? "").trim();
+  if (!query) return "Error: query is required";
+
+  // Safety check: only allow SELECT statements
+  const normalizedQuery = query.replace(/\s+/g, " ").trim().toUpperCase();
+  if (!normalizedQuery.startsWith("SELECT") && !normalizedQuery.startsWith("WITH")) {
+    return "Error: Only SELECT (and WITH ... SELECT) queries are allowed for safety. No writes, DDL, or DML permitted.";
+  }
+
+  // Block dangerous keywords
+  const blocked = ["DROP", "DELETE", "INSERT", "UPDATE", "CREATE", "ALTER", "TRUNCATE", "EXEC", "EXECUTE", "--", "/*", "*/", ";"];
+  // Allow semicolons only if it's the very last character (end of query)
+  const queryWithoutTrailingSemicolon = query.trimEnd().replace(/;$/, "");
+  for (const kw of blocked) {
+    if (kw === ";" && !queryWithoutTrailingSemicolon.includes(";")) continue;
+    if (normalizedQuery.includes(kw)) {
+      return `Error: Query contains blocked keyword "${kw}". Only simple SELECT queries are allowed.`;
+    }
+  }
+
+  // Look up database connection
+  let connRow: { encryptedConnectionString: string; allowedTablesJson: string | null } | null = null;
+  try {
+    const rows = await prisma.$queryRaw<Array<{ encryptedConnectionString: string; allowedTablesJson: string | null }>>`
+      SELECT "encryptedConnectionString", "allowedTablesJson"
+      FROM "DatabaseConnection"
+      WHERE "userId" = ${ctx.userId}
+        AND "enabled" = true
+        AND (${connectionName} = '' OR LOWER(name) = LOWER(${connectionName}))
+      LIMIT 1
+    `;
+    connRow = rows[0] ?? null;
+  } catch {
+    return "Error: DatabaseConnection table not available. Run database migrations.";
+  }
+
+  if (!connRow) {
+    return connectionName
+      ? `Error: No database connection named "${connectionName}" found. Add one in Settings → Database Connections.`
+      : "Error: No database connection configured. Add one in Settings → Database Connections.";
+  }
+
+  // Validate table names against allowlist if configured
+  if (connRow.allowedTablesJson) {
+    try {
+      const allowedTables = JSON.parse(connRow.allowedTablesJson) as string[];
+      // Simple table name extraction from FROM/JOIN clauses
+      const tableMatches = query.matchAll(/(?:FROM|JOIN)\s+["']?(\w+)["']?/gi);
+      for (const match of tableMatches) {
+        const tableName = match[1];
+        if (tableName && !allowedTables.includes(tableName.toLowerCase())) {
+          return `Error: Table "${tableName}" is not in the allowed tables list for this connection.`;
+        }
+      }
+    } catch {
+      // Invalid JSON, skip validation
+    }
+  }
+
+  // Decrypt connection string and execute query
+  try {
+    const { decryptSecret } = await import("@/lib/crypto-secrets");
+    const connectionString = decryptSecret(connRow.encryptedConnectionString);
+
+    // Use postgres package (dynamic import to avoid bundling issues)
+    const { default: postgres } = await import("postgres");
+    const sql = postgres(connectionString, { max: 1, ssl: "prefer", idle_timeout: 10 });
+    try {
+      const result = await sql.unsafe(query.replace(/;$/, ""));
+      await sql.end();
+      return JSON.stringify(result.slice(0, 200), null, 2);
+    } catch (queryErr) {
+      await sql.end({ timeout: 5 }).catch(() => null);
+      return `Query error: ${queryErr instanceof Error ? queryErr.message : "unknown"}`;
+    }
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "Database connection failed"}`;
+  }
+}
+
 // --- Dispatch ---
 
 const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {
@@ -957,6 +1623,7 @@ const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: T
   slack_post_message: handleSlackPostMessage,
   // Google
   google_list_emails: handleGoogleListEmails,
+  google_read_email: handleGoogleReadEmail,
   google_send_email: handleGoogleSendEmail,
   google_list_calendar_events: handleGoogleListCalendarEvents,
   google_create_calendar_event: handleGoogleCreateCalendarEvent,
@@ -966,11 +1633,51 @@ const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: T
   linear_list_issues: handleLinearListIssues,
   linear_create_issue: handleLinearCreateIssue,
   linear_update_issue: handleLinearUpdateIssue,
+  // QuickBooks
+  quickbooks_get_profit_loss: handleQuickbooksGetProfitLoss,
+  quickbooks_get_balance_sheet: handleQuickbooksGetBalanceSheet,
+  quickbooks_get_cash_flow: handleQuickbooksGetCashFlow,
+  quickbooks_list_invoices: handleQuickbooksListInvoices,
+  // Xero
+  xero_get_profit_loss: handleXeroGetProfitLoss,
+  xero_get_balance_sheet: handleXeroGetBalanceSheet,
+  xero_get_trial_balance: handleXeroGetTrialBalance,
+  xero_list_invoices: handleXeroListInvoices,
   // Calendly
   calendly_list_event_types: handleCalendlyListEventTypes,
   calendly_list_scheduled_events: handleCalendlyListScheduledEvents,
   calendly_get_event_invitees: handleCalendlyGetEventInvitees,
   calendly_create_scheduling_link: handleCalendlyCreateSchedulingLink,
+  // Browser automation
+  browser_navigate: handleBrowserNavigate,
+  browser_get_content: handleBrowserGetContent,
+  browser_screenshot: handleBrowserScreenshot,
+  browser_click: handleBrowserClick,
+  browser_type: handleBrowserType,
+  // GitHub
+  github_list_repos: handleGithubListRepos,
+  github_list_issues: handleGithubListIssues,
+  github_create_issue: handleGithubCreateIssue,
+  github_list_prs: handleGithubListPRs,
+  // Notion
+  notion_search: handleNotionSearch,
+  notion_read_page: handleNotionReadPage,
+  notion_create_page: handleNotionCreatePage,
+  notion_append_block: handleNotionAppendBlock,
+  // Stripe Finance
+  stripe_get_revenue: handleStripeGetRevenue,
+  stripe_list_customers: handleStripeListCustomers,
+  stripe_list_subscriptions: handleStripeListSubscriptions,
+  stripe_list_invoices: handleStripeListInvoices,
+  // Google Docs / Sheets write
+  google_create_doc: handleGoogleCreateDoc,
+  google_append_doc: handleGoogleAppendDoc,
+  google_create_sheet: handleGoogleCreateSheet,
+  google_append_sheet_rows: handleGoogleAppendSheetRows,
+  // Agent-scheduled follow-up
+  schedule_followup: handleScheduleFollowup,
+  // SQL query
+  sql_query: handleSqlQuery,
 };
 
 const RUNNER_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {
@@ -989,9 +1696,13 @@ export async function executeToolCall(
     const args = parseArgs(call.arguments);
 
     if (toolDef.executionMode === "approval_required" || (ctx.requireApproval && toolDef.category === "external")) {
-      const handler = IN_PROCESS_HANDLERS[call.name];
-      const output = handler ? await handler(args, ctx) : `Tool "${call.name}" queued for approval.`;
-      return { output, status: "approval_required", latencyMs: Date.now() - start };
+      // Do NOT execute the action here — store it for deferred execution after human approval.
+      // The actual call fires in pending-actions-executor.ts once the inbox item is approved.
+      return {
+        output: `Action "${call.name}" is pending human approval. It will execute once approved in the Inbox.`,
+        status: "approval_required",
+        latencyMs: Date.now() - start,
+      };
     }
 
     if (toolDef.executionMode === "runner") {

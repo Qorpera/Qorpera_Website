@@ -35,7 +35,7 @@ type Message = {
   role: "user" | "assistant";
   content: string;
   structured?: StructuredReply;
-  source?: "openai" | "ollama" | "fallback";
+  source?: "openai" | "fallback";
   model?: string;
   warning?: string | null;
   tasks?: TaskCard[];
@@ -241,10 +241,10 @@ export function AdvisorChat({
         error?: string;
         help?: string[];
         reply?: StructuredReply;
-        source?: "openai" | "ollama" | "fallback";
+        source?: "openai" | "fallback";
         sessionId?: string;
         runtime?: {
-          selectedProvider?: "OPENAI" | "OLLAMA";
+          selectedProvider?: "OPENAI" | "ANTHROPIC" | "GOOGLE";
           selectedModel?: string;
           warning?: string | null;
         };
@@ -386,15 +386,13 @@ export function AdvisorChat({
                     {msg.source ? (
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] ${
-                          msg.source === "ollama"
-                            ? "bg-emerald-100 text-emerald-900"
-                            : msg.source === "openai"
-                              ? "bg-blue-100 text-blue-900"
-                              : "bg-rose-100 text-rose-900"
+                          msg.source === "openai"
+                            ? "bg-blue-100 text-blue-900"
+                            : "bg-rose-100 text-rose-900"
                         }`}
                         title={msg.model ? `Model: ${msg.model}` : undefined}
                       >
-                        {msg.source === "ollama" ? "local" : msg.source}
+                        {msg.source}
                         {msg.model ? ` · ${msg.model}` : ""}
                       </span>
                     ) : null}

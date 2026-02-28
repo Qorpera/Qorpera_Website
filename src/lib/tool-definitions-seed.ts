@@ -347,7 +347,7 @@ const TOOL_SEEDS: ToolSeedRow[] = [
     name: "google_list_emails",
     category: "external",
     executionMode: "in_process",
-    description: "List recent emails from Gmail inbox. Returns sender, subject, date, and snippet for each message. Requires Google Workspace integration connected in Settings → Integrations.",
+    description: "List recent emails from Gmail inbox. Returns message IDs, sender, subject, date, and snippet for each message. Use google_read_email to fetch the full body. Requires Google Workspace integration connected in Settings → Integrations.",
     parametersJson: JSON.stringify({
       type: "object",
       properties: {
@@ -356,16 +356,31 @@ const TOOL_SEEDS: ToolSeedRow[] = [
     }),
   },
   {
+    name: "google_read_email",
+    category: "external",
+    executionMode: "in_process",
+    description: "Read the full body and headers of a specific Gmail message by ID. Use after google_list_emails to get the full content before replying. Returns from, to, subject, date, messageId, threadId, and body. Requires Google Workspace integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        message_id: { type: "string", description: "Gmail message ID (from google_list_emails)" },
+      },
+      required: ["message_id"],
+    }),
+  },
+  {
     name: "google_send_email",
     category: "external",
     executionMode: "approval_required",
-    description: "Send an email via Gmail. Always requires human approval before sending. Requires Google Workspace integration connected in Settings → Integrations.",
+    description: "Send an email via Gmail. To reply in-thread, include thread_id and in_reply_to from the original message. Requires Google Workspace integration connected in Settings → Integrations.",
     parametersJson: JSON.stringify({
       type: "object",
       properties: {
         to: { type: "string", description: "Recipient email address" },
         subject: { type: "string", description: "Email subject line" },
         body: { type: "string", description: "Email body (plain text)" },
+        thread_id: { type: "string", description: "Optional Gmail thread ID to reply in the same thread (from google_read_email)" },
+        in_reply_to: { type: "string", description: "Optional Message-ID of the email being replied to (from google_read_email)" },
       },
       required: ["to", "subject", "body"],
     }),
@@ -470,6 +485,107 @@ const TOOL_SEEDS: ToolSeedRow[] = [
       required: ["issue_id", "input"],
     }),
   },
+  // ── QuickBooks ────────────────────────────────────────────────────────
+  {
+    name: "quickbooks_get_profit_loss",
+    category: "external",
+    executionMode: "in_process",
+    description: "Fetch a Profit & Loss (Income Statement) report from QuickBooks Online for a given date range. Returns revenue, expenses, and net income by category. Requires QuickBooks integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        start_date: { type: "string", description: "Start date in YYYY-MM-DD format (default: Jan 1 of current year)" },
+        end_date: { type: "string", description: "End date in YYYY-MM-DD format (default: today)" },
+      },
+    }),
+  },
+  {
+    name: "quickbooks_get_balance_sheet",
+    category: "external",
+    executionMode: "in_process",
+    description: "Fetch a Balance Sheet report from QuickBooks Online. Returns assets, liabilities, and equity. Requires QuickBooks integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        date: { type: "string", description: "Report date in YYYY-MM-DD format (default: today)" },
+      },
+    }),
+  },
+  {
+    name: "quickbooks_get_cash_flow",
+    category: "external",
+    executionMode: "in_process",
+    description: "Fetch a Cash Flow Statement from QuickBooks Online for a given date range. Requires QuickBooks integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        start_date: { type: "string", description: "Start date in YYYY-MM-DD format (default: Jan 1 of current year)" },
+        end_date: { type: "string", description: "End date in YYYY-MM-DD format (default: today)" },
+      },
+    }),
+  },
+  {
+    name: "quickbooks_list_invoices",
+    category: "external",
+    executionMode: "in_process",
+    description: "List recent invoices from QuickBooks Online, ordered by date descending. Returns customer name, amount, due date, and balance. Requires QuickBooks integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        max_results: { type: "number", description: "Number of invoices to return (default: 20, max: 50)" },
+      },
+    }),
+  },
+  // ── Xero ──────────────────────────────────────────────────────────────
+  {
+    name: "xero_get_profit_loss",
+    category: "external",
+    executionMode: "in_process",
+    description: "Fetch a Profit & Loss report from Xero for a given date range. Returns income, expenses, and net profit by account. Requires Xero integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        from_date: { type: "string", description: "Start date in YYYY-MM-DD format" },
+        to_date: { type: "string", description: "End date in YYYY-MM-DD format" },
+      },
+    }),
+  },
+  {
+    name: "xero_get_balance_sheet",
+    category: "external",
+    executionMode: "in_process",
+    description: "Fetch a Balance Sheet from Xero. Returns assets, liabilities, and equity. Requires Xero integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        date: { type: "string", description: "Report date in YYYY-MM-DD format (default: today)" },
+      },
+    }),
+  },
+  {
+    name: "xero_get_trial_balance",
+    category: "external",
+    executionMode: "in_process",
+    description: "Fetch a Trial Balance report from Xero. Lists all accounts with debit and credit balances. Requires Xero integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        date: { type: "string", description: "Report date in YYYY-MM-DD format (default: today)" },
+      },
+    }),
+  },
+  {
+    name: "xero_list_invoices",
+    category: "external",
+    executionMode: "in_process",
+    description: "List invoices from Xero. Use type=ACCREC for accounts receivable (money owed to you) or type=ACCPAY for accounts payable (money you owe). Requires Xero integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        type: { type: "string", description: "Invoice type: ACCREC (receivable, default) or ACCPAY (payable)" },
+      },
+    }),
+  },
   // Calendly
   {
     name: "calendly_list_event_types",
@@ -521,6 +637,327 @@ const TOOL_SEEDS: ToolSeedRow[] = [
       required: ["event_type_uri"],
     }),
   },
+  // ── GitHub ────────────────────────────────────────────────────────────
+  {
+    name: "github_list_repos",
+    category: "external",
+    executionMode: "in_process",
+    description: "List GitHub repositories you have access to. Returns repo names, languages, and issue counts. Requires GitHub integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "Max repos to return (default: 20, max: 50)" },
+      },
+    }),
+  },
+  {
+    name: "github_list_issues",
+    category: "external",
+    executionMode: "in_process",
+    description: "List issues in a GitHub repository. Requires GitHub integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        repo: { type: "string", description: "Repository in owner/repo format (e.g. acme/backend)" },
+        state: { type: "string", enum: ["open", "closed", "all"], description: "Filter by state (default: open)" },
+        limit: { type: "number", description: "Max issues to return (default: 20, max: 50)" },
+      },
+      required: ["repo"],
+    }),
+  },
+  {
+    name: "github_create_issue",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a new GitHub issue. Always requires human approval. Requires GitHub integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        repo: { type: "string", description: "Repository in owner/repo format (e.g. acme/backend)" },
+        title: { type: "string", description: "Issue title" },
+        body: { type: "string", description: "Issue body (Markdown supported)" },
+        labels: { type: "array", items: { type: "string" }, description: "Optional labels to apply" },
+        assignees: { type: "array", items: { type: "string" }, description: "Optional GitHub usernames to assign" },
+      },
+      required: ["repo", "title"],
+    }),
+  },
+  {
+    name: "github_list_prs",
+    category: "external",
+    executionMode: "in_process",
+    description: "List pull requests in a GitHub repository. Requires GitHub integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        repo: { type: "string", description: "Repository in owner/repo format (e.g. acme/backend)" },
+        state: { type: "string", enum: ["open", "closed", "all"], description: "Filter by state (default: open)" },
+        limit: { type: "number", description: "Max PRs to return (default: 20, max: 50)" },
+      },
+      required: ["repo"],
+    }),
+  },
+  // ── Notion ────────────────────────────────────────────────────────────
+  {
+    name: "notion_search",
+    category: "external",
+    executionMode: "in_process",
+    description: "Search pages in your Notion workspace. Returns page titles, IDs, and URLs. Requires Notion integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Search query to find pages" },
+        limit: { type: "number", description: "Max results to return (default: 10, max: 20)" },
+      },
+      required: ["query"],
+    }),
+  },
+  {
+    name: "notion_read_page",
+    category: "external",
+    executionMode: "in_process",
+    description: "Read the full content of a Notion page by ID. Returns title, text content, and metadata. Requires Notion integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        page_id: { type: "string", description: "Notion page ID (from notion_search or the page URL)" },
+      },
+      required: ["page_id"],
+    }),
+  },
+  {
+    name: "notion_create_page",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a new Notion page. Always requires human approval. Requires Notion integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Page title" },
+        content: { type: "string", description: "Optional page content (plain text, each line becomes a paragraph)" },
+        parent_page_id: { type: "string", description: "Optional parent page ID to nest this page under" },
+        parent_database_id: { type: "string", description: "Optional parent database ID to create a database entry" },
+      },
+      required: ["title"],
+    }),
+  },
+  {
+    name: "notion_append_block",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Append text content to an existing Notion page. Always requires human approval. Requires Notion integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        page_id: { type: "string", description: "Notion page ID to append to" },
+        content: { type: "string", description: "Text content to append (each line becomes a paragraph block)" },
+      },
+      required: ["page_id", "content"],
+    }),
+  },
+  // ── Stripe Finance ────────────────────────────────────────────────────
+  {
+    name: "stripe_get_revenue",
+    category: "external",
+    executionMode: "in_process",
+    description: "Get a revenue overview from Stripe: available balance, last 30 days revenue, MRR, and active subscription count. Requires STRIPE_SECRET_KEY in Settings → Skills.",
+    parametersJson: JSON.stringify({ type: "object", properties: {} }),
+  },
+  {
+    name: "stripe_list_customers",
+    category: "external",
+    executionMode: "in_process",
+    description: "List Stripe customers with their names and emails. Requires STRIPE_SECRET_KEY in Settings → Skills.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "Max customers to return (default: 20, max: 100)" },
+      },
+    }),
+  },
+  {
+    name: "stripe_list_subscriptions",
+    category: "external",
+    executionMode: "in_process",
+    description: "List Stripe subscriptions. Returns subscription status, amount, and billing interval. Requires STRIPE_SECRET_KEY in Settings → Skills.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        status: { type: "string", description: "Filter by status: 'active' (default) or 'all'" },
+        limit: { type: "number", description: "Max subscriptions to return (default: 20, max: 100)" },
+      },
+    }),
+  },
+  {
+    name: "stripe_list_invoices",
+    category: "external",
+    executionMode: "in_process",
+    description: "List recent paid invoices from Stripe with amounts and customer emails. Requires STRIPE_SECRET_KEY in Settings → Skills.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        limit: { type: "number", description: "Max invoices to return (default: 20, max: 100)" },
+      },
+    }),
+  },
+  // ── Google Docs / Sheets write ─────────────────────────────────────────
+  {
+    name: "google_create_doc",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a new Google Doc with optional content. Always requires human approval. Requires Google Workspace integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Document title" },
+        content: { type: "string", description: "Optional initial content (plain text)" },
+      },
+      required: ["title"],
+    }),
+  },
+  {
+    name: "google_append_doc",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Append content to an existing Google Doc by document ID. Always requires human approval. Requires Google Workspace integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        document_id: { type: "string", description: "Google Docs document ID" },
+        content: { type: "string", description: "Text content to append at the end of the document" },
+      },
+      required: ["document_id", "content"],
+    }),
+  },
+  {
+    name: "google_create_sheet",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Create a new Google Spreadsheet with optional column headers. Always requires human approval. Requires Google Workspace integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Spreadsheet title" },
+        headers: { type: "array", items: { type: "string" }, description: "Optional column header names for the first row" },
+      },
+      required: ["title"],
+    }),
+  },
+  {
+    name: "google_append_sheet_rows",
+    category: "external",
+    executionMode: "approval_required",
+    description: "Append rows to an existing Google Sheet. Always requires human approval. Requires Google Workspace integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        spreadsheet_id: { type: "string", description: "Google Sheets spreadsheet ID" },
+        sheet_name: { type: "string", description: "Sheet tab name (default: Sheet1)" },
+        rows: { type: "array", items: { type: "array", items: { type: "string" } }, description: "Array of rows, each row is an array of cell values" },
+      },
+      required: ["spreadsheet_id", "rows"],
+    }),
+  },
+  // ── Agent-scheduled follow-up ──────────────────────────────────────────
+  {
+    name: "schedule_followup",
+    category: "orchestration",
+    executionMode: "in_process",
+    description: "Schedule a follow-up task for this agent (or another agent) to run at a future time. Useful for scheduling check-ins, reminders, or deferred work. Returns the scheduled task ID.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Follow-up task title (max 240 chars)" },
+        instructions: { type: "string", description: "Detailed instructions for the follow-up task" },
+        scheduled_for: { type: "string", description: "ISO 8601 datetime for when to run the follow-up (e.g. 2026-03-01T09:00:00Z). Defaults to 24 hours from now." },
+        to_agent: { type: "string", description: "Optional: delegate to a specific agent kind. Defaults to the current agent." },
+      },
+      required: ["title", "instructions"],
+    }),
+  },
+  // ── SQL Query ─────────────────────────────────────────────────────────
+  {
+    name: "sql_query",
+    category: "read",
+    executionMode: "in_process",
+    description: "Run a read-only SQL SELECT query against a configured database connection. Only SELECT statements are permitted — no writes, DDL, or DML. Returns up to 200 rows as JSON. Requires a database connection configured in Settings → Database Connections.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        query: { type: "string", description: "A SELECT SQL query to execute (no writes, DDL, or DML allowed)" },
+        connection_name: { type: "string", description: "Optional: name of the database connection to use. Defaults to the first configured connection." },
+      },
+      required: ["query"],
+    }),
+  },
+  // ── Browser automation ────────────────────────────────────────────────
+  {
+    name: "browser_navigate",
+    category: "browser",
+    executionMode: "in_process",
+    description: "Navigate a headless browser to a URL and return the page state (URL, title, visible text, links, form inputs). Use this to open web pages and read their content.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        url: { type: "string", description: "The URL to navigate to (must be a fully-qualified http/https URL)" },
+      },
+      required: ["url"],
+    }),
+  },
+  {
+    name: "browser_get_content",
+    category: "browser",
+    executionMode: "in_process",
+    description: "Extract content from the currently open browser page. Choose format: 'text' (default) for visible text, 'links' for all hyperlinks, 'inputs' for form fields, 'full' for everything.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        format: {
+          type: "string",
+          enum: ["text", "links", "inputs", "full"],
+          description: "Content format to extract (default: text)",
+        },
+      },
+    }),
+  },
+  {
+    name: "browser_screenshot",
+    category: "browser",
+    executionMode: "in_process",
+    description: "Take a screenshot of the current browser page and save it to .data/screenshots/. Returns the filename and current page state.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {},
+    }),
+  },
+  {
+    name: "browser_click",
+    category: "browser",
+    executionMode: "in_process",
+    description: "Click an element on the current page by visible text or CSS selector. Returns the new page state after the click (navigation may occur).",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        text: { type: "string", description: "Visible text of the element to click (e.g. 'Submit', 'Login')" },
+        selector: { type: "string", description: "CSS selector of the element to click (e.g. 'button.primary', '#submit-btn')" },
+      },
+    }),
+  },
+  {
+    name: "browser_type",
+    category: "browser",
+    executionMode: "in_process",
+    description: "Type text into a form field on the current page. Optionally press Enter to submit. Returns the page state after typing.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        selector: { type: "string", description: "CSS selector of the input field (defaults to first visible input/textarea)" },
+        text: { type: "string", description: "Text to type into the field" },
+        submit: { type: "boolean", description: "Whether to press Enter after typing (default: false)" },
+      },
+      required: ["text"],
+    }),
+  },
 ];
 
 const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
@@ -529,30 +966,49 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "list_inbox_items", "web_fetch", "run_command", "write_file",
     "delegate_task", "send_email", "call_webhook", "create_business_log",
     "figma_get_design", "figma_get_image", "web_search", "extract_content",
-    // All 16 integration tools
+    "schedule_followup", "sql_query",
+    // HubSpot
     "hubspot_search_contacts", "hubspot_create_contact", "hubspot_update_contact",
     "hubspot_list_deals", "hubspot_create_note",
+    // Slack
     "slack_list_channels", "slack_post_message",
-    "google_list_emails", "google_send_email", "google_list_calendar_events",
+    // Google full suite including Docs/Sheets write
+    "google_list_emails", "google_read_email", "google_send_email", "google_list_calendar_events",
     "google_create_calendar_event", "google_list_drive_files", "google_read_drive_file",
+    "google_create_doc", "google_append_doc", "google_create_sheet", "google_append_sheet_rows",
+    // Linear
     "linear_list_issues", "linear_create_issue", "linear_update_issue",
     // Calendly all 4
     "calendly_list_event_types", "calendly_list_scheduled_events",
     "calendly_get_event_invitees", "calendly_create_scheduling_link",
+    // GitHub
+    "github_list_repos", "github_list_issues", "github_create_issue", "github_list_prs",
+    // Notion
+    "notion_search", "notion_read_page", "notion_create_page", "notion_append_block",
+    // Browser automation: all 5
+    "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
   ],
   MARKETING_COORDINATOR: [
     "search_business_logs", "list_files", "read_file", "web_fetch",
     "delegate_task", "create_business_log", "send_email", "list_inbox_items",
-    "figma_get_design", "figma_get_image",
-    // Google all 6 + Slack
-    "google_list_emails", "google_send_email", "google_list_calendar_events",
+    "figma_get_design", "figma_get_image", "schedule_followup",
+    // Google full suite
+    "google_list_emails", "google_read_email", "google_send_email", "google_list_calendar_events",
     "google_create_calendar_event", "google_list_drive_files", "google_read_drive_file",
+    "google_create_doc", "google_append_doc", "google_create_sheet", "google_append_sheet_rows",
+    // Slack
     "slack_list_channels", "slack_post_message",
+    // Notion
+    "notion_search", "notion_read_page", "notion_create_page", "notion_append_block",
+    // Browser: all 5
+    "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
   ],
   ASSISTANT: [
     "read_file", "list_files", "search_business_logs", "list_inbox_items",
     "web_fetch", "run_command", "write_file", "send_email", "call_webhook",
     "create_business_log", "delegate_task",
+    // Browser: all 5
+    "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
   ],
   SALES_REP: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
@@ -565,6 +1021,8 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     // Calendly: view bookings + create booking links for leads
     "calendly_list_event_types", "calendly_list_scheduled_events",
     "calendly_create_scheduling_link",
+    // Browser: all 5
+    "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
   ],
   CUSTOMER_SUCCESS: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
@@ -575,38 +1033,75 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     // Calendly: view upcoming client bookings
     "calendly_list_event_types", "calendly_list_scheduled_events",
     "calendly_get_event_invitees",
+    // Browser: navigate/content/screenshot only (no click/type)
+    "browser_navigate", "browser_get_content", "browser_screenshot",
   ],
   FINANCE_ANALYST: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
-    "list_inbox_items", "get_project_details",
+    "list_inbox_items", "get_project_details", "sql_query",
+    "google_list_drive_files", "google_read_drive_file",
+    "google_create_doc", "google_append_doc", "google_create_sheet", "google_append_sheet_rows",
+    // QuickBooks
+    "quickbooks_get_profit_loss", "quickbooks_get_balance_sheet",
+    "quickbooks_get_cash_flow", "quickbooks_list_invoices",
+    // Xero
+    "xero_get_profit_loss", "xero_get_balance_sheet",
+    "xero_get_trial_balance", "xero_list_invoices",
+    // Stripe
+    "stripe_get_revenue", "stripe_list_customers",
+    "stripe_list_subscriptions", "stripe_list_invoices",
   ],
   OPERATIONS_MANAGER: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
     "web_fetch", "send_email", "call_webhook", "delegate_task", "list_inbox_items",
+    "schedule_followup", "sql_query",
     // Linear all 3 + Slack
     "linear_list_issues", "linear_create_issue", "linear_update_issue",
     "slack_list_channels", "slack_post_message",
+    // GitHub
+    "github_list_repos", "github_list_issues", "github_create_issue", "github_list_prs",
+    // Notion
+    "notion_search", "notion_read_page", "notion_create_page", "notion_append_block",
+    // Google Docs
+    "google_create_doc", "google_append_doc", "google_create_sheet", "google_append_sheet_rows",
+    // Browser: all 5
+    "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
   ],
   EXECUTIVE_ASSISTANT: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
-    "list_inbox_items", "send_email", "get_project_details",
-    // Google Gmail + Calendar + Slack list
-    "google_list_emails", "google_send_email",
+    "list_inbox_items", "send_email", "get_project_details", "schedule_followup",
+    // Google Gmail + Calendar + Docs
+    "google_list_emails", "google_read_email", "google_send_email",
     "google_list_calendar_events", "google_create_calendar_event",
+    "google_list_drive_files", "google_read_drive_file",
+    "google_create_doc", "google_append_doc",
+    // Slack
     "slack_list_channels",
+    // Notion
+    "notion_search", "notion_read_page", "notion_create_page", "notion_append_block",
     // Calendly all 4
     "calendly_list_event_types", "calendly_list_scheduled_events",
     "calendly_get_event_invitees", "calendly_create_scheduling_link",
+    // Browser: all 5
+    "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
   ],
   RESEARCH_ANALYST: [
     "web_search", "extract_content", "quality_review",
     "search_business_logs", "create_business_log",
     "list_files", "read_file", "delegate_task", "list_inbox_items",
+    "sql_query",
+    "notion_search", "notion_read_page", "notion_create_page",
+    "google_list_drive_files", "google_read_drive_file",
+    "google_create_doc", "google_append_doc",
+    // Browser: all 5
+    "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
   ],
   SEO_SPECIALIST: [
     "web_search", "extract_content", "web_fetch", "quality_review",
     "search_business_logs", "create_business_log",
     "list_files", "read_file", "delegate_task", "list_inbox_items",
+    // Browser: all 5
+    "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
   ],
 };
 

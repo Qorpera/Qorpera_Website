@@ -13,10 +13,8 @@ import { getChiefAdvisorSoulPackForUser } from "@/lib/agent-soul";
 import { getModelRoute } from "@/lib/model-routing-store";
 import { listBusinessLogs } from "@/lib/business-logs-store";
 import { listBusinessFiles, backfillMissingExtracts } from "@/lib/business-files-store";
-import { postOllamaJson } from "@/lib/ollama";
 import { getPreferredUsername } from "@/lib/usernames";
 import { listRunnersForUser } from "@/lib/runner-control-plane";
-import { recordOllamaUsage } from "@/lib/ollama-usage-store";
 import { getPlanStatus } from "@/lib/plan-store";
 import { AGENT_HIRE_CATALOG } from "@/lib/agent-catalog";
 import { getAppliedPatches } from "@/lib/optimizer/optimizer-store";
@@ -774,114 +772,6 @@ async function callOpenAIAdvisor({
   return safeParseStructured(text);
 }
 
-async function callOllamaAdvisor({
-  userId,
-  mode,
-  userMessage,
-  projectDescription,
-  history,
-  context,
-}: {
-  userId: string;
-  mode: AdvisorMode;
-  userMessage: string;
-  projectDescription?: string;
-  history: ChatTurn[];
-  context: unknown;
-}): Promise<AdvisorStructuredReply | null> {
-  const route = await getModelRoute(userId, "ADVISOR");
-  if (route.provider !== "OLLAMA") return null;
-
-  const chiefAdvisorSoulPrompt =
-    typeof context === "object" &&
-    context &&
-    "chiefAdvisorSoulPromptText" in context &&
-    typeof (context as { chiefAdvisorSoulPromptText?: string | null }).chiefAdvisorSoulPromptText === "string"
-      ? (context as { chiefAdvisorSoulPromptText: string }).chiefAdvisorSoulPromptText
-      : null;
-  const ownerUsername =
-    typeof context === "object" &&
-    context &&
-    "owner" in context &&
-    typeof (context as { owner?: { username?: string } }).owner?.username === "string"
-      ? (context as { owner: { username: string } }).owner.username
-      : "owner";
-  const runnerCtxOllama =
-    typeof context === "object" &&
-    context &&
-    "runnerState" in context
-      ? (context as { runnerState?: { onlineRunnerCount: number; pendingApprovalCount: number } | null }).runnerState
-      : null;
-  const isRecentlyOnboardedOllama =
-    typeof context === "object" &&
-    context &&
-    "recentlyOnboarded" in context
-      ? Boolean((context as { recentlyOnboarded?: boolean }).recentlyOnboarded)
-      : false;
-  const dataSignalsOllama = extractDataSignals(context);
-  const planCtxOllama = extractPlanContext(context);
-  const appliedOptsOllama = extractAppliedOptimizations(context);
-  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtxOllama, isRecentlyOnboardedOllama, dataSignalsOllama, planCtxOllama, appliedOptsOllama);
-
-  const userPayload = buildSmartPayload(context as Record<string, unknown>, userMessage, {
-    mode,
-    projectDescription,
-    history,
-    charLimit: 80_000,
-  });
-
-  type OllamaTokenFields = { eval_count?: number; prompt_eval_count?: number };
-
-  const chatResult = await postOllamaJson<{ message?: { content?: string }; response?: string } & OllamaTokenFields>(
-    "/api/chat",
-    {
-      model: route.modelName,
-      stream: false,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPayload },
-      ],
-      options: { temperature: 0.4, num_predict: extractMaxTokens(context) },
-    },
-    { timeoutMs: 90000 },
-  );
-
-  if (chatResult.ok) {
-    const text = chatResult.data.message?.content ?? chatResult.data.response;
-    const parsed = text ? safeParseStructured(text) : null;
-    if (parsed) {
-      recordOllamaUsage(userId, {
-        promptTokens: chatResult.data.prompt_eval_count ?? 0,
-        completionTokens: chatResult.data.eval_count ?? 0,
-      }).catch(() => {});
-      return parsed;
-    }
-  }
-
-  const generateResult = await postOllamaJson<{ response?: string; message?: { content?: string } } & OllamaTokenFields>(
-    "/api/generate",
-    {
-      model: route.modelName,
-      stream: false,
-      prompt: `${systemPrompt}\n\nUSER INPUT JSON:\n${userPayload}`,
-      format: "json",
-      options: { temperature: 0.4, num_predict: extractMaxTokens(context) },
-    },
-    { timeoutMs: 90000 },
-  );
-  if (!generateResult.ok) {
-    const chatError = chatResult.ok ? null : chatResult.error;
-    const reason = [chatError, generateResult.error].filter(Boolean).join(" | ");
-    throw new Error(reason || `Ollama request failed for model "${route.modelName}"`);
-  }
-  const generatedText = generateResult.data.response ?? generateResult.data.message?.content;
-  if (!generatedText) return null;
-  recordOllamaUsage(userId, {
-    promptTokens: generateResult.data.prompt_eval_count ?? 0,
-    completionTokens: generateResult.data.eval_count ?? 0,
-  }).catch(() => {});
-  return safeParseStructured(generatedText);
-}
 
 export async function runAdvisorChat(input: {
   userId: string;
@@ -894,26 +784,14 @@ export async function runAdvisorChat(input: {
   const selectedRoute = await getModelRoute(input.userId, "ADVISOR");
   let providerError: string | null = null;
 
-  const cloudReply = await (async () => {
-    if (selectedRoute.provider === "OLLAMA") {
-      return callOllamaAdvisor({
-        userId: input.userId,
-        mode: input.mode,
-        userMessage: input.userMessage,
-        projectDescription: input.projectDescription,
-        history: input.history ?? [],
-        context,
-      });
-    }
-    return callOpenAIAdvisor({
-      userId: input.userId,
-      mode: input.mode,
-      userMessage: input.userMessage,
-      projectDescription: input.projectDescription,
-      history: input.history ?? [],
-      context,
-    });
-  })().catch((e: unknown) => {
+  const cloudReply = await callOpenAIAdvisor({
+    userId: input.userId,
+    mode: input.mode,
+    userMessage: input.userMessage,
+    projectDescription: input.projectDescription,
+    history: input.history ?? [],
+    context,
+  }).catch((e: unknown) => {
     providerError = e instanceof Error ? e.message : "Provider request failed";
     return null;
   });
@@ -958,19 +836,12 @@ export async function runAdvisorChat(input: {
     },
   });
 
-  const source =
-    cloudReply && selectedRoute.provider === "OLLAMA"
-      ? ("ollama" as const)
-      : cloudReply && selectedRoute.provider === "OPENAI"
-        ? ("openai" as const)
-        : ("fallback" as const);
+  const source = cloudReply ? ("openai" as const) : ("fallback" as const);
 
   const warning =
-    source === "fallback" && selectedRoute.provider === "OLLAMA"
-      ? `Ollama route failed for model "${selectedRoute.modelName}". ${providerError ? `Ollama said: ${providerError}` : "Check that Ollama is running and the model is pulled."}`
-      : source === "fallback" && selectedRoute.provider === "OPENAI"
-        ? `OpenAI route failed for model "${selectedRoute.modelName}". ${providerError ? `OpenAI said: ${providerError}` : "Check your cloud key in Settings or switch to Ollama."}`
-        : null;
+    source === "fallback"
+      ? `${selectedRoute.provider} route failed for model "${selectedRoute.modelName}". ${providerError ?? "Check that your managed API key is configured."}`
+      : null;
 
   return {
     reply,

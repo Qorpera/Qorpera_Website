@@ -7,7 +7,7 @@ import crypto from "node:crypto";
 
 export const runtime = "nodejs";
 
-const VALID_PROVIDERS = ["hubspot", "slack", "google", "linear", "calendly"] as const;
+const VALID_PROVIDERS = ["hubspot", "slack", "google", "linear", "calendly", "quickbooks", "xero", "github", "notion"] as const;
 type Provider = (typeof VALID_PROVIDERS)[number];
 
 function isValidProvider(p: string): p is Provider {
@@ -26,6 +26,7 @@ async function exchangeCode(
   provider: Provider,
   code: string,
   redirectUri: string,
+  extra?: { realmId?: string },
 ): Promise<TokenResult> {
   if (provider === "hubspot") {
     const params = new URLSearchParams({
@@ -214,6 +215,174 @@ async function exchangeCode(
     };
   }
 
+  if (provider === "quickbooks") {
+    const realmId = extra?.realmId ?? "";
+    if (!realmId) throw new Error("QuickBooks realmId missing from callback");
+
+    const credentials = Buffer.from(
+      `${process.env.QUICKBOOKS_CLIENT_ID ?? ""}:${process.env.QUICKBOOKS_CLIENT_SECRET ?? ""}`,
+    ).toString("base64");
+    const params = new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: redirectUri,
+    });
+    const res = await fetch("https://oauth2.platform.intuit.com/oauth2/v1/tokens/bearer", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${credentials}`,
+      },
+      body: params.toString(),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`QuickBooks token exchange failed: ${res.status}`);
+    const data = (await res.json()) as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in?: number;
+      x_refresh_token_expires_in?: number;
+    };
+
+    // Fetch company name for display
+    let companyName: string | undefined;
+    try {
+      const { getCompanyInfo } = await import("@/lib/integrations/quickbooks");
+      const info = await getCompanyInfo(data.access_token, realmId);
+      const ci = (info as Record<string, unknown>).CompanyInfo as Record<string, unknown> | undefined;
+      companyName = ci?.CompanyName ? String(ci.CompanyName) : undefined;
+    } catch {
+      // Non-critical
+    }
+
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : undefined,
+      metadata: {
+        realm_id: realmId,
+        ...(companyName ? { company_name: companyName } : {}),
+      },
+    };
+  }
+
+  if (provider === "xero") {
+    const credentials = Buffer.from(
+      `${process.env.XERO_CLIENT_ID ?? ""}:${process.env.XERO_CLIENT_SECRET ?? ""}`,
+    ).toString("base64");
+    const params = new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: redirectUri,
+    });
+    const res = await fetch("https://identity.xero.com/connect/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${credentials}`,
+      },
+      body: params.toString(),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`Xero token exchange failed: ${res.status}`);
+    const data = (await res.json()) as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in?: number;
+      scope?: string;
+    };
+
+    // Fetch tenant (organisation) info
+    let tenantId: string | undefined;
+    let tenantName: string | undefined;
+    try {
+      const { getConnections } = await import("@/lib/integrations/xero");
+      const connections = await getConnections(data.access_token);
+      const org = connections.find((c) => c.tenantType === "ORGANISATION") ?? connections[0];
+      tenantId = org?.tenantId;
+      tenantName = org?.tenantName;
+    } catch {
+      // Non-critical
+    }
+
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : undefined,
+      scopes: data.scope,
+      metadata: {
+        ...(tenantId ? { tenant_id: tenantId } : {}),
+        ...(tenantName ? { tenant_name: tenantName } : {}),
+      },
+    };
+  }
+
+  if (provider === "github") {
+    const params = new URLSearchParams({
+      client_id: process.env.GITHUB_CLIENT_ID ?? "",
+      client_secret: process.env.GITHUB_CLIENT_SECRET ?? "",
+      code,
+      redirect_uri: redirectUri,
+    });
+    const res = await fetch("https://github.com/login/oauth/access_token", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`GitHub token exchange failed: ${res.status}`);
+    const data = (await res.json()) as { access_token: string; scope?: string; error?: string };
+    if (data.error) throw new Error(`GitHub token exchange failed: ${data.error}`);
+
+    // Fetch user info
+    let login: string | undefined;
+    try {
+      const { getAuthenticatedUser } = await import("@/lib/integrations/github");
+      const user = await getAuthenticatedUser(data.access_token);
+      login = user.login;
+    } catch {
+      // Non-critical
+    }
+
+    return {
+      accessToken: data.access_token,
+      scopes: data.scope,
+      metadata: login ? { login } : {},
+    };
+  }
+
+  if (provider === "notion") {
+    const credentials = Buffer.from(
+      `${process.env.NOTION_CLIENT_ID ?? ""}:${process.env.NOTION_CLIENT_SECRET ?? ""}`,
+    ).toString("base64");
+    const res = await fetch("https://api.notion.com/v1/oauth/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Basic ${credentials}`,
+      },
+      body: JSON.stringify({ grant_type: "authorization_code", code, redirect_uri: redirectUri }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`Notion token exchange failed: ${res.status}`);
+    const data = (await res.json()) as {
+      access_token: string;
+      workspace_id?: string;
+      workspace_name?: string;
+      bot_id?: string;
+      owner?: { user?: { name?: string } };
+    };
+
+    return {
+      accessToken: data.access_token,
+      metadata: {
+        ...(data.workspace_id ? { workspace_id: data.workspace_id } : {}),
+        ...(data.workspace_name ? { workspace_name: data.workspace_name } : {}),
+        ...(data.bot_id ? { bot_id: data.bot_id } : {}),
+      },
+    };
+  }
+
   throw new Error(`Unknown provider: ${provider}`);
 }
 
@@ -233,6 +402,8 @@ export async function GET(
   const code = searchParams.get("code");
   const state = searchParams.get("state");
   const errorParam = searchParams.get("error");
+  // QuickBooks passes realmId (company ID) as a URL param in the callback
+  const realmId = searchParams.get("realmId") ?? undefined;
 
   if (errorParam) return errorRedirect(errorParam);
   if (!code || !state) return errorRedirect("state_missing");
@@ -299,7 +470,7 @@ export async function GET(
   }
 
   try {
-    const tokens = await exchangeCode(provider as Provider, code, redirectUri);
+    const tokens = await exchangeCode(provider as Provider, code, redirectUri, { realmId });
 
     // Preserve Google refresh token when exchange doesn't include one
     if (provider === "google" && !tokens.refreshToken && existingRefreshToken) {

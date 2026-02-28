@@ -6,13 +6,11 @@
 
 import { getModelRouteForAgentKind, type AgentKindRouteKey } from "@/lib/model-routing-store";
 import { getProviderApiKeyRuntime, checkManagedGuardrails, recordManagedUsage } from "@/lib/connectors-store";
-import { postOllamaJson } from "@/lib/ollama";
-import { recordOllamaUsage } from "@/lib/ollama-usage-store";
 import type { LlmToolSpec } from "@/lib/tool-registry";
 
 export type AgentLlmResult = {
   text: string;
-  provider: "OPENAI" | "OLLAMA" | "ANTHROPIC" | "GOOGLE";
+  provider: "OPENAI" | "ANTHROPIC" | "GOOGLE";
   model: string;
   error?: string;
 };
@@ -24,9 +22,9 @@ export type ToolCallRequest = {
 };
 
 export type AgentLlmToolResult =
-  | { kind: "text"; text: string; provider: "OPENAI" | "OLLAMA" | "ANTHROPIC" | "GOOGLE"; model: string }
-  | { kind: "tool_calls"; calls: ToolCallRequest[]; provider: "OPENAI" | "OLLAMA" | "ANTHROPIC" | "GOOGLE"; model: string }
-  | { kind: "error"; error: string; provider: "OPENAI" | "OLLAMA" | "ANTHROPIC" | "GOOGLE"; model: string };
+  | { kind: "text"; text: string; provider: "OPENAI" | "ANTHROPIC" | "GOOGLE"; model: string }
+  | { kind: "tool_calls"; calls: ToolCallRequest[]; provider: "OPENAI" | "ANTHROPIC" | "GOOGLE"; model: string }
+  | { kind: "error"; error: string; provider: "OPENAI" | "ANTHROPIC" | "GOOGLE"; model: string };
 
 export type ConversationMessage =
   | { role: "system"; content: string }
@@ -160,63 +158,6 @@ async function callGoogle(input: {
   return data?.candidates?.[0]?.content?.parts?.find((p) => p.text)?.text ?? null;
 }
 
-type OllamaTokenFields = { eval_count?: number; prompt_eval_count?: number };
-
-async function callOllama(input: {
-  model: string;
-  systemPrompt: string;
-  userMessage: string;
-  maxOutputTokens?: number;
-}): Promise<{ text: string | null; promptTokens: number; completionTokens: number }> {
-  const chatResult = await postOllamaJson<{ message?: { content?: string }; response?: string } & OllamaTokenFields>(
-    "/api/chat",
-    {
-      model: input.model,
-      stream: false,
-      messages: [
-        { role: "system", content: input.systemPrompt },
-        { role: "user", content: clampText(input.userMessage, 18000) },
-      ],
-      options: { temperature: 0.3, num_predict: input.maxOutputTokens ?? 8192 },
-    },
-    { timeoutMs: 90000 },
-  );
-
-  if (chatResult.ok) {
-    const text = chatResult.data.message?.content ?? chatResult.data.response;
-    if (text) return {
-      text,
-      promptTokens: chatResult.data.prompt_eval_count ?? 0,
-      completionTokens: chatResult.data.eval_count ?? 0,
-    };
-  }
-
-  // Fallback to generate endpoint
-  const genResult = await postOllamaJson<{ response?: string; message?: { content?: string } } & OllamaTokenFields>(
-    "/api/generate",
-    {
-      model: input.model,
-      stream: false,
-      prompt: `${input.systemPrompt}\n\n${clampText(input.userMessage, 18000)}`,
-      options: { temperature: 0.3 },
-    },
-    { timeoutMs: 90000 },
-  );
-
-  if (!genResult.ok) {
-    const reason = [
-      chatResult.ok ? null : chatResult.error,
-      genResult.error,
-    ].filter(Boolean).join(" | ");
-    throw new Error(reason || `Ollama request failed for model "${input.model}"`);
-  }
-
-  return {
-    text: genResult.data.response ?? genResult.data.message?.content ?? null,
-    promptTokens: genResult.data.prompt_eval_count ?? 0,
-    completionTokens: genResult.data.eval_count ?? 0,
-  };
-}
 
 export async function callAgentLlm(input: {
   userId: string;
@@ -226,24 +167,6 @@ export async function callAgentLlm(input: {
   maxOutputTokens?: number;
 }): Promise<AgentLlmResult> {
   const route = await getModelRouteForAgentKind(input.userId, input.agentKind);
-
-  if (route.provider === "OLLAMA") {
-    const result = await callOllama({
-      model: route.modelName,
-      systemPrompt: input.systemPrompt,
-      userMessage: input.userMessage,
-      maxOutputTokens: input.maxOutputTokens,
-    });
-    recordOllamaUsage(input.userId, {
-      promptTokens: result.promptTokens,
-      completionTokens: result.completionTokens,
-    }).catch(() => {});
-    return {
-      text: result.text ?? "",
-      provider: "OLLAMA",
-      model: route.modelName,
-    };
-  }
 
   if (route.provider === "ANTHROPIC") {
     const runtime = await getProviderApiKeyRuntime(input.userId, "ANTHROPIC");
@@ -365,31 +288,6 @@ function safeParseJson(raw: string): Record<string, unknown> {
   }
 }
 
-function conversationToOllamaMessages(messages: ConversationMessage[]) {
-  const result: Array<Record<string, unknown>> = [];
-  for (const msg of messages) {
-    if (msg.role === "system") {
-      result.push({ role: "system", content: msg.content });
-    } else if (msg.role === "user") {
-      result.push({ role: "user", content: clampText(msg.content, 18000) });
-    } else if (msg.role === "assistant") {
-      result.push({ role: "assistant", content: msg.content });
-    } else if (msg.role === "assistant_tool_calls") {
-      result.push({
-        role: "assistant",
-        content: "",
-        tool_calls: msg.tool_calls.map((tc) => ({
-          id: tc.id,
-          type: "function",
-          function: { name: tc.name, arguments: safeParseJson(tc.arguments) },
-        })),
-      });
-    } else if (msg.role === "tool_result") {
-      result.push({ role: "tool", content: msg.output });
-    }
-  }
-  return result;
-}
 
 function toolSpecsToOpenAIFormat(tools: LlmToolSpec[]) {
   return tools.map((t) => ({
@@ -473,16 +371,6 @@ function toolSpecsToGoogleFormat(tools: LlmToolSpec[]) {
   ];
 }
 
-function toolSpecsToOllamaFormat(tools: LlmToolSpec[]) {
-  return tools.map((t) => ({
-    type: "function" as const,
-    function: {
-      name: t.name,
-      description: t.description,
-      parameters: t.parameters,
-    },
-  }));
-}
 
 type OpenAIResponseOutput = Array<{
   type?: string;
@@ -511,18 +399,6 @@ function extractOpenAITextResponse(data: { output_text?: string; output?: OpenAI
     .join("\n");
 }
 
-type OllamaChatToolResponse = {
-  message?: {
-    content?: string;
-    tool_calls?: Array<{
-      id?: string;
-      function?: { name?: string; arguments?: Record<string, unknown> };
-    }>;
-  };
-  response?: string;
-  eval_count?: number;
-  prompt_eval_count?: number;
-};
 
 export async function callAgentLlmWithTools(input: {
   userId: string;
@@ -641,45 +517,6 @@ export async function callAgentLlmWithTools(input: {
     }
     const gText = parts.find((p) => p.text)?.text ?? "";
     return { kind: "text", text: gText, provider: "GOOGLE", model: route.modelName };
-  }
-
-  if (route.provider === "OLLAMA") {
-    const messages = conversationToOllamaMessages(input.messages);
-    const tools = hasTools ? toolSpecsToOllamaFormat(input.tools!) : undefined;
-
-    const chatResult = await postOllamaJson<OllamaChatToolResponse>(
-      "/api/chat",
-      {
-        model: route.modelName,
-        stream: false,
-        messages,
-        ...(tools ? { tools } : {}),
-        options: { temperature: 0.3, num_predict: maxTokens },
-      },
-      { timeoutMs: 90000 },
-    );
-
-    if (!chatResult.ok) {
-      return { kind: "error", error: chatResult.error, provider: "OLLAMA", model: route.modelName };
-    }
-
-    recordOllamaUsage(input.userId, {
-      promptTokens: chatResult.data.prompt_eval_count ?? 0,
-      completionTokens: chatResult.data.eval_count ?? 0,
-    }).catch(() => {});
-
-    const msg = chatResult.data.message;
-    if (msg?.tool_calls && msg.tool_calls.length > 0) {
-      const calls: ToolCallRequest[] = msg.tool_calls.map((tc, i) => ({
-        id: tc.id ?? `ollama_tc_${i}_${Date.now()}`,
-        name: tc.function?.name ?? "unknown",
-        arguments: JSON.stringify(tc.function?.arguments ?? {}),
-      }));
-      return { kind: "tool_calls", calls, provider: "OLLAMA", model: route.modelName };
-    }
-
-    const text = msg?.content ?? chatResult.data.response ?? "";
-    return { kind: "text", text, provider: "OLLAMA", model: route.modelName };
   }
 
   // OpenAI path

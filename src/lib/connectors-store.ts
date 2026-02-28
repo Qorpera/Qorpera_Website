@@ -1,12 +1,11 @@
 import { CredentialMode, CredentialStatus, ProviderName } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { decryptSecret, encryptSecret } from "@/lib/crypto-secrets";
 
 export type SupportedProvider = "OPENAI" | "ANTHROPIC" | "GOOGLE";
 
 export type CloudConnectorView = {
   provider: SupportedProvider;
-  mode: "MANAGED" | "BYOK";
+  mode: "MANAGED";
   status: "CONNECTED" | "NEEDS_ATTENTION" | "PENDING";
   label: string | null;
   keyLast4: string | null;
@@ -78,12 +77,12 @@ function toView(
 ): CloudConnectorView {
   return {
     provider,
-    mode: (row?.mode ?? CredentialMode.MANAGED) as CloudConnectorView["mode"],
+    mode: "MANAGED",
     status: (row?.status ?? CredentialStatus.PENDING) as CloudConnectorView["status"],
-    label: row?.label ?? (provider === "OPENAI" ? "Managed by Qorpera" : null),
-    keyLast4: row?.keyLast4 ?? null,
+    label: row?.label ?? "Managed by Qorpera",
+    keyLast4: null,
     managedAvailable: managedEnvAvailable(provider),
-    hasStoredKey: Boolean(row?.encryptedKey),
+    hasStoredKey: false,
     updatedAt: row?.updatedAt?.toISOString() ?? null,
     monthlyRequestLimit: row?.monthlyRequestLimit ?? 500,
     monthlyRequestCount: row?.monthlyRequestCount ?? 0,
@@ -169,64 +168,6 @@ export async function setManagedConnector(userId: string, label?: string, provid
   return toView(provider, row);
 }
 
-function basicKeyLooksValid(provider: SupportedProvider, key: string) {
-  const normalized = key.trim();
-  if (provider === "OPENAI") return normalized.startsWith("sk-") && normalized.length >= 20;
-  if (provider === "ANTHROPIC") return normalized.startsWith("sk-ant-") || normalized.length > 20;
-  return normalized.length > 20; // Google AI Studio keys vary in prefix
-}
-
-export async function setByokConnector(userId: string, apiKey: string, label?: string, provider: SupportedProvider = "OPENAI") {
-  const normalized = apiKey.trim();
-  const looksValid = basicKeyLooksValid(provider, normalized);
-  const row = await upsertConnectorBase(userId, provider, {
-    mode: CredentialMode.BYOK,
-    encryptedKey: encryptSecret(normalized),
-    keyLast4: normalized.slice(-4),
-    label: label ?? `${provider} (BYOK)`,
-    status: looksValid ? CredentialStatus.CONNECTED : CredentialStatus.NEEDS_ATTENTION,
-  });
-
-  await prisma.auditLog.create({
-    data: {
-      userId,
-      scope: "CONNECTOR",
-      entityId: row.id,
-      action: "SET_BYOK",
-      summary: `Cloud connector saved (${provider} BYOK, key ••••${normalized.slice(-4)})`,
-    },
-  });
-
-  return toView(provider, row);
-}
-
-export async function clearByokConnector(userId: string, provider: SupportedProvider = "OPENAI") {
-  const row = await getConnectorRow(userId, provider);
-  if (!row) return toView(provider, null);
-
-  const updated = await prisma.providerCredential.update({
-    where: { id: row.id },
-    data: {
-      encryptedKey: null,
-      keyLast4: null,
-      mode: CredentialMode.MANAGED,
-      status: managedEnvAvailable(provider) ? CredentialStatus.CONNECTED : CredentialStatus.NEEDS_ATTENTION,
-      label: "Managed by Qorpera",
-    },
-  });
-
-  await prisma.auditLog.create({
-    data: {
-      userId,
-      scope: "CONNECTOR",
-      entityId: row.id,
-      action: "CLEAR_BYOK",
-      summary: `Removed BYOK key and switched to managed mode (${provider})`,
-    },
-  });
-
-  return toView(provider, updated);
-}
 
 export async function updateConnectorGuardrails(
   userId: string,
@@ -303,18 +244,7 @@ export async function recordManagedUsage(
 
 export async function getProviderApiKeyRuntime(userId: string, provider: SupportedProvider) {
   const row = await getConnectorRow(userId, provider);
-  if (!row) {
-    return { apiKey: getManagedEnvKey(provider), mode: "MANAGED" as const, credential: null };
-  }
-  if (row.mode === CredentialMode.MANAGED) {
-    return { apiKey: getManagedEnvKey(provider), mode: "MANAGED" as const, credential: row };
-  }
-  if (!row.encryptedKey) return { apiKey: null, mode: "BYOK" as const, credential: row };
-  try {
-    return { apiKey: decryptSecret(row.encryptedKey), mode: "BYOK" as const, credential: row };
-  } catch {
-    return { apiKey: null, mode: "BYOK" as const, credential: row };
-  }
+  return { apiKey: getManagedEnvKey(provider), mode: "MANAGED" as const, credential: row ?? null };
 }
 
 export async function getUserOpenAiApiKey(userId: string): Promise<string | null> {

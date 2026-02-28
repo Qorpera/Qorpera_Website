@@ -1,6 +1,8 @@
 const GMAIL_BASE = "https://gmail.googleapis.com";
 const CALENDAR_BASE = "https://www.googleapis.com/calendar/v3";
 const DRIVE_BASE = "https://www.googleapis.com/drive/v3";
+const DOCS_BASE = "https://docs.googleapis.com/v1";
+const SHEETS_BASE = "https://sheets.googleapis.com/v4";
 
 async function googleFetch(token: string, url: string, options?: { method?: string; body?: string }) {
   const res = await fetch(url, {
@@ -58,18 +60,63 @@ export async function listEmails(token: string, maxResults = 10) {
   };
 }
 
-export async function sendEmail(token: string, to: string, subject: string, body: string) {
-  const message = [
+export async function readEmail(token: string, messageId: string) {
+  const data = await googleFetch(
+    token,
+    `${GMAIL_BASE}/gmail/v1/users/me/messages/${messageId}?format=full`,
+  );
+  const payload = (data.payload ?? {}) as Record<string, unknown>;
+  const headers = (payload.headers ?? []) as Array<{ name: string; value: string }>;
+  const getHeader = (name: string) =>
+    headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value ?? "";
+
+  function extractBody(part: Record<string, unknown>): string {
+    const mimeType = String(part.mimeType ?? "");
+    const bodyPart = (part.body ?? {}) as Record<string, unknown>;
+    if (mimeType === "text/plain" && bodyPart.data) {
+      return Buffer.from(String(bodyPart.data), "base64url").toString("utf-8");
+    }
+    if (mimeType.startsWith("multipart/")) {
+      for (const sub of (part.parts ?? []) as Array<Record<string, unknown>>) {
+        const text = extractBody(sub);
+        if (text) return text;
+      }
+    }
+    return "";
+  }
+
+  return {
+    id: String(data.id),
+    threadId: String(data.threadId),
+    from: getHeader("From"),
+    to: getHeader("To"),
+    subject: getHeader("Subject"),
+    date: getHeader("Date"),
+    messageId: getHeader("Message-ID"),
+    body: extractBody(payload).slice(0, 8000),
+  };
+}
+
+export async function sendEmail(
+  token: string,
+  to: string,
+  subject: string,
+  body: string,
+  threadId?: string,
+  inReplyTo?: string,
+) {
+  const lines = [
     `To: ${to}`,
     `Subject: ${subject}`,
     `Content-Type: text/plain; charset=utf-8`,
+    ...(inReplyTo ? [`In-Reply-To: ${inReplyTo}`, `References: ${inReplyTo}`] : []),
     ``,
     body,
-  ].join("\r\n");
-  const raw = Buffer.from(message).toString("base64url");
+  ];
+  const raw = Buffer.from(lines.join("\r\n")).toString("base64url");
   return googleFetch(token, `${GMAIL_BASE}/gmail/v1/users/me/messages/send`, {
     method: "POST",
-    body: JSON.stringify({ raw }),
+    body: JSON.stringify({ raw, ...(threadId ? { threadId } : {}) }),
   });
 }
 
@@ -132,4 +179,116 @@ export async function getDriveFile(
   }
   const content = await res.text();
   return { content, contentType: res.headers.get("content-type") };
+}
+
+// ── Google Docs write ──────────────────────────────────────────────────────
+
+export async function createGoogleDoc(token: string, title: string, content?: string) {
+  // Create a blank document
+  const doc = (await googleFetch(token, `${DOCS_BASE}/documents`, {
+    method: "POST",
+    body: JSON.stringify({ title }),
+  })) as { documentId: string; title: string };
+
+  // Insert content if provided
+  if (content) {
+    await googleFetch(token, `${DOCS_BASE}/documents/${doc.documentId}:batchUpdate`, {
+      method: "POST",
+      body: JSON.stringify({
+        requests: [
+          {
+            insertText: {
+              location: { index: 1 },
+              text: content.slice(0, 50000),
+            },
+          },
+        ],
+      }),
+    });
+  }
+
+  return {
+    documentId: doc.documentId,
+    title: doc.title,
+    url: `https://docs.google.com/document/d/${doc.documentId}/edit`,
+  };
+}
+
+export async function appendToGoogleDoc(token: string, documentId: string, content: string) {
+  // Get current document end index
+  const doc = (await googleFetch(token, `${DOCS_BASE}/documents/${documentId}`)) as {
+    body: { content: Array<{ endIndex?: number }> };
+    title: string;
+  };
+
+  const lastElement = doc.body.content[doc.body.content.length - 1];
+  const endIndex = (lastElement?.endIndex ?? 2) - 1;
+
+  await googleFetch(token, `${DOCS_BASE}/documents/${documentId}:batchUpdate`, {
+    method: "POST",
+    body: JSON.stringify({
+      requests: [
+        {
+          insertText: {
+            location: { index: endIndex },
+            text: "\n" + content.slice(0, 50000),
+          },
+        },
+      ],
+    }),
+  });
+
+  return { documentId, title: doc.title, appended: true };
+}
+
+// ── Google Sheets write ────────────────────────────────────────────────────
+
+export async function createGoogleSheet(token: string, title: string, headers?: string[]) {
+  const spreadsheet = (await googleFetch(token, `${SHEETS_BASE}/spreadsheets`, {
+    method: "POST",
+    body: JSON.stringify({ properties: { title } }),
+  })) as { spreadsheetId: string; spreadsheetUrl: string; sheets: Array<{ properties: { sheetId: number; title: string } }> };
+
+  const sheetId = spreadsheet.sheets[0]?.properties.sheetId ?? 0;
+  const sheetTitle = spreadsheet.sheets[0]?.properties.title ?? "Sheet1";
+
+  // Add headers if provided
+  if (headers && headers.length > 0) {
+    await googleFetch(token, `${SHEETS_BASE}/spreadsheets/${spreadsheet.spreadsheetId}/values/${encodeURIComponent(sheetTitle)}!A1:append?valueInputOption=USER_ENTERED`, {
+      method: "POST",
+      body: JSON.stringify({ values: [headers] }),
+    });
+  }
+
+  return {
+    spreadsheetId: spreadsheet.spreadsheetId,
+    title,
+    sheetId,
+    url: spreadsheet.spreadsheetUrl,
+  };
+}
+
+export async function appendRowsToSheet(token: string, spreadsheetId: string, sheetName: string, rows: string[][]) {
+  const range = `${sheetName}!A1`;
+  await googleFetch(
+    token,
+    `${SHEETS_BASE}/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+    {
+      method: "POST",
+      body: JSON.stringify({ values: rows }),
+    },
+  );
+  return { spreadsheetId, rowsAdded: rows.length };
+}
+
+export async function updateSheetCell(token: string, spreadsheetId: string, range: string, values: string[][]) {
+  await googleFetch(
+    token,
+    `${SHEETS_BASE}/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ range, values }),
+    },
+  );
+  return { spreadsheetId, range, updated: true };
 }

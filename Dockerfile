@@ -27,6 +27,12 @@ RUN apt-get update && apt-get install -y openssl curl && rm -rf /var/lib/apt/lis
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
+# Install Playwright Chromium for browser automation tools
+ENV PLAYWRIGHT_BROWSERS_PATH=/app/.playwright
+RUN npx playwright install-deps chromium && \
+    npx playwright install chromium && \
+    chown -R nextjs:nodejs /app/.playwright
+
 WORKDIR /app
 
 # Writable data directory for file uploads (owned by nextjs user)

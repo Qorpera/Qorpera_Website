@@ -130,18 +130,10 @@ export async function POST(request: Request) {
         error: result.runtime.warning,
         sessionId: sessionRow.id,
         runtime: result.runtime,
-        help:
-          result.runtime.selectedProvider === "OLLAMA"
-            ? [
-                "Make sure Ollama is running (`ollama serve`).",
-                `Pull the selected model first (\`ollama pull ${result.runtime.selectedModel ?? "your-model"}\`).`,
-                "Keep the advisor model set to an installed Ollama model.",
-              ]
-            : [
-                "Open Settings -> Model setup and add a valid cloud key.",
-                "Or switch the advisor to Ollama (local open-source).",
-                "Then try sending the message again.",
-              ],
+        help: [
+          "The managed API key for this provider may be temporarily unavailable.",
+          "Contact support if this issue persists.",
+        ],
       },
       { status: 503 },
     );
