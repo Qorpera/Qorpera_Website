@@ -42,6 +42,13 @@ const PROVIDERS: ProviderConfig[] = [
     icon: "L",
     metadataLabel: (m) => m.workspace_name ?? "",
   },
+  {
+    key: "calendly",
+    label: "Calendly",
+    description: "View upcoming bookings, get client details before consults, and share one-time booking links.",
+    icon: "C",
+    metadataLabel: (m) => m.user_name ?? "",
+  },
 ];
 
 type Props = {

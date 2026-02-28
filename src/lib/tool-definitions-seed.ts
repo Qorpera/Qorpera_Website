@@ -470,6 +470,57 @@ const TOOL_SEEDS: ToolSeedRow[] = [
       required: ["issue_id", "input"],
     }),
   },
+  // Calendly
+  {
+    name: "calendly_list_event_types",
+    category: "external",
+    executionMode: "in_process",
+    description: "List all active Calendly booking types (e.g. '60-min Birth Chart Reading', '30-min Follow-up'). Returns name, duration, description, and scheduling URL for each type. Requires Calendly integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {},
+    }),
+  },
+  {
+    name: "calendly_list_scheduled_events",
+    category: "external",
+    executionMode: "in_process",
+    description: "List upcoming booked appointments from Calendly. Returns start/end time, event type name, and location for each booking. Requires Calendly integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        days_ahead: { type: "number", description: "How many days ahead to look (default: 30, max: 90)" },
+        status: { type: "string", enum: ["active", "canceled"], description: "Filter by status (default: active)" },
+      },
+    }),
+  },
+  {
+    name: "calendly_get_event_invitees",
+    category: "external",
+    executionMode: "in_process",
+    description: "Get the client details for a specific Calendly booking — name, email, and any pre-booking questions answered. Use this to prepare for an upcoming consult. Requires Calendly integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        event_uuid: { type: "string", description: "The Calendly event UUID (from calendly_list_scheduled_events)" },
+      },
+      required: ["event_uuid"],
+    }),
+  },
+  {
+    name: "calendly_create_scheduling_link",
+    category: "external",
+    executionMode: "in_process",
+    description: "Create a one-time Calendly booking link for a specific client. Useful when following up with a lead — share the link in an email and they can book directly. Requires Calendly integration connected in Settings → Integrations.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        event_type_uri: { type: "string", description: "The Calendly event type URI (from calendly_list_event_types)" },
+        max_event_count: { type: "number", description: "Maximum times the link can be used (default: 1, max: 10)" },
+      },
+      required: ["event_type_uri"],
+    }),
+  },
 ];
 
 const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
@@ -485,6 +536,9 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "google_list_emails", "google_send_email", "google_list_calendar_events",
     "google_create_calendar_event", "google_list_drive_files", "google_read_drive_file",
     "linear_list_issues", "linear_create_issue", "linear_update_issue",
+    // Calendly all 4
+    "calendly_list_event_types", "calendly_list_scheduled_events",
+    "calendly_get_event_invitees", "calendly_create_scheduling_link",
   ],
   MARKETING_COORDINATOR: [
     "search_business_logs", "list_files", "read_file", "web_fetch",
@@ -508,6 +562,9 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "hubspot_list_deals", "hubspot_create_note",
     "slack_list_channels", "slack_post_message",
     "linear_list_issues", "linear_update_issue",
+    // Calendly: view bookings + create booking links for leads
+    "calendly_list_event_types", "calendly_list_scheduled_events",
+    "calendly_create_scheduling_link",
   ],
   CUSTOMER_SUCCESS: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
@@ -515,6 +572,9 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     // HubSpot search/update/note + Slack
     "hubspot_search_contacts", "hubspot_update_contact", "hubspot_create_note",
     "slack_list_channels", "slack_post_message",
+    // Calendly: view upcoming client bookings
+    "calendly_list_event_types", "calendly_list_scheduled_events",
+    "calendly_get_event_invitees",
   ],
   FINANCE_ANALYST: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
@@ -534,6 +594,9 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "google_list_emails", "google_send_email",
     "google_list_calendar_events", "google_create_calendar_event",
     "slack_list_channels",
+    // Calendly all 4
+    "calendly_list_event_types", "calendly_list_scheduled_events",
+    "calendly_get_event_invitees", "calendly_create_scheduling_link",
   ],
   RESEARCH_ANALYST: [
     "web_search", "extract_content", "quality_review",

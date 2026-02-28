@@ -94,10 +94,11 @@ export async function deleteConnection(userId: string, provider: string): Promis
 }
 
 const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
+const CALENDLY_TOKEN_ENDPOINT = "https://auth.calendly.com/oauth/token";
 
 /**
  * Returns a decrypted access token for the given provider.
- * For Google, auto-refreshes if the token expires within 5 minutes.
+ * For Google and Calendly, auto-refreshes if the token expires within 5 minutes.
  * Returns null if no connection exists.
  */
 export async function getAccessToken(userId: string, provider: string): Promise<string | null> {
@@ -138,6 +139,42 @@ export async function getAccessToken(userId: string, provider: string): Promise<
             ? new Date(Date.now() + data.expires_in * 1000)
             : null;
           // Save new access token; don't pass refreshToken so existing one is preserved
+          await saveConnection(userId, provider, {
+            accessToken: data.access_token,
+            expiresAt,
+            scopes: row.scopes,
+          });
+          return data.access_token;
+        }
+      } catch {
+        // Fall through to return existing token
+      }
+    }
+  }
+
+  // Calendly: auto-refresh when within 5 minutes of expiry
+  if (provider === "calendly" && row.tokenExpiresAt && row.encryptedRefreshToken) {
+    const fiveMinFromNow = new Date(Date.now() + 5 * 60 * 1000);
+    if (row.tokenExpiresAt <= fiveMinFromNow) {
+      try {
+        const refreshToken = decryptSecret(row.encryptedRefreshToken);
+        const params = new URLSearchParams({
+          client_id: process.env.CALENDLY_CLIENT_ID ?? "",
+          client_secret: process.env.CALENDLY_CLIENT_SECRET ?? "",
+          refresh_token: refreshToken,
+          grant_type: "refresh_token",
+        });
+        const res = await fetch(CALENDLY_TOKEN_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: params.toString(),
+          signal: AbortSignal.timeout(10000),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { access_token: string; expires_in?: number };
+          const expiresAt = data.expires_in
+            ? new Date(Date.now() + data.expires_in * 1000)
+            : null;
           await saveConnection(userId, provider, {
             accessToken: data.access_token,
             expiresAt,

@@ -5,7 +5,7 @@ import crypto from "node:crypto";
 
 export const runtime = "nodejs";
 
-const VALID_PROVIDERS = ["hubspot", "slack", "google", "linear"] as const;
+const VALID_PROVIDERS = ["hubspot", "slack", "google", "linear", "calendly"] as const;
 type Provider = (typeof VALID_PROVIDERS)[number];
 
 function isValidProvider(p: string): p is Provider {
@@ -60,6 +60,17 @@ function buildAuthUrl(provider: Provider, state: string, redirectUri: string): s
       state,
     });
     return `https://linear.app/oauth/authorize?${params.toString()}`;
+  }
+
+  if (provider === "calendly") {
+    const params = new URLSearchParams({
+      client_id: process.env.CALENDLY_CLIENT_ID ?? "",
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope: "default",
+      state,
+    });
+    return `https://calendly.com/oauth/authorize?${params.toString()}`;
   }
 
   throw new Error(`Unknown provider: ${provider}`);

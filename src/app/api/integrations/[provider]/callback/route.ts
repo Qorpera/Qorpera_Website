@@ -7,7 +7,7 @@ import crypto from "node:crypto";
 
 export const runtime = "nodejs";
 
-const VALID_PROVIDERS = ["hubspot", "slack", "google", "linear"] as const;
+const VALID_PROVIDERS = ["hubspot", "slack", "google", "linear", "calendly"] as const;
 type Provider = (typeof VALID_PROVIDERS)[number];
 
 function isValidProvider(p: string): p is Provider {
@@ -159,6 +159,58 @@ async function exchangeCode(
       accessToken: data.access_token,
       scopes: data.scope,
       metadata: workspaceName ? { workspace_name: workspaceName } : {},
+    };
+  }
+
+  if (provider === "calendly") {
+    const params = new URLSearchParams({
+      grant_type: "authorization_code",
+      client_id: process.env.CALENDLY_CLIENT_ID ?? "",
+      client_secret: process.env.CALENDLY_CLIENT_SECRET ?? "",
+      redirect_uri: redirectUri,
+      code,
+    });
+    const res = await fetch("https://auth.calendly.com/oauth/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`Calendly token exchange failed: ${res.status}`);
+    const data = (await res.json()) as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in?: number;
+      scope?: string;
+      owner?: string; // user URI
+    };
+
+    // Fetch user info for display name
+    let userName: string | undefined;
+    let userUri = data.owner;
+    try {
+      const meRes = await fetch("https://api.calendly.com/users/me", {
+        headers: { Authorization: `Bearer ${data.access_token}` },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (meRes.ok) {
+        const meData = (await meRes.json()) as { resource?: { uri?: string; name?: string } };
+        userName = meData.resource?.name;
+        if (meData.resource?.uri) userUri = meData.resource.uri;
+      }
+    } catch {
+      // Non-critical
+    }
+
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : undefined,
+      scopes: data.scope,
+      metadata: {
+        ...(userUri ? { user_uri: userUri } : {}),
+        ...(userName ? { user_name: userName } : {}),
+      },
     };
   }
 

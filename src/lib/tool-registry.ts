@@ -124,6 +124,19 @@ const INTEGRATION_TO_TOOL_MAPPING: Record<string, string[]> = {
   linear: ["linear_list_issues", "linear_create_issue", "linear_update_issue"],
   calendar: [
     "google_list_calendar_events", "google_create_calendar_event",
+    "calendly_list_scheduled_events", "calendly_list_event_types",
+  ],
+  calendly: [
+    "calendly_list_event_types", "calendly_list_scheduled_events",
+    "calendly_get_event_invitees", "calendly_create_scheduling_link",
+  ],
+  scheduling: [
+    "calendly_list_event_types", "calendly_list_scheduled_events",
+    "calendly_get_event_invitees", "calendly_create_scheduling_link",
+  ],
+  booking: [
+    "calendly_list_event_types", "calendly_list_scheduled_events",
+    "calendly_create_scheduling_link",
   ],
   browser: ["web_fetch"],
   web: ["web_fetch"],

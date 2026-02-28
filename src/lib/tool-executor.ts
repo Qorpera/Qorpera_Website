@@ -863,6 +863,71 @@ async function handleLinearUpdateIssue(args: Record<string, unknown>, ctx: ToolE
   }
 }
 
+// --- Calendly ---
+
+async function handleCalendlyListEventTypes(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "calendly");
+  if (!token) return integrationNotConnected("calendly");
+  try {
+    const conn = await (await import("@/lib/integrations/token-store")).getConnection(ctx.userId, "calendly");
+    const metadata = conn?.metadataJson ? (JSON.parse(conn.metadataJson) as Record<string, string>) : {};
+    const userUri = metadata.user_uri;
+    if (!userUri) return "Error: Calendly user URI not found. Try reconnecting Calendly in Settings → Integrations.";
+    const { listEventTypes } = await import("@/lib/integrations/calendly");
+    const data = await listEventTypes(token, userUri);
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleCalendlyListScheduledEvents(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "calendly");
+  if (!token) return integrationNotConnected("calendly");
+  try {
+    const conn = await (await import("@/lib/integrations/token-store")).getConnection(ctx.userId, "calendly");
+    const metadata = conn?.metadataJson ? (JSON.parse(conn.metadataJson) as Record<string, string>) : {};
+    const userUri = metadata.user_uri;
+    if (!userUri) return "Error: Calendly user URI not found. Try reconnecting Calendly in Settings → Integrations.";
+    const { listScheduledEvents } = await import("@/lib/integrations/calendly");
+    const daysAhead = Math.min(Number(args.days_ahead) || 30, 90);
+    const status = args.status === "canceled" ? "canceled" : "active";
+    const data = await listScheduledEvents(token, userUri, status, daysAhead);
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleCalendlyGetEventInvitees(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "calendly");
+  if (!token) return integrationNotConnected("calendly");
+  const eventUuid = String(args.event_uuid ?? "");
+  if (!eventUuid) return "Error: event_uuid is required";
+  try {
+    const { getEventInvitees } = await import("@/lib/integrations/calendly");
+    const data = await getEventInvitees(token, eventUuid);
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
+async function handleCalendlyCreateSchedulingLink(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const token = await getIntegrationToken(ctx.userId, "calendly");
+  if (!token) return integrationNotConnected("calendly");
+  const eventTypeUri = String(args.event_type_uri ?? "");
+  if (!eventTypeUri) return "Error: event_type_uri is required";
+  try {
+    const { createSchedulingLink } = await import("@/lib/integrations/calendly");
+    const maxEventCount = Math.min(Number(args.max_event_count) || 1, 10);
+    const data = await createSchedulingLink(token, eventTypeUri, maxEventCount);
+    return JSON.stringify(data, null, 2);
+  } catch (e) {
+    return `Error: ${e instanceof Error ? e.message : "unknown"}`;
+  }
+}
+
 // --- Dispatch ---
 
 const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {
@@ -901,6 +966,11 @@ const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: T
   linear_list_issues: handleLinearListIssues,
   linear_create_issue: handleLinearCreateIssue,
   linear_update_issue: handleLinearUpdateIssue,
+  // Calendly
+  calendly_list_event_types: handleCalendlyListEventTypes,
+  calendly_list_scheduled_events: handleCalendlyListScheduledEvents,
+  calendly_get_event_invitees: handleCalendlyGetEventInvitees,
+  calendly_create_scheduling_link: handleCalendlyCreateSchedulingLink,
 };
 
 const RUNNER_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {
