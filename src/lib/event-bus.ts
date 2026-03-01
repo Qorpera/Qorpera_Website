@@ -117,6 +117,18 @@ export type WorkforceEvent =
       nodeId: string;
       nodeType: string;
       status: string;
+    }
+  | {
+      type: "GOAL_CREATED";
+      userId: string;
+      goalId: string;
+      title: string;
+    }
+  | {
+      type: "GOAL_COMPLETED";
+      userId: string;
+      goalId: string;
+      title: string;
     };
 
 export type WorkforceEventType = WorkforceEvent["type"];

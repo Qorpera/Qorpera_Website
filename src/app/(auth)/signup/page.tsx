@@ -61,7 +61,7 @@ export default function SignupPage() {
           <polygon points="58,40 150,28 150,30 58,43" fill="url(#qp-signup-streak2)" />
         </svg>
         <h1 className="text-2xl font-semibold">Create account</h1>
-        <p className="text-sm text-zinc-400">Spin up your first office.</p>
+        <p className="text-sm text-zinc-400">Teach your AI team about your business — it only takes a few minutes.</p>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-3">

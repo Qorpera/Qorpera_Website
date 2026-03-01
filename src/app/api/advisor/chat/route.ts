@@ -113,6 +113,7 @@ export async function POST(request: Request) {
 
   const sessionRow = await ensureAdvisorSession(userId, sessionId, message);
   await appendAdvisorMessage({
+    userId,
     sessionId: sessionRow.id,
     role: "user",
     content: message,
@@ -156,6 +157,7 @@ export async function POST(request: Request) {
   }
 
   await appendAdvisorMessage({
+    userId,
     sessionId: sessionRow.id,
     role: "assistant",
     content: result.reply.answer,

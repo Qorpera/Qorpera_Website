@@ -4,13 +4,17 @@
  * Replaces the shallow 30-entry / 300-char memory with:
  * - Up to 500 entries per agent, 2000 chars each
  * - Category, tag, and importance-based organization
- * - Relevance-based retrieval (embedding similarity + keyword fallback)
+ * - Hybrid retrieval: BM25 + vector cosine + decay + importance with MMR diversity re-ranking
  * - Decay scoring: score = importance × 0.95^days × (1 + 0.1×accessCount)
  * - Automatic compaction: prune entries with decayScore < 0.5 AND importance ≤ 3 AND age > 30d
+ * - Fire-and-forget embedding on new entries; lazy backfill for old entries
  */
 
 import { prisma } from "@/lib/db";
 import { inferCategory, type MemoryCategory } from "@/lib/memory-categories";
+import { tokenize, buildBM25Corpus, scoreAllBM25 } from "@/lib/bm25";
+import { mmrRerank, type MMRCandidate } from "@/lib/mmr";
+import { cosineSimilarity, generateEmbedding, getOpenAIKeyForUser } from "@/lib/embedding-store";
 
 const DEFAULT_MAX_ENTRIES = 500;
 const MAX_CONTENT_CHARS = 2000;
@@ -64,7 +68,7 @@ export async function appendMemoryEntry(
   const category = entry.category ?? inferCategory(entry.topic, entry.content);
   const tags = entry.tags ?? "";
 
-  await prisma.agentMemoryEntry.create({
+  const row = await prisma.agentMemoryEntry.create({
     data: {
       agentMemoryId: mem.id,
       topic: entry.topic.slice(0, 80),
@@ -78,6 +82,9 @@ export async function appendMemoryEntry(
     },
   });
 
+  // Fire-and-forget: generate embedding for the new entry
+  embedMemoryEntry(userId, row.id, `${entry.topic} ${entry.title} ${entry.content}`).catch(() => {});
+
   // Atomic increment — only the caller whose increment crosses the threshold compacts.
   const updated = await prisma.agentMemory.update({
     where: { id: mem.id },
@@ -90,11 +97,22 @@ export async function appendMemoryEntry(
 
   const maxEntries = updated.maxEntries ?? DEFAULT_MAX_ENTRIES;
   if (updated.entryCount >= maxEntries) {
-    // Run compaction in the background — non-blocking
     compactMemory(mem.id).catch((err) => {
       console.error("[memory-v2] compactMemory error", err);
     });
   }
+}
+
+/** Generate and store embedding for a single memory entry */
+async function embedMemoryEntry(userId: string, entryId: string, text: string): Promise<void> {
+  const apiKey = await getOpenAIKeyForUser(userId);
+  if (!apiKey) return;
+  const embedding = await generateEmbedding(text.slice(0, 8000), apiKey);
+  if (!embedding) return;
+  await prisma.agentMemoryEntry.update({
+    where: { id: entryId },
+    data: { embeddingJson: JSON.stringify(embedding) },
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -103,8 +121,8 @@ export async function appendMemoryEntry(
 
 /**
  * Get memories most relevant to a given task context.
- * Uses keyword matching + importance + decay score to rank.
- * Returns top-k results formatted for prompt injection.
+ * Hybrid pipeline: BM25 + vector cosine + decay + importance, then MMR diversity re-ranking.
+ * Gracefully degrades: no API key → BM25-only; no embedding → per-entry fallback weights.
  */
 export async function getRelevantMemories(
   userId: string,
@@ -121,37 +139,84 @@ export async function getRelevantMemories(
   const entries = await prisma.agentMemoryEntry.findMany({
     where: { agentMemoryId: mem.id },
     orderBy: [{ importance: "desc" }, { updatedAt: "desc" }],
-    take: 200, // fetch a wider pool for scoring
+    take: 200,
   });
 
   if (entries.length === 0) return "";
 
-  const contextText = `${context.taskTitle ?? ""} ${context.taskInstructions ?? ""}`.toLowerCase();
-  const contextWords = new Set(contextText.split(/\W+/).filter((w) => w.length > 3));
+  const contextText = `${context.taskTitle ?? ""} ${context.taskInstructions ?? ""}`;
+  const queryTerms = tokenize(contextText);
 
-  // Score each entry: keywordOverlap + decayScore + importance boost
-  const scored = entries.map((e) => {
-    const entryText = `${e.topic} ${e.title} ${e.content}`.toLowerCase();
-    const entryWords = new Set(entryText.split(/\W+/).filter((w) => w.length > 3));
+  // 1. BM25 scoring
+  const docTexts = entries.map((e) => `${e.topic} ${e.title} ${e.content}`);
+  const corpus = buildBM25Corpus(docTexts);
+  const bm25Scores = scoreAllBM25(queryTerms, corpus);
 
-    let keywordOverlap = 0;
-    for (const w of contextWords) {
-      if (entryWords.has(w)) keywordOverlap++;
+  // Normalize BM25 scores to [0, 1]
+  const maxBm25 = Math.max(...bm25Scores, 0.001);
+  const normBm25 = bm25Scores.map((s) => s / maxBm25);
+
+  // 2. Vector scoring (for entries that have embeddings)
+  let queryEmbedding: number[] | null = null;
+  const apiKey = await getOpenAIKeyForUser(userId);
+  if (apiKey && queryTerms.length > 0) {
+    queryEmbedding = await generateEmbedding(contextText.slice(0, 8000), apiKey);
+  }
+
+  const vectorScores: (number | null)[] = entries.map((e) => {
+    if (!queryEmbedding || !e.embeddingJson) return null;
+    try {
+      const vec = JSON.parse(e.embeddingJson) as number[];
+      return cosineSimilarity(queryEmbedding, vec);
+    } catch {
+      return null;
     }
-    const keywordScore = contextWords.size > 0 ? keywordOverlap / contextWords.size : 0;
-    const decayScore = computeDecayScore(e.importance, e.createdAt, e.accessCount ?? 0);
-    const relevanceScore = (keywordScore * 5) + (decayScore * 0.5) + (e.importance * 0.3);
-
-    return { ...e, relevanceScore, decayScore };
   });
 
-  scored.sort((a, b) => b.relevanceScore - a.relevanceScore);
-  const top = scored.slice(0, limit);
+  // 3. Hybrid scoring
+  const scored = entries.map((e, i) => {
+    const decay = computeDecayScore(e.importance, e.createdAt, e.accessCount ?? 0);
+    const normDecay = Math.min(decay / 10, 1); // normalize: max importance=10
+    const normImportance = e.importance / 10;
 
-  if (top.length === 0) return "";
+    const vecScore = vectorScores[i];
+    let hybridScore: number;
+    if (vecScore !== null) {
+      // Full hybrid: 0.35*BM25 + 0.35*vector + 0.15*decay + 0.15*importance
+      hybridScore = 0.35 * normBm25[i] + 0.35 * vecScore + 0.15 * normDecay + 0.15 * normImportance;
+    } else {
+      // No embedding fallback: 0.55*BM25 + 0.25*decay + 0.20*importance
+      hybridScore = 0.55 * normBm25[i] + 0.25 * normDecay + 0.20 * normImportance;
+    }
+
+    return { entry: e, hybridScore, embedding: vecScore !== null ? (JSON.parse(e.embeddingJson!) as number[]) : undefined };
+  });
+
+  scored.sort((a, b) => b.hybridScore - a.hybridScore);
+
+  // 4. Take top 60 candidates → MMR re-rank → return top `limit`
+  const MMR_POOL = 60;
+  const pool = scored.slice(0, MMR_POOL);
+
+  const candidates: MMRCandidate<typeof pool[0]>[] = pool.map((s) => ({
+    item: s,
+    score: s.hybridScore,
+    embedding: s.embedding,
+    text: `${s.entry.topic} ${s.entry.title} ${s.entry.content}`,
+  }));
+
+  const reranked = mmrRerank(candidates, limit, 0.7);
+
+  if (reranked.length === 0) return "";
+
+  // Lazy backfill: if >30% of fetched entries lack embeddings, backfill 10 in background
+  const withoutEmbedding = entries.filter((e) => !e.embeddingJson).length;
+  if (withoutEmbedding / entries.length > 0.3) {
+    backfillMemoryEmbeddings(userId, agentKind, 10).catch(() => {});
+  }
 
   // Update access counts for retrieved memories (fire-and-forget)
-  const ids = top.map((e) => e.id);
+  const ids = reranked.map((s) => s.entry.id);
   prisma.agentMemoryEntry.updateMany({
     where: { id: { in: ids } },
     data: { accessCount: { increment: 1 }, lastAccessedAt: new Date() },
@@ -159,7 +224,8 @@ export async function getRelevantMemories(
 
   // Format for prompt injection
   let output = "## AGENT MEMORY\n";
-  for (const e of top) {
+  for (const s of reranked) {
+    const e = s.entry;
     const catLabel = e.category !== "general" ? ` [${e.category}]` : "";
     const tagsLabel = e.tags ? ` #${e.tags.split(",").map((t: string) => t.trim()).filter(Boolean).join(" #")}` : "";
     const line = `[${e.topic}]${catLabel}${tagsLabel} ${e.title} → ${e.content}`;
@@ -193,16 +259,15 @@ export async function searchMemory(
     take: 100,
   });
 
-  const queryLower = (opts.query ?? "").toLowerCase();
-  const queryWords = new Set(queryLower.split(/\W+/).filter((w) => w.length > 2));
+  const queryText = opts.query ?? "";
+  const queryTerms = tokenize(queryText);
+  const docTexts = entries.map((e) => `${e.topic} ${e.title} ${e.content}`);
+  const corpus = buildBM25Corpus(docTexts);
+  const bm25Scores = scoreAllBM25(queryTerms, corpus);
+  const maxBm25 = Math.max(...bm25Scores, 0.001);
 
-  const scored = entries.map((e) => {
-    const text = `${e.topic} ${e.title} ${e.content}`.toLowerCase();
-    let matchScore = 0;
-    if (queryLower && text.includes(queryLower)) matchScore += 3;
-    for (const w of queryWords) {
-      if (text.includes(w)) matchScore += 1;
-    }
+  const scored = entries.map((e, i) => {
+    const normBm25 = bm25Scores[i] / maxBm25;
     const decayScore = computeDecayScore(e.importance, e.createdAt, e.accessCount ?? 0);
     return {
       id: e.id,
@@ -211,7 +276,7 @@ export async function searchMemory(
       content: e.content,
       importance: e.importance,
       category: e.category ?? "general",
-      relevanceScore: matchScore + decayScore * 0.3,
+      relevanceScore: normBm25 * 5 + decayScore * 0.3,
     };
   });
 
@@ -320,6 +385,46 @@ export async function compactMemory(agentMemoryId: string): Promise<{ pruned: nu
   });
 
   return { pruned: toPrune.length, kept: toKeep.length };
+}
+
+// ---------------------------------------------------------------------------
+// Lazy backfill: embed old entries that lack embeddings
+// ---------------------------------------------------------------------------
+
+export async function backfillMemoryEmbeddings(
+  userId: string,
+  agentKind: string,
+  batchSize = 30,
+): Promise<number> {
+  const apiKey = await getOpenAIKeyForUser(userId);
+  if (!apiKey) return 0;
+
+  const mem = await prisma.agentMemory.findUnique({
+    where: { userId_agentKind: { userId, agentKind } },
+    select: { id: true },
+  });
+  if (!mem) return 0;
+
+  const entries = await prisma.agentMemoryEntry.findMany({
+    where: { agentMemoryId: mem.id, embeddingJson: null },
+    select: { id: true, topic: true, title: true, content: true },
+    take: batchSize,
+    orderBy: { importance: "desc" },
+  });
+
+  let count = 0;
+  for (const e of entries) {
+    const text = `${e.topic} ${e.title} ${e.content}`.slice(0, 8000);
+    const embedding = await generateEmbedding(text, apiKey);
+    if (embedding) {
+      await prisma.agentMemoryEntry.update({
+        where: { id: e.id },
+        data: { embeddingJson: JSON.stringify(embedding) },
+      });
+      count++;
+    }
+  }
+  return count;
 }
 
 // ---------------------------------------------------------------------------

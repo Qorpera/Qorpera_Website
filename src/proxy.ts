@@ -5,7 +5,7 @@ const PUBLIC_PATHS = new Set(["/login", "/signup", "/forgot-password", "/reset-p
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
-  if (pathname === "/" || pathname === "/pricing") return true;
+  if (pathname === "/" || pathname === "/pricing" || pathname === "/how-it-works" || pathname === "/use-cases" || pathname === "/offerings" || pathname === "/about") return true;
   // SEO / crawler assets
   if (pathname === "/robots.txt" || pathname === "/sitemap.xml" || pathname === "/manifest.webmanifest") return true;
   if (pathname.startsWith("/api/auth/")) return true;

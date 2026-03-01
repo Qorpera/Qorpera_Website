@@ -7,11 +7,11 @@ import { PricingInquiryButton } from "@/components/pricing-inquiry-modal";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Simple, transparent pricing for Qorpera. Scale from solo founder to a full AI-powered team.",
+    "An AI team that learns your business — starting at $299/mo. Pick a plan that fits how you work.",
   openGraph: {
     title: "Pricing | Qorpera",
     description:
-      "Simple, transparent pricing. Scale from solo founder to a full AI-powered team.",
+      "An AI team that learns your business — starting at $299/mo.",
   },
 };
 
@@ -30,13 +30,13 @@ export default async function PricingPage({
       {isWelcome && (
         <div className="mb-10 rounded-2xl border border-teal-500/25 bg-teal-500/[0.07] px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex-1">
-            <p className="text-sm font-semibold text-teal-300">Your workspace is ready 🎉</p>
+            <p className="text-sm font-semibold text-teal-300">Your AI team is learning about your business 🎉</p>
             <p className="mt-0.5 text-sm text-white/55">
-              Pick a plan to activate your first agents. Not sure which fits?{" "}
+              Pick a plan to bring your first AI team members online. Not sure which fits?{" "}
               <Link href="/" className="text-teal-400 underline underline-offset-2 hover:text-teal-300">
-                Ask the Chief Advisor
+                Ask your advisor
               </Link>{" "}
-              — he&apos;s in the sidebar and can recommend based on your goals.
+              — they already know your goals and can recommend the right fit.
             </p>
           </div>
           <Link
@@ -51,10 +51,10 @@ export default async function PricingPage({
       {/* Hero */}
       <div className="mb-14 text-center">
         <h1 className="text-3xl font-bold tracking-tight text-zinc-100 sm:text-4xl">
-          Simple, transparent pricing
+          An AI team that actually knows your business
         </h1>
         <p className="mt-3 text-base text-zinc-400">
-          Choose a plan that fits your business. Scale from solo founder to a full AI-powered team.
+          Pick a plan, teach them how you work, and let them start handling the day-to-day. They get better every week.
         </p>
       </div>
 
@@ -89,7 +89,7 @@ export default async function PricingPage({
               </div>
 
               <div className="mb-6 text-sm text-zinc-400">
-                Up to <span className="font-medium text-zinc-200">{plan.agentCap} AI agents</span>
+                Up to <span className="font-medium text-zinc-200">{plan.agentCap} AI team members</span>
               </div>
 
               <ul className="mb-8 flex-1 space-y-2">
@@ -123,8 +123,8 @@ export default async function PricingPage({
 
       {/* Footer note */}
       <div className="mt-10 text-center text-xs text-zinc-600">
-        All plans include the AI advisor. Agents can be activated, swapped, or deactivated anytime
-        within your plan&apos;s cap. Prices in USD.
+        Every plan includes an AI advisor that knows your business. Team members can be added, swapped, or
+        paused anytime. Prices in USD.
       </div>
     </div>
   );

@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@/lib/db";
-import { DelegatedTaskStatus } from "@prisma/client";
+import { DelegatedTaskStatus, GoalStepStatus } from "@prisma/client";
 
 export type HeartbeatPrecheckResult = {
   shouldWake: boolean;
@@ -18,7 +18,7 @@ export async function runHeartbeatPrecheck(
   const signals: string[] = [];
   const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
 
-  const [queuedTasks, openInbox, recentFiles, pendingApprovals, staleTasks] = await Promise.all([
+  const [queuedTasks, openInbox, recentFiles, pendingApprovals, staleTasks, pendingGoalSteps] = await Promise.all([
     // 1. Queued delegated tasks targeting this agent
     prisma.delegatedTask.count({
       where: {
@@ -61,6 +61,15 @@ export async function runHeartbeatPrecheck(
         updatedAt: { lt: thirtyMinAgo },
       },
     }),
+
+    // 6. Pending goal steps assigned to this agent
+    prisma.goalStep.count({
+      where: {
+        agentTarget: agentTarget,
+        status: GoalStepStatus.PENDING,
+        goal: { userId, status: "ACTIVE" },
+      },
+    }),
   ]);
 
   if (queuedTasks > 0) signals.push(`${queuedTasks} queued task(s) for this agent`);
@@ -68,6 +77,7 @@ export async function runHeartbeatPrecheck(
   if (openInbox > 0) signals.push(`${openInbox} open inbox item(s)`);
   if (recentFiles > 0) signals.push(`${recentFiles} new file(s) uploaded in last 30min`);
   if (pendingApprovals > 0) signals.push(`${pendingApprovals} runner job(s) awaiting approval`);
+  if (pendingGoalSteps > 0) signals.push(`${pendingGoalSteps} pending goal step(s) for this agent`);
 
   return {
     shouldWake: signals.length > 0,

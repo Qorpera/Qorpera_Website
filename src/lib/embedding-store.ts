@@ -35,7 +35,7 @@ export async function generateEmbedding(text: string, apiKey: string): Promise<n
   }
 }
 
-async function getOpenAIKey(userId: string): Promise<string | null> {
+export async function getOpenAIKeyForUser(userId: string): Promise<string | null> {
   try {
     const { getProviderApiKeyRuntime } = await import("@/lib/connectors-store");
     const runtime = await getProviderApiKeyRuntime(userId, "OPENAI");
@@ -107,7 +107,7 @@ export async function chunkAndEmbedFile(userId: string, fileId: string): Promise
     const existingCount = await prisma.documentChunk.count({ where: { fileId } });
     if (existingCount > 0) return;
 
-    const apiKey = await getOpenAIKey(userId);
+    const apiKey = await getOpenAIKeyForUser(userId);
     if (!apiKey) return;
 
     const fullText = `${file.name}\n\n${file.textExtract}`;
@@ -152,7 +152,7 @@ export async function embedBusinessFile(userId: string, fileId: string): Promise
   });
   if (!file || !file.textExtract || file.embeddingModel === EMBEDDING_MODEL) return;
 
-  const apiKey = await getOpenAIKey(userId);
+  const apiKey = await getOpenAIKeyForUser(userId);
   if (!apiKey) return;
 
   const text = `${file.name}\n\n${file.textExtract}`.slice(0, 8000);
@@ -169,7 +169,7 @@ export async function embedBusinessFile(userId: string, fileId: string): Promise
  * Embed all un-embedded files for a user (lazy batch, max 50).
  */
 export async function embedPendingFiles(userId: string, limit = 50): Promise<number> {
-  const apiKey = await getOpenAIKey(userId);
+  const apiKey = await getOpenAIKeyForUser(userId);
   if (!apiKey) return 0;
 
   const files = await prisma.businessFile.findMany({
@@ -213,7 +213,7 @@ export async function semanticSearchFiles(
   query: string,
   limit = 5,
 ): Promise<SemanticSearchResult[]> {
-  const apiKey = await getOpenAIKey(userId);
+  const apiKey = await getOpenAIKeyForUser(userId);
 
   if (apiKey) {
     const queryEmbedding = await generateEmbedding(query, apiKey);

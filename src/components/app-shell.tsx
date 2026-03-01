@@ -358,7 +358,7 @@ if (ownerFlag) {
                 <Link className="wf-btn px-3 py-1.5" href="/login">
                   Login
                 </Link>
-                <Link className="wf-btn-primary px-3 py-1.5" href="/signup">
+                <Link className="rounded-full bg-purple-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-purple-500" href="/signup">
                   Sign up
                 </Link>
               </div>

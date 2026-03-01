@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { indexSessionMessages } from "@/lib/session-index-store";
 
 function fallbackTitle(input: string) {
   const clean = input.trim().replace(/\s+/g, " ");
@@ -33,6 +34,7 @@ export async function ensureAdvisorSession(userId: string, sessionId?: string | 
 }
 
 export async function appendAdvisorMessage(input: {
+  userId?: string;
   sessionId: string;
   role: "user" | "assistant";
   content: string;
@@ -52,6 +54,12 @@ export async function appendAdvisorMessage(input: {
     where: { id: input.sessionId },
     data: { updatedAt: new Date() },
   });
+
+  // Fire-and-forget: index session messages on assistant responses
+  if (input.userId && input.role === "assistant") {
+    indexSessionMessages(input.userId, input.sessionId).catch(() => {});
+  }
+
   return msg;
 }
 

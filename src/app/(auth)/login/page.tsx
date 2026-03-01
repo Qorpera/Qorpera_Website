@@ -67,7 +67,7 @@ export default function LoginPage() {
           <polygon points="58,40 150,28 150,30 58,43" fill="url(#qp-login-streak2)" />
         </svg>
         <h1 className="text-2xl font-semibold">Qorpera</h1>
-        <p className="text-sm text-zinc-400">Log in to your digital office.</p>
+        <p className="text-sm text-zinc-400">Your AI team is waiting for you.</p>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-3">
