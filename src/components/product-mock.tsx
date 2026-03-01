@@ -180,9 +180,8 @@ function MetricsView() {
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-xl border border-white/[0.06] bg-gradient-to-br from-teal-500/[0.06] to-transparent p-5 text-center">
-        <div className="text-xs uppercase tracking-widest text-white/30">You would have spent</div>
         <motion.div
-          className="mt-1.5 bg-gradient-to-r from-teal-300 to-teal-500 bg-clip-text text-4xl font-bold text-transparent"
+          className="bg-gradient-to-r from-teal-300 to-teal-500 bg-clip-text text-4xl font-bold text-transparent"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
