@@ -14,6 +14,7 @@ import { getModelRoute } from "@/lib/model-routing-store";
 import { listBusinessLogs } from "@/lib/business-logs-store";
 import { listBusinessFiles, backfillMissingExtracts } from "@/lib/business-files-store";
 import { semanticSearchFiles, SemanticSearchResult } from "@/lib/embedding-store";
+import { searchSessionTranscripts, type SessionSearchResult } from "@/lib/session-index-store";
 import { getPreferredUsername } from "@/lib/usernames";
 import { listRunnersForUser } from "@/lib/runner-control-plane";
 import { getPlanStatus } from "@/lib/plan-store";
@@ -155,6 +156,7 @@ function buildSmartPayload(
     history: ChatTurn[];
     charLimit: number;
     semanticResults?: SemanticSearchResult[];
+    sessionResults?: SessionSearchResult[];
   },
 ): string {
   const terms = extractSearchTerms(userMessage);
@@ -257,13 +259,22 @@ function buildSmartPayload(
 
   // Build payload with business context FIRST so it survives truncation
   const smartContext = { ...context, businessLogs: smartLogs, businessFiles: smartFiles };
-  const payload = {
+  const payload: Record<string, unknown> = {
     businessContext: smartContext,
     mode: opts.mode,
     projectDescription: opts.projectDescription,
     message: userMessage,
     history: opts.history.slice(-8),
   };
+
+  // Inject relevant session transcript excerpts
+  if (opts.sessionResults && opts.sessionResults.length > 0) {
+    payload.priorConversations = opts.sessionResults.map((r) => ({
+      sessionId: r.sessionId,
+      excerpt: r.chunkText.slice(0, 1500),
+      similarity: Math.round(r.similarity * 100) / 100,
+    }));
+  }
 
   return clampText(JSON.stringify(payload), opts.charLimit);
 }
@@ -360,6 +371,7 @@ function advisorSystemPrompt(
   dataSignals?: { hasCompanySoul: boolean; hiredAgentCount: number; projectCount: number },
   planContext?: { planName: string | null; tier: string | null; agentCap: number; hiredCount: number; slotsAvailable: number } | null,
   appliedOptimizations?: string | null,
+  activeGoals?: Array<{ title: string; priority: string; progressPct: number; agentTarget: string | null; status: string }> | null,
 ) {
   const runnerLines = runnerContext && runnerContext.onlineRunnerCount > 0
     ? ["", "RUNNER_CAPABILITIES", "When a runner is online you can ask to execute local commands or read/write files — these go through the runner approval queue."]
@@ -454,6 +466,13 @@ function advisorSystemPrompt(
     "- OPERATIONS_MANAGER: SOP maintenance (versioned), vendor SLA tracking, blocker identification with impact assessment, cross-team delegation. Use for process, ops, logistics, or vendor work.",
     "- EXECUTIVE_ASSISTANT: Inbox triage (Critical/Today/This Week/FYI), meeting briefs, action item tracking with owners and due dates. Use for admin, scheduling, triage, or executive prep. Treats all info as confidential.",
     "",
+    "DATA APPS",
+    "Agents have access to the generate_data_app tool which creates visual applications from business data.",
+    "Available types: 'rack-map' (server/hardware rack layout), 'table' (interactive data table), 'kpi-grid' (metric cards dashboard).",
+    "When the user asks to visualize, map, chart, display, or create a dashboard from their data, delegate to an appropriate agent with instructions to call generate_data_app.",
+    "Include the desired app_type, a descriptive title, and any relevant file_ids in the delegation instructions.",
+    "Data apps are viewable at /data-apps after creation.",
+    "",
     "HIRING",
     "You can hire agents directly by including the 'hireAgents' field in your JSON response.",
     "CRITICAL: When the user explicitly asks to hire, add, activate, or set up an agent — you MUST include that agent in hireAgents. Do NOT just say you are hiring it in the answer field without also including it in hireAgents. The answer text alone does nothing; only hireAgents triggers the actual hire.",
@@ -482,11 +501,21 @@ function advisorSystemPrompt(
     ...(appliedOptimizations
       ? ["", "APPLIED_OPTIMIZATIONS", "The following evidence-based improvements have been validated and applied to enhance your performance:", appliedOptimizations]
       : []),
+    ...(activeGoals && activeGoals.length > 0
+      ? [
+          "",
+          "ACTIVE_GOALS",
+          "The user has the following active goals. Consider progress and priority when making recommendations:",
+          ...activeGoals.map((g) =>
+            `- [${g.priority}] "${g.title}" (${g.progressPct}% complete${g.agentTarget ? `, assigned: ${g.agentTarget}` : ""})`,
+          ),
+        ]
+      : []),
   ].join("\n");
 }
 
 export async function buildAdvisorContext(userId: string) {
-  const [projects, runs, inboxItems, prefs, agents, submissions, companySoul, chiefAdvisorSoul, businessLogs, businessFiles, owner, runnerContext, hiredJobs, planStatus, appliedOptimizationPatches] = await Promise.all([
+  const [projects, runs, inboxItems, prefs, agents, submissions, companySoul, chiefAdvisorSoul, businessLogs, businessFiles, owner, runnerContext, hiredJobs, planStatus, appliedOptimizationPatches, activeGoalsRaw] = await Promise.all([
     getProjectsForUser(userId),
     getRunsForUser(userId),
     getInboxItems(userId),
@@ -502,6 +531,12 @@ export async function buildAdvisorContext(userId: string) {
     prisma.hiredJob.findMany({ where: { userId, enabled: true }, select: { agentKind: true }, distinct: ["agentKind"] }),
     getPlanStatus(userId),
     getAppliedPatches(userId, "CHIEF_ADVISOR").catch(() => null),
+    prisma.goal.findMany({
+      where: { userId, status: "ACTIVE" },
+      orderBy: [{ priority: "asc" }, { updatedAt: "desc" }],
+      take: 5,
+      select: { title: true, priority: true, progressPct: true, agentTarget: true, status: true },
+    }).catch(() => [] as Array<{ title: string; priority: string; progressPct: number; agentTarget: string | null; status: string }>),
   ]);
 
   // Backfill text extracts for files uploaded before extraction was enabled
@@ -606,6 +641,9 @@ export async function buildAdvisorContext(userId: string) {
           slotsAvailable: planStatus.agentCap - planStatus.hiredCount,
         }
       : null,
+    activeGoals: activeGoalsRaw.length > 0
+      ? activeGoalsRaw.map((g) => ({ title: g.title, priority: g.priority, progressPct: g.progressPct, agentTarget: g.agentTarget, status: g.status }))
+      : null,
   };
 }
 
@@ -675,6 +713,7 @@ async function callOpenAIAdvisor({
   history,
   context,
   semanticResults,
+  sessionResults,
 }: {
   userId: string;
   mode: AdvisorMode;
@@ -683,6 +722,7 @@ async function callOpenAIAdvisor({
   history: ChatTurn[];
   context: unknown;
   semanticResults?: SemanticSearchResult[];
+  sessionResults?: SessionSearchResult[];
 }): Promise<AdvisorStructuredReply | null> {
   const runtime = await getProviderApiKeyRuntime(userId, "OPENAI");
   const apiKey = runtime.apiKey;
@@ -724,7 +764,14 @@ async function callOpenAIAdvisor({
   const dataSignals = extractDataSignals(context);
   const planCtx = extractPlanContext(context);
   const appliedOpts = extractAppliedOptimizations(context);
-  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx, isRecentlyOnboarded, dataSignals, planCtx, appliedOpts);
+  const goalsCtx =
+    typeof context === "object" &&
+    context &&
+    "activeGoals" in context &&
+    Array.isArray((context as { activeGoals?: unknown }).activeGoals)
+      ? (context as { activeGoals: Array<{ title: string; priority: string; progressPct: number; agentTarget: string | null; status: string }> }).activeGoals
+      : null;
+  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx, isRecentlyOnboarded, dataSignals, planCtx, appliedOpts, goalsCtx);
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -750,6 +797,7 @@ async function callOpenAIAdvisor({
                 history,
                 charLimit: 120_000,
                 semanticResults,
+                sessionResults,
               }),
             },
           ],
@@ -806,9 +854,10 @@ export async function runAdvisorChat(input: {
   history?: ChatTurn[];
   projectDescription?: string;
 }) {
-  const [context, semanticResults] = await Promise.all([
+  const [context, semanticResults, sessionResults] = await Promise.all([
     buildAdvisorContext(input.userId),
     semanticSearchFiles(input.userId, input.userMessage, 8).catch(() => [] as SemanticSearchResult[]),
+    searchSessionTranscripts(input.userId, input.userMessage, 5).catch(() => [] as SessionSearchResult[]),
   ]);
   const selectedRoute = await getModelRoute(input.userId, "ADVISOR");
   let providerError: string | null = null;
@@ -821,6 +870,7 @@ export async function runAdvisorChat(input: {
     history: input.history ?? [],
     context,
     semanticResults,
+    sessionResults: sessionResults.filter((r) => r.similarity > 0.3).slice(0, 3),
   }).catch((e: unknown) => {
     providerError = e instanceof Error ? e.message : "Provider request failed";
     return null;

@@ -249,6 +249,23 @@ const TOOL_SEEDS: ToolSeedRow[] = [
       required: ["draft"],
     }),
   },
+  // ── Data Apps ────────────────────────────────────────────────────────
+  {
+    name: "generate_data_app",
+    category: "orchestration",
+    executionMode: "in_process",
+    description: "Generate a visual data application from business data. Creates rack maps, data tables, or KPI dashboards. The app is stored and viewable at /data-apps/[id].",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        app_type: { type: "string", description: "Type of visualization: 'rack-map' (server/hardware layout), 'table' (data table with sorting/grouping), or 'kpi-grid' (metric cards dashboard)" },
+        title: { type: "string", description: "Title for the data app (max 240 chars)" },
+        description: { type: "string", description: "Description of what to visualize and any specific requirements" },
+        file_ids: { type: "array", items: { type: "string" }, description: "Optional array of business file IDs to use as data source (max 5)" },
+      },
+      required: ["app_type", "title", "description"],
+    }),
+  },
   // ── HubSpot ──────────────────────────────────────────────────────────
   {
     name: "hubspot_search_contacts",
@@ -1926,6 +1943,36 @@ const TOOL_SEEDS: ToolSeedRow[] = [
       required: ["text"],
     }),
   },
+  // Entity ontology — cross-integration knowledge
+  {
+    name: "lookup_entity",
+    category: "read",
+    executionMode: "in_process",
+    description: "Look up a unified entity across all connected integrations. Returns all known info, linked accounts, relationships, and recent activity. Use this when you need to understand who a person, company, deal, or project is across HubSpot, Google, Slack, Linear, etc.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        name_or_id: { type: "string", description: "Entity name, email, or ID to look up" },
+        type: { type: "string", enum: ["PERSON", "COMPANY", "DEAL", "PROJECT"], description: "Optional entity type filter" },
+      },
+      required: ["name_or_id"],
+    }),
+  },
+  {
+    name: "search_entities",
+    category: "read",
+    executionMode: "in_process",
+    description: "Search for entities by partial name, email, or domain. Returns matching entities across all types with their integration source counts.",
+    parametersJson: JSON.stringify({
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Search term (partial name, email, or domain)" },
+        type: { type: "string", enum: ["PERSON", "COMPANY", "DEAL", "PROJECT"], description: "Optional entity type filter" },
+        limit: { type: "number", description: "Max results (default 20, max 50)" },
+      },
+      required: ["query"],
+    }),
+  },
 ];
 
 const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
@@ -1983,6 +2030,10 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "channel_send_message", "channel_reply", "channel_list_conversations",
     // Agent-to-agent communication (Phase 3B)
     "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
+    // Data Apps
+    "generate_data_app",
+    // Entity ontology
+    "lookup_entity", "search_entities",
   ],
   MARKETING_COORDINATOR: [
     "search_business_logs", "list_files", "read_file", "web_fetch",
@@ -2007,6 +2058,8 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "channel_send_message", "channel_reply", "channel_list_conversations",
     // Agent-to-agent communication
     "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
+    // Entity ontology
+    "lookup_entity", "search_entities",
   ],
   ASSISTANT: [
     "read_file", "list_files", "search_business_logs", "list_inbox_items",
@@ -2024,6 +2077,10 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "channel_send_message", "channel_reply", "channel_list_conversations",
     // Agent-to-agent communication
     "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
+    // Data Apps
+    "generate_data_app",
+    // Entity ontology
+    "lookup_entity", "search_entities",
   ],
   SALES_REP: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
@@ -2053,6 +2110,8 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "channel_send_message", "channel_reply", "channel_list_conversations",
     // Agent-to-agent communication
     "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
+    // Entity ontology
+    "lookup_entity", "search_entities",
   ],
   CUSTOMER_SUCCESS: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
@@ -2074,6 +2133,8 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "channel_send_message", "channel_reply", "channel_list_conversations",
     // Agent-to-agent communication
     "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
+    // Entity ontology
+    "lookup_entity", "search_entities",
   ],
   FINANCE_ANALYST: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
@@ -2093,6 +2154,10 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "stripe_list_products", "stripe_list_prices",
     // Agent-to-agent communication
     "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
+    // Data Apps
+    "generate_data_app",
+    // Entity ontology
+    "lookup_entity", "search_entities",
   ],
   OPERATIONS_MANAGER: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
@@ -2128,6 +2193,10 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "channel_send_message", "channel_reply", "channel_list_conversations",
     // Agent-to-agent communication
     "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
+    // Data Apps
+    "generate_data_app",
+    // Entity ontology
+    "lookup_entity", "search_entities",
   ],
   EXECUTIVE_ASSISTANT: [
     "search_business_logs", "create_business_log", "list_files", "read_file",
@@ -2154,6 +2223,8 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "channel_send_message", "channel_reply", "channel_list_conversations",
     // Agent-to-agent communication
     "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
+    // Entity ontology
+    "lookup_entity", "search_entities",
   ],
   RESEARCH_ANALYST: [
     "web_search", "extract_content", "quality_review",
@@ -2173,6 +2244,10 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
     // Agent-to-agent communication
     "send_agent_message", "read_agent_messages", "write_workspace", "read_workspace", "request_agent_help",
+    // Data Apps
+    "generate_data_app",
+    // Entity ontology
+    "lookup_entity", "search_entities",
   ],
   SEO_SPECIALIST: [
     "web_search", "extract_content", "web_fetch", "quality_review",
@@ -2184,6 +2259,8 @@ const AGENT_TOOL_ASSIGNMENTS: Record<string, string[]> = {
     "browser_navigate", "browser_get_content", "browser_screenshot", "browser_click", "browser_type",
     // Agent-to-agent communication (read-only)
     "read_agent_messages", "read_workspace",
+    // Entity ontology
+    "lookup_entity", "search_entities",
   ],
 };
 

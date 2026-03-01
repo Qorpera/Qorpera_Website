@@ -2569,6 +2569,178 @@ async function handleRequestAgentHelp(args: Record<string, unknown>, ctx: ToolEx
   } catch (e) { return `Error: ${e instanceof Error ? e.message : "unknown"}`; }
 }
 
+// --- Data App Generation ---
+
+const DATA_APP_SCHEMAS: Record<string, string> = {
+  "rack-map": `{
+  "racks": [
+    {
+      "id": "string",
+      "label": "string (rack name/location)",
+      "totalUnits": "number (typically 42)",
+      "nodes": [
+        {
+          "id": "string",
+          "label": "string (device name)",
+          "rackUnit": "number (1-based, bottom-up U position)",
+          "heightUnits": "number (how many U slots this spans, e.g. 1, 2, 4)",
+          "status": "online | offline | warning | maintenance",
+          "specs": "string (e.g. 'Dell R740 · 128GB · 2x Xeon')",
+          "tags": ["string"]
+        }
+      ]
+    }
+  ]
+}`,
+  "table": `{
+  "columns": [
+    { "key": "string (field key)", "label": "string (display header)", "align": "left|center|right", "format": "text|number|currency|date|badge" }
+  ],
+  "rows": [ { "key1": "value1", "key2": "value2" } ],
+  "groupByKey": "optional string (column key to group rows by)",
+  "sortByKey": "optional string (column key for default sort)"
+}`,
+  "kpi-grid": `{
+  "cards": [
+    { "label": "string", "value": "string|number", "unit": "optional string", "trend": "up|down|flat", "tone": "teal|amber|rose|green|purple|slate" }
+  ],
+  "columns": "optional number (2|3|4, default 3)"
+}`,
+};
+
+// ---------------------------------------------------------------------------
+// Entity ontology handlers
+// ---------------------------------------------------------------------------
+
+async function handleLookupEntity(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const nameOrId = String(args.name_or_id ?? "").trim();
+  if (!nameOrId) return "Error: name_or_id is required";
+
+  const typeStr = args.type ? String(args.type).toUpperCase() : undefined;
+  const validTypes = ["PERSON", "COMPANY", "DEAL", "PROJECT"];
+  const type = typeStr && validTypes.includes(typeStr) ? (typeStr as "PERSON" | "COMPANY" | "DEAL" | "PROJECT") : undefined;
+
+  const { getEntityContext, formatEntityContextForPrompt } = await import("@/lib/entity-store");
+  const entityCtx = await getEntityContext(ctx.userId, nameOrId, type);
+  if (!entityCtx) return `No entity found matching "${nameOrId}"`;
+  return formatEntityContextForPrompt(entityCtx);
+}
+
+async function handleSearchEntities(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const query = String(args.query ?? "").trim();
+  if (!query) return "Error: query is required";
+
+  const typeStr = args.type ? String(args.type).toUpperCase() : undefined;
+  const validTypes = ["PERSON", "COMPANY", "DEAL", "PROJECT"];
+  const type = typeStr && validTypes.includes(typeStr) ? (typeStr as "PERSON" | "COMPANY" | "DEAL" | "PROJECT") : undefined;
+  const limit = typeof args.limit === "number" ? args.limit : 20;
+
+  const { searchEntities } = await import("@/lib/entity-store");
+  const results = await searchEntities(ctx.userId, query, type, limit);
+  if (results.length === 0) return `No entities found matching "${query}"`;
+  return JSON.stringify(results, null, 2);
+}
+
+async function handleGenerateDataApp(args: Record<string, unknown>, ctx: ToolExecutionContext): Promise<string> {
+  const appType = String(args.app_type ?? "").trim();
+  const title = String(args.title ?? "").trim();
+  const description = String(args.description ?? "").trim();
+  const fileIds = Array.isArray(args.file_ids) ? (args.file_ids as string[]).slice(0, 5) : [];
+
+  if (!appType || !DATA_APP_SCHEMAS[appType]) {
+    return `Error: app_type must be one of: ${Object.keys(DATA_APP_SCHEMAS).join(", ")}`;
+  }
+  if (!title) return "Error: title is required";
+
+  // Gather data context
+  const contextParts: string[] = [];
+
+  // Company soul
+  try {
+    const { getCompanySoul } = await import("@/lib/company-soul-store");
+    const soul = await getCompanySoul(ctx.userId);
+    const soulText = [
+      soul.companyName && `Company: ${soul.companyName}`,
+      soul.coreOffers && `Offers: ${soul.coreOffers}`,
+      soul.toolsAndSystems && `Tools/Systems: ${soul.toolsAndSystems}`,
+      soul.departments && `Departments: ${soul.departments}`,
+    ].filter(Boolean).join("\n");
+    if (soulText) contextParts.push(`COMPANY PROFILE:\n${soulText}`);
+  } catch { /* no company soul */ }
+
+  // Business files
+  if (fileIds.length > 0) {
+    for (const fid of fileIds) {
+      const file = await prisma.businessFile.findFirst({ where: { id: fid, userId: ctx.userId } });
+      if (file?.textExtract) {
+        contextParts.push(`FILE "${file.name}":\n${file.textExtract.slice(0, 6000)}`);
+      }
+    }
+  }
+
+  // Recent business logs
+  try {
+    const { listBusinessLogs } = await import("@/lib/business-logs-store");
+    const logs = await listBusinessLogs(ctx.userId, 10);
+    if (logs.length > 0) {
+      const logText = logs.map((l) => `- ${l.title}: ${(l.body ?? "").slice(0, 200)}`).join("\n");
+      contextParts.push(`RECENT BUSINESS LOGS:\n${logText}`);
+    }
+  } catch { /* no logs */ }
+
+  const combinedContext = contextParts.join("\n\n").slice(0, 24000);
+
+  const systemPrompt = `You are a data visualization assistant. Generate structured JSON for a "${appType}" visualization.
+
+The user wants: ${title}${description ? `\nDetails: ${description}` : ""}
+
+You MUST output ONLY valid JSON conforming to this exact schema:
+${DATA_APP_SCHEMAS[appType]}
+
+Rules:
+- Output raw JSON only. No markdown, no explanation, no code fences.
+- Use real data from the provided context. If data is sparse, make reasonable inferences based on context.
+- For rack-map: ensure rackUnit + heightUnits never exceed totalUnits. Use realistic specs.
+- For table: include at least the columns that make sense for the data.
+- For kpi-grid: derive meaningful metrics from the data provided.`;
+
+  try {
+    const { callAgentLlm } = await import("@/lib/agent-llm");
+    const result = await callAgentLlm({
+      userId: ctx.userId,
+      agentKind: "CHIEF_ADVISOR",
+      systemPrompt,
+      userMessage: combinedContext || "Generate sample data based on common business scenarios.",
+      maxOutputTokens: 4096,
+    });
+
+    if (result.error) return `Error generating data app: ${result.error}`;
+
+    const raw = result.text.trim();
+    // Extract JSON (handle potential markdown wrapping)
+    const jsonStart = raw.indexOf("{");
+    const jsonEnd = raw.lastIndexOf("}");
+    if (jsonStart === -1 || jsonEnd === -1) return "Error: LLM did not return valid JSON";
+
+    const jsonStr = raw.slice(jsonStart, jsonEnd + 1);
+    // Validate it parses
+    JSON.parse(jsonStr);
+
+    const { createDataApp } = await import("@/lib/data-app-store");
+    const app = await createDataApp(ctx.userId, {
+      title,
+      appType,
+      dataJson: jsonStr,
+      sourceContext: fileIds.length > 0 ? `files: ${fileIds.join(", ")}` : "business context",
+    });
+
+    return `Data app created successfully.\nTitle: ${app.title}\nType: ${appType}\nID: ${app.id}\nView it at: /data-apps/${app.id}`;
+  } catch (e: unknown) {
+    if (e instanceof SyntaxError) return "Error: LLM returned invalid JSON. Please try again.";
+    return `Error generating data app: ${e instanceof Error ? e.message : "unknown error"}`;
+  }
+}
+
 // --- Dispatch ---
 
 const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {
@@ -2735,12 +2907,31 @@ const IN_PROCESS_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: T
   write_workspace: handleWriteWorkspace,
   read_workspace: handleReadWorkspace,
   request_agent_help: handleRequestAgentHelp,
+  // Data Apps
+  generate_data_app: handleGenerateDataApp,
+  // Entity ontology
+  lookup_entity: handleLookupEntity,
+  search_entities: handleSearchEntities,
 };
 
 const RUNNER_HANDLERS: Record<string, (args: Record<string, unknown>, ctx: ToolExecutionContext) => Promise<string>> = {
   run_command: handleRunCommand,
   write_file: handleWriteFile,
 };
+
+const ENTITY_EXTRACTION_PREFIXES = ["hubspot_", "google_", "slack_", "linear_"];
+
+function maybeExtractEntities(
+  toolName: string,
+  args: Record<string, unknown>,
+  output: string,
+  ctx: ToolExecutionContext,
+): void {
+  if (!ENTITY_EXTRACTION_PREFIXES.some((p) => toolName.startsWith(p))) return;
+  void import("@/lib/entity-extractor").then(({ extractEntitiesFromToolOutput }) =>
+    extractEntitiesFromToolOutput(ctx.userId, toolName, args, output, ctx.delegatedTaskId).catch(() => {}),
+  ).catch(() => {});
+}
 
 export async function executeToolCall(
   call: ToolCallRequest,
@@ -2774,6 +2965,7 @@ export async function executeToolCall(
         return { output: `No runner handler for tool "${call.name}"`, status: "error", latencyMs: Date.now() - start };
       }
       const output = await handler(args, ctx);
+      maybeExtractEntities(call.name, args, output, ctx);
       return { output, status: "ok", latencyMs: Date.now() - start };
     }
 
@@ -2789,6 +2981,7 @@ export async function executeToolCall(
     }
 
     const output = await handler(args, ctx);
+    maybeExtractEntities(call.name, args, output, ctx);
     return { output, status: "ok", latencyMs: Date.now() - start };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown execution error";

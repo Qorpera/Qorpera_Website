@@ -183,6 +183,52 @@ enum ScheduleFrequency {
   MONTHLY
 }
 
+enum GoalStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum GoalPriority {
+  URGENT
+  HIGH
+  NORMAL
+  LOW
+}
+
+enum GoalStepStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  FAILED
+  BLOCKED
+  SKIPPED
+}
+
+enum TaskOutcome {
+  SUCCESS
+  PARTIAL
+  FAILURE
+}
+
+enum EntityType {
+  PERSON
+  COMPANY
+  DEAL
+  PROJECT
+}
+
+enum EntityRelationType {
+  WORKS_AT
+  OWNS
+  ASSIGNED_TO
+  BELONGS_TO
+  PART_OF
+  RELATED_TO
+}
+
 model User {
   id              String    @id @default(cuid())
   email           String    @unique
@@ -242,6 +288,11 @@ model User {
   databaseConnections      DatabaseConnection[]
   outputRoutes             OutputRoute[]
   workflows                Workflow[]
+  goals                    Goal[]
+  taskOutcomeRecords       TaskOutcomeRecord[]
+  sessionChunks            SessionChunk[]
+  dataApps                 DataApp[]
+  entities                 Entity[]
 }
 
 model HiredJob {
@@ -694,8 +745,11 @@ model AdvisorSession {
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
 
+  lastIndexedMessageId String?
+
   user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages   AdvisorMessage[]
+  chunks     SessionChunk[]
 
   @@index([userId, updatedAt])
 }
@@ -789,6 +843,7 @@ model DelegatedTask {
   taskGroupId      String?
   workflowRunId    String?
   workflowNodeId   String?
+  goalStepId       String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   completedAt      DateTime?
@@ -1598,4 +1653,190 @@ model DatabaseConnection {
   user                      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, enabled])
+}
+
+// ── Session Chunks (for advisor transcript search) ──────────
+
+model SessionChunk {
+  id             String   @id @default(cuid())
+  sessionId      String
+  userId         String
+  messageId      String
+  chunkIndex     Int
+  chunkText      String
+  embeddingJson  String?
+  createdAt      DateTime @default(now())
+
+  session        AdvisorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sessionId])
+  @@index([sessionId, chunkIndex])
+}
+
+// ── Goals & Goal Steps ──────────────────────────────────────
+
+model Goal {
+  id              String       @id @default(cuid())
+  userId          String
+  parentGoalId    String?
+  title           String
+  description     String       @default("")
+  status          GoalStatus   @default(ACTIVE)
+  priority        GoalPriority @default(NORMAL)
+  agentTarget     String?
+  totalSteps      Int          @default(0)
+  completedSteps  Int          @default(0)
+  progressPct     Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  completedAt     DateTime?
+
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentGoal      Goal?        @relation("GoalHierarchy", fields: [parentGoalId], references: [id], onDelete: SetNull)
+  childGoals      Goal[]       @relation("GoalHierarchy")
+  steps           GoalStep[]
+
+  @@index([userId, status, priority])
+  @@index([userId, agentTarget, status])
+  @@index([parentGoalId])
+}
+
+model GoalStep {
+  id              String         @id @default(cuid())
+  goalId          String
+  stepOrder       Int
+  title           String
+  instructions    String         @default("")
+  status          GoalStepStatus @default(PENDING)
+  agentTarget     String?
+  dependsOnJson   String         @default("[]") // JSON array of step IDs
+  taskId          String?        // linked DelegatedTask ID
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  completedAt     DateTime?
+
+  goal            Goal           @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, stepOrder])
+  @@index([goalId, status])
+}
+
+// ── Task Outcome Records ────────────────────────────────────
+
+model TaskOutcomeRecord {
+  id              String      @id @default(cuid())
+  userId          String
+  taskId          String      @unique
+  agentTarget     String
+  outcome         TaskOutcome
+  category        String      @default("general")
+  toolsUsedJson   String      @default("[]")
+  turnsUsed       Int         @default(0)
+  runtimeMs       Int         @default(0)
+  wasApproved     Boolean?
+  errorSummary    String?
+  createdAt       DateTime    @default(now())
+
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, agentTarget, createdAt])
+  @@index([userId, category, createdAt])
+}
+
+model DataApp {
+  id            String   @id @default(cuid())
+  userId        String
+  title         String
+  appType       String   // "rack-map" | "table" | "kpi-grid"
+  dataJson      String   // structured JSON conforming to per-type schema
+  layoutJson    String   @default("{}")
+  sourceContext String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, appType])
+}
+
+// ---------------------------------------------------------------------------
+// Entity Ontology — unified cross-integration context
+// ---------------------------------------------------------------------------
+
+model Entity {
+  id           String     @id @default(cuid())
+  userId       String
+  type         EntityType
+  displayName  String
+  email        String?
+  phone        String?
+  domain       String?
+  metadataJson String?
+  mergedIntoId String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mergedInto    Entity?             @relation("EntityMerge", fields: [mergedIntoId], references: [id])
+  mergedFrom    Entity[]            @relation("EntityMerge")
+  externalRefs  EntityExternalRef[]
+  mentions      EntityMention[]
+  relationsFrom EntityRelationship[] @relation("EntityRelFrom")
+  relationsTo   EntityRelationship[] @relation("EntityRelTo")
+
+  @@index([userId, type, updatedAt])
+  @@index([userId, email])
+  @@index([userId, displayName])
+  @@index([userId, domain])
+  @@index([userId, mergedIntoId])
+}
+
+model EntityExternalRef {
+  id           String   @id @default(cuid())
+  entityId     String
+  provider     String
+  externalId   String
+  label        String?
+  metadataJson String?
+  lastSeenAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([entityId, provider, externalId])
+  @@index([provider, externalId])
+}
+
+model EntityRelationship {
+  id             String             @id @default(cuid())
+  userId         String
+  fromEntityId   String
+  toEntityId     String
+  relationType   EntityRelationType
+  label          String?
+  confidence     Float              @default(1.0)
+  createdAt      DateTime           @default(now())
+
+  fromEntity Entity @relation("EntityRelFrom", fields: [fromEntityId], references: [id], onDelete: Cascade)
+  toEntity   Entity @relation("EntityRelTo", fields: [toEntityId], references: [id], onDelete: Cascade)
+
+  @@unique([fromEntityId, toEntityId, relationType])
+  @@index([userId, fromEntityId])
+  @@index([userId, toEntityId])
+}
+
+model EntityMention {
+  id         String   @id @default(cuid())
+  entityId   String
+  sourceType String
+  sourceId   String
+  snippet    String?
+  createdAt  DateTime @default(now())
+
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@index([entityId, createdAt])
+  @@index([sourceType, sourceId])
 }

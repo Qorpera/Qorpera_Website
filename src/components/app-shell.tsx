@@ -27,6 +27,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/metrics", label: "Metrics" },
       { href: "/schedules", label: "Schedules" },
       { href: "/workflows", label: "Workflows" },
+      { href: "/data-apps", label: "Data Apps" },
       { href: "/agents", label: "Agents", dataTour: "nav-agents" },
       { href: "/optimizer", label: "Optimizer" },
     ],
@@ -323,32 +324,45 @@ if (ownerFlag) {
                 </svg>
                 <div>
                   <div className="text-base font-semibold tracking-tight">Qorpera</div>
-                  <div className="text-xs wf-muted">AI workforce control room</div>
+                  <div className="text-xs wf-muted">AI that learns your business</div>
                 </div>
               </Link>
 
               {session ? <AppNav items={navItems} /> : null}
             </div>
 
-            <div className="flex items-center gap-2 text-sm lg:shrink-0">
-              {session ? (
+            {session ? (
+              <div className="flex items-center gap-2 text-sm lg:shrink-0">
                 <form action="/api/auth/logout" method="post">
                   <button className="wf-btn px-3 py-1.5">Logout</button>
                 </form>
-              ) : (
-                <>
-                  <Link className="wf-btn px-3 py-1.5" href="/pricing">
-                    View Plans
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-x-1 gap-y-2 text-sm lg:shrink-0">
+                {[
+                  { href: "/how-it-works", label: "How It Works" },
+                  { href: "/use-cases", label: "Use Cases" },
+                  { href: "/offerings", label: "Offerings" },
+                  { href: "/about", label: "About" },
+                  { href: "/pricing", label: "Pricing" },
+                ].map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="rounded-md px-3 py-1.5 text-white/55 transition-colors hover:bg-white/[0.04] hover:text-white/80"
+                  >
+                    {link.label}
                   </Link>
-                  <Link className="wf-btn px-3 py-1.5" href="/login">
-                    Login
-                  </Link>
-                  <Link className="wf-btn-primary px-3 py-1.5" href="/signup">
-                    Sign up
-                  </Link>
-                </>
-              )}
-            </div>
+                ))}
+                <span className="mx-1 hidden h-4 w-px bg-white/[0.08] lg:inline-block" />
+                <Link className="wf-btn px-3 py-1.5" href="/login">
+                  Login
+                </Link>
+                <Link className="wf-btn-primary px-3 py-1.5" href="/signup">
+                  Sign up
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </header>
