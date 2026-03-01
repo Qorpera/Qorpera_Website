@@ -17,16 +17,16 @@ import { useRef, useState } from "react";
 
 /* ── Data ─────────────────────────────────────────────────────── */
 
-const AGENTS = [
-  { name: "Mara", role: "Support Team", tasks: "A team of agents that runs your entire support queue — triaging, replying, escalating — all in your voice" },
-  { name: "Kai", role: "Sales Team", tasks: "A team that owns your outbound pipeline — finding leads, researching prospects, writing outreach, following up" },
-  { name: "Zoe", role: "Success Team", tasks: "A team that owns every client relationship — health checks, churn alerts, renewals, upsells" },
-  { name: "Ava", role: "Marketing Team", tasks: "A team that runs your content engine — writing, planning campaigns, tracking what converts" },
-  { name: "Max", role: "Finance Team", tasks: "A team that handles invoices, reconciliation, reporting, and anomaly detection end to end" },
-  { name: "Jordan", role: "Ops Team", tasks: "A team that manages processes, vendors, and SOPs — keeping the business running without your input" },
-  { name: "Sam", role: "Admin Team", tasks: "A team that owns your inbox, calendar, and briefings — nothing falls through the cracks" },
-  { name: "Nova", role: "Research Team", tasks: "A team that delivers competitor intel, market analysis, and decision-ready briefs on demand" },
-  { name: "Sage", role: "SEO Team", tasks: "A team that audits your site, finds keywords, and writes content briefs — full SEO coverage" },
+const TEAMS = [
+  { lead: "Mara", team: "Support Team", tasks: "Mara leads a team that runs your entire support queue — triaging, replying, escalating — all in your voice" },
+  { lead: "Kai", team: "Sales Team", tasks: "Kai leads a team that owns your outbound pipeline — finding leads, researching, writing outreach, following up" },
+  { lead: "Zoe", team: "Success Team", tasks: "Zoe leads a team that manages every client relationship — health checks, churn alerts, renewals, upsells" },
+  { lead: "Ava", team: "Marketing Team", tasks: "Ava leads a team that runs your content engine — writing, planning campaigns, tracking what converts" },
+  { lead: "Max", team: "Finance Team", tasks: "Max leads a team that handles invoices, reconciliation, reporting, and anomaly detection end to end" },
+  { lead: "Jordan", team: "Ops Team", tasks: "Jordan leads a team that manages processes, vendors, and SOPs — keeping the business running" },
+  { lead: "Sam", team: "Admin Team", tasks: "Sam leads a team that owns your inbox, calendar, and briefings — nothing falls through the cracks" },
+  { lead: "Nova", team: "Research Team", tasks: "Nova leads a team that delivers competitor intel, market analysis, and decision-ready briefs" },
+  { lead: "Sage", team: "SEO Team", tasks: "Sage leads a team that audits your site, finds keywords, and writes content briefs — full SEO coverage" },
 ];
 
 const STEPS = [
@@ -418,12 +418,12 @@ export function MarketingLandingClient() {
           <div className="grid gap-12 lg:grid-cols-[1fr_1.6fr] lg:items-start">
             <FadeIn>
               <div className="lg:sticky lg:top-8">
-                <div className="text-xs font-medium uppercase tracking-wider text-white/30">Your AI workforce</div>
+                <div className="text-xs font-medium uppercase tracking-wider text-white/30">Your agentic teams</div>
                 <h2 className="mt-3 text-3xl font-bold tracking-tight text-white">
-                  Pre-built teams.<br />Ready to hire.
+                  Nine teams.<br />Each led by a specialist.
                 </h2>
                 <p className="mt-4 text-sm leading-relaxed text-[#b8c5ce]">
-                  Each function gets a coordinated team of agents — not one bot with a label on it. They learn your business, follow your rules, and work together to cover the entire function.
+                  Every team has a named lead backed by a coordinated squad. They learn your business, follow your rules, and work together to cover the entire function.
                 </p>
                 <Link
                   href="/use-cases"
@@ -435,21 +435,21 @@ export function MarketingLandingClient() {
             </FadeIn>
 
             <StaggerGroup className="grid gap-3 sm:grid-cols-2" stagger={0.05}>
-              {AGENTS.map((a) => (
-                <StaggerItem key={a.name}>
+              {TEAMS.map((t) => (
+                <StaggerItem key={t.lead}>
                   <motion.div
                     className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4 transition-colors hover:border-white/[0.12] hover:bg-white/[0.04]"
                     whileHover={{ y: -2 }}
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="font-semibold text-white">{a.name}</span>
+                      <span className="font-semibold text-white">{t.team}</span>
                       <span className="ml-auto rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-0.5 text-xs text-white/40">
-                        {a.role}
+                        Led by {t.lead}
                       </span>
                     </div>
                     <div className="mt-2.5 text-xs leading-relaxed text-white/35 transition-colors group-hover:text-white/50">
-                      {a.tasks}
+                      {t.tasks}
                     </div>
                   </motion.div>
                 </StaggerItem>

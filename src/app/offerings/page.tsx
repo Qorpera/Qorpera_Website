@@ -6,15 +6,15 @@ import { OfferingsClient } from "./client";
 export const metadata: Metadata = {
   title: "Offerings | Qorpera",
   description:
-    "Pre-built AI workers for 9 business roles, real integrations, hybrid processing, and the company file that makes it all work.",
+    "Nine agentic teams — each led by a named specialist, backed by a coordinated squad. Real integrations, hybrid processing, and the company file that ties it all together.",
 };
 
 export default function OfferingsPage() {
   return (
     <MarketingPageShell
       label="Offerings"
-      title="Your AI workforce, ready to hire"
-      subtitle="Nine pre-built digital workers, real integrations with the tools you use, and a cost model that makes hiring humans optional."
+      title="Nine agentic teams, ready to deploy"
+      subtitle="Each team is led by a named specialist and backed by a coordinated squad. Real integrations, hybrid processing, and a cost model that makes hiring humans optional."
     >
       <OfferingsClient />
       <MarketingCta />

@@ -17,7 +17,7 @@ interface UseCase {
   title: string;
   description: string;
   color: string;
-  agents: { name: string; role: string; task: string }[];
+  members: { name: string; role: string; task: string }[];
 }
 
 const USE_CASES: UseCase[] = [
@@ -27,8 +27,8 @@ const USE_CASES: UseCase[] = [
     color: "from-blue-500/20 to-cyan-500/20",
     description:
       "An SDR costs $50k+/year and works alone. Your AI sales team is a group of agents working together — prospecting, researching, writing outreach, and following up in coordination.",
-    agents: [
-      { name: "Kai", role: "Lead agent", task: "Coordinates the team — owns pipeline, delegates research and outreach" },
+    members: [
+      { name: "Kai", role: "Team lead", task: "Coordinates the team — owns pipeline, delegates research and outreach" },
       { name: "Nova", role: "Research", task: "Builds prospect briefs and competitive intelligence for the team" },
       { name: "Ava", role: "Campaigns", task: "Runs inbound campaigns that feed leads into Kai's pipeline" },
       { name: "Zoe", role: "Nurture", task: "Warms leads and keeps relationships alive post-contact" },
@@ -40,8 +40,8 @@ const USE_CASES: UseCase[] = [
     color: "from-emerald-500/20 to-teal-500/20",
     description:
       "SOPs, vendor tracking, inbox triage, invoices, scheduling — work that normally requires 1-2 full-time hires. Your AI ops team is a group of agents that handle it together.",
-    agents: [
-      { name: "Jordan", role: "Lead agent", task: "Coordinates the team — owns processes, vendors, and bottleneck alerts" },
+    members: [
+      { name: "Jordan", role: "Team lead", task: "Coordinates the team — owns processes, vendors, and bottleneck alerts" },
       { name: "Sam", role: "Admin", task: "Runs inbox triage and calendar management for the team" },
       { name: "Max", role: "Finance", task: "Handles reporting, invoice matching, and anomaly detection" },
       { name: "Ren", role: "General", task: "Picks up everything that falls between the cracks" },
@@ -53,8 +53,8 @@ const USE_CASES: UseCase[] = [
     color: "from-violet-500/20 to-purple-500/20",
     description:
       "A support rep costs $35k+/year and works 8 hours. Your AI customer team is a group of agents working together 24/7 — resolving tickets, monitoring health, and catching churn risk.",
-    agents: [
-      { name: "Zoe", role: "Lead agent", task: "Coordinates the team — owns client health and early churn detection" },
+    members: [
+      { name: "Zoe", role: "Team lead", task: "Coordinates the team — owns client health and early churn detection" },
       { name: "Mara", role: "Support", task: "Answers tickets in your voice, around the clock" },
       { name: "Kai", role: "Expansion", task: "Identifies upsell and cross-sell opportunities" },
       { name: "Sam", role: "Scheduling", task: "Manages client meetings and follow-up cadence" },
@@ -66,8 +66,8 @@ const USE_CASES: UseCase[] = [
     color: "from-amber-500/20 to-orange-500/20",
     description:
       "Competitor tracking, market analysis, financial modeling, SEO audits — work that's expensive to outsource and slow to do alone. Your AI research team delivers it on demand, together.",
-    agents: [
-      { name: "Nova", role: "Lead agent", task: "Coordinates the team — assigns research, compiles briefs, surfaces trends" },
+    members: [
+      { name: "Nova", role: "Team lead", task: "Coordinates the team — assigns research, compiles briefs, surfaces trends" },
       { name: "Max", role: "Finance", task: "Models scenarios and builds financial forecasts" },
       { name: "Sage", role: "SEO", task: "Audits visibility and writes content briefs" },
       { name: "Ava", role: "Analysis", task: "Analyzes what's converting and recommends next moves" },
@@ -125,7 +125,7 @@ export function UseCasesClient() {
               </div>
             </FadeIn>
             <StaggerGroup className="grid gap-3 sm:grid-cols-2" stagger={0.08}>
-              {uc.agents.map((a) => (
+              {uc.members.map((a) => (
                 <StaggerItem key={a.name}>
                   <AgentCard {...a} />
                 </StaggerItem>

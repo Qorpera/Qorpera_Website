@@ -14,16 +14,16 @@ import { useRef, useState } from "react";
 
 /* ── Data ─────────────────────────────────────────────────────── */
 
-const AGENTS = [
-  { name: "Mara", role: "Support Team", desc: "A team of agents that runs your entire support queue. Triages, replies, escalates — all coordinated, all in your voice." },
-  { name: "Kai", role: "Sales Team", desc: "A team that owns your outbound pipeline. Prospecting, research, outreach, follow-up — multiple agents working the funnel together." },
-  { name: "Zoe", role: "Success Team", desc: "A team that manages every client relationship. Health checks, churn alerts, check-ins, renewals — all coordinated." },
-  { name: "Ava", role: "Marketing Team", desc: "A team that runs your content engine. Writing, campaigns, performance tracking — multiple agents collaborating across channels." },
-  { name: "Max", role: "Finance Team", desc: "A team that handles invoices, reconciliation, and reporting end to end. Multiple agents matching, checking, and building reports together." },
-  { name: "Jordan", role: "Ops Team", desc: "A team that owns your processes. SOPs, vendor tracking, bottleneck alerts — coordinated agents keeping the business running." },
-  { name: "Sam", role: "Admin Team", desc: "A team that manages your inbox, calendar, and briefings. Multiple agents triaging, scheduling, and drafting in sync." },
-  { name: "Nova", role: "Research Team", desc: "A team that delivers competitor intel, market analysis, and decision-ready briefs. Multiple agents researching in parallel." },
-  { name: "Sage", role: "SEO Team", desc: "A team that audits your site, finds keywords, and writes content briefs. Technical and content agents working together." },
+const TEAMS = [
+  { lead: "Mara", team: "Support Team", desc: "Mara leads a team that runs your entire support queue. Triages, replies, escalates — all coordinated, all in your voice." },
+  { lead: "Kai", team: "Sales Team", desc: "Kai leads a team that owns your outbound pipeline. Prospecting, research, outreach, follow-up — the whole funnel, working together." },
+  { lead: "Zoe", team: "Success Team", desc: "Zoe leads a team that manages every client relationship. Health checks, churn alerts, check-ins, renewals — all coordinated." },
+  { lead: "Ava", team: "Marketing Team", desc: "Ava leads a team that runs your content engine. Writing, campaigns, performance tracking — collaborating across channels." },
+  { lead: "Max", team: "Finance Team", desc: "Max leads a team that handles invoices, reconciliation, and reporting end to end. Matching, checking, and building reports together." },
+  { lead: "Jordan", team: "Ops Team", desc: "Jordan leads a team that owns your processes. SOPs, vendor tracking, bottleneck alerts — keeping the business running." },
+  { lead: "Sam", team: "Admin Team", desc: "Sam leads a team that manages your inbox, calendar, and briefings. Triaging, scheduling, and drafting in sync." },
+  { lead: "Nova", team: "Research Team", desc: "Nova leads a team that delivers competitor intel, market analysis, and decision-ready briefs on demand." },
+  { lead: "Sage", team: "SEO Team", desc: "Sage leads a team that audits your site, finds keywords, and writes content briefs. Technical and content working together." },
 ];
 
 const INTEGRATIONS = [
@@ -40,8 +40,8 @@ const COMPANY_FILE_FIELDS = [
   { field: "Business documents", desc: "Upload product sheets, pricing guides, handbooks — your agent teams read and reference them like new hires." },
 ];
 
-/* ── Agent card with shimmer ──────────────────────────────────── */
-function AgentRosterCard({ name, role, desc }: { name: string; role: string; desc: string }) {
+/* ── Team card with shimmer ──────────────────────────────────── */
+function TeamCard({ lead, team, desc }: { lead: string; team: string; desc: string }) {
   const [hovered, setHovered] = useState(false);
   return (
     <motion.div
@@ -63,11 +63,11 @@ function AgentRosterCard({ name, role, desc }: { name: string; role: string; des
       <div className="relative">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] text-sm font-bold text-white/50">
-            {name[0]}
+            {lead[0]}
           </div>
           <div>
-            <div className="text-base font-semibold text-white">{name}</div>
-            <div className="text-xs text-white/40">{role}</div>
+            <div className="text-base font-semibold text-white">{team}</div>
+            <div className="text-xs text-white/40">Led by {lead}</div>
           </div>
         </div>
         <p className="mt-3 text-sm text-[#b8c5ce]">{desc}</p>
@@ -109,11 +109,11 @@ export function OfferingsClient() {
   return (
     <>
       {/* --- Agent Roster --- */}
-      <Section label="The workforce" title="Agent teams you can hire">
+      <Section label="The teams" title="Nine agentic teams">
         <StaggerGroup className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" stagger={0.06}>
-          {AGENTS.map((a) => (
-            <StaggerItem key={a.name}>
-              <AgentRosterCard {...a} />
+          {TEAMS.map((t) => (
+            <StaggerItem key={t.lead}>
+              <TeamCard {...t} />
             </StaggerItem>
           ))}
         </StaggerGroup>
