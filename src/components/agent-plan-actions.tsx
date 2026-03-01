@@ -47,9 +47,9 @@ export function AgentPlanActions({
   return (
     <div className="wf-panel rounded-3xl p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold tracking-tight">Manage agents</h2>
+        <h2 className="text-lg font-semibold tracking-tight">Manage Team Roles</h2>
         <span className="text-sm text-zinc-400">
-          {hiredCount}/{agentCap} slots used
+          {hiredCount}/{agentCap} roles filled
         </span>
       </div>
 
@@ -82,7 +82,7 @@ export function AgentPlanActions({
           </div>
           {!canAddMore && (
             <p className="mt-2 text-xs text-amber-400/70">
-              All agent slots are in use. Deactivate an agent to make room.
+              All team roles are filled. Deactivate a role to make room.
             </p>
           )}
         </div>

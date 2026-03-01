@@ -47,11 +47,11 @@ export async function hireAgentWithinPlan(userId: string, agentKind: HireAgentKi
     });
     const cap = sub?.plan.agentCap ?? 0;
     if (cap <= 0) {
-      return { ok: false as const, error: "Agent cap reached. Upgrade your plan or deactivate an agent to make room." };
+      return { ok: false as const, error: "All team roles for your plan are filled. Upgrade your plan or deactivate a role to make room." };
     }
     const count = await tx.hiredJob.count({ where: { userId, enabled: true } });
     if (count >= cap) {
-      return { ok: false as const, error: "Agent cap reached. Upgrade your plan or deactivate an agent to make room." };
+      return { ok: false as const, error: "All team roles for your plan are filled. Upgrade your plan or deactivate a role to make room." };
     }
 
     // Check if already hired and enabled

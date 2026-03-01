@@ -408,7 +408,7 @@ export function AdvisorChat({
                   {firstTime && (
                     <div className="mt-4 flex flex-wrap justify-center gap-2">
                       {[
-                        "Which agents should I hire first?",
+                        "Which roles should I activate first?",
                         "What should I work on this week?",
                         "How does Qorpera work?",
                         "Review my company setup and suggest improvements",
@@ -544,10 +544,10 @@ export function AdvisorChat({
                 href="/pricing"
                 className="inline-block rounded-xl bg-purple-600 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-purple-600/25 transition hover:bg-purple-500"
               >
-                Hire Agents
+                Add Team Roles
               </a>
               <p className="mt-3 text-sm text-white/45">
-                Your business is now integrated with our AI. Let&apos;s build your agentic workforce.
+                Your business is now integrated with our AI. Let&apos;s bring your team online.
               </p>
             </div>
           </div>

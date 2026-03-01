@@ -123,7 +123,7 @@ export function LicenseKeysPanel() {
       });
       const data = (await res.json()) as { ok?: boolean; agentKind?: string; error?: string };
       if (!res.ok || !data.ok) throw new Error(data.error || "Failed to redeem");
-      setRedeemMsg({ ok: true, text: `${kindLabel(data.agentKind ?? "Agent")} agent added to your workforce.` });
+      setRedeemMsg({ ok: true, text: `${kindLabel(data.agentKind ?? "Agent")} role activated on your team.` });
       setRedeemCode("");
       await fetchKeys();
     } catch (e: unknown) {

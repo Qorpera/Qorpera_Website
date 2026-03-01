@@ -7,11 +7,11 @@ import { PricingInquiryButton } from "@/components/pricing-inquiry-modal";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "An AI team that learns your business — starting at $299/mo. Pick a plan that fits how you work.",
+    "Set up for free. Launch your AI team when you're ready.",
   openGraph: {
     title: "Pricing | Qorpera",
     description:
-      "An AI team that learns your business — starting at $299/mo.",
+      "Set up for free. Launch your AI team when you're ready.",
   },
 };
 
@@ -32,7 +32,7 @@ export default async function PricingPage({
           <div className="flex-1">
             <p className="text-sm font-semibold text-teal-300">Your AI team is learning about your business 🎉</p>
             <p className="mt-0.5 text-sm text-white/55">
-              Pick a plan to bring your first AI team members online. Not sure which fits?{" "}
+              Pick a plan to bring your AI team online. Not sure which fits?{" "}
               <Link href="/" className="text-teal-400 underline underline-offset-2 hover:text-teal-300">
                 Ask your advisor
               </Link>{" "}
@@ -51,32 +51,28 @@ export default async function PricingPage({
       {/* Hero */}
       <div className="mb-14 text-center">
         <h1 className="text-3xl font-bold tracking-tight text-zinc-100 sm:text-4xl">
-          An AI team that actually knows your business
+          AI teams that run your business — not just answer questions
         </h1>
         <p className="mt-3 text-base text-zinc-400">
-          Pick a plan, teach them how you work, and let them start handling the day-to-day. They get better every week.
+          Set up your company file and meet your AI advisor for free — no card needed.
+          When you're ready to launch your AI team, pick a plan.
         </p>
+        <Link
+          href="/signup"
+          className="mt-4 inline-block rounded-lg border border-zinc-700 bg-zinc-800/60 px-5 py-2 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-700/60"
+        >
+          Start free setup →
+        </Link>
       </div>
 
       {/* Pricing grid */}
       <div className="grid gap-6 lg:grid-cols-3">
         {PLAN_CATALOG.map((plan) => {
-          const isRecommended = plan.recommended;
-
           return (
             <div
               key={plan.slug}
-              className={`relative flex flex-col rounded-2xl border p-6 ${
-                isRecommended
-                  ? "border-teal-500/40 bg-[rgba(13,25,30,0.9)] shadow-[0_0_40px_rgba(20,184,166,0.08)]"
-                  : "border-zinc-800 bg-[rgba(10,14,18,0.9)]"
-              }`}
+              className="relative flex flex-col rounded-2xl border border-zinc-800 bg-[rgba(10,14,18,0.9)] p-6"
             >
-              {isRecommended && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-teal-600 px-3 py-0.5 text-xs font-medium text-white">
-                  Recommended
-                </div>
-              )}
 
               <div className="mb-4">
                 <h3 className="text-lg font-semibold text-zinc-100">{plan.name}</h3>
@@ -89,7 +85,7 @@ export default async function PricingPage({
               </div>
 
               <div className="mb-6 text-sm text-zinc-400">
-                Up to <span className="font-medium text-zinc-200">{plan.agentCap} AI team members</span>
+                Up to <span className="font-medium text-zinc-200">{plan.agentCap} coordinated AI roles</span>
               </div>
 
               <ul className="mb-8 flex-1 space-y-2">
@@ -123,7 +119,7 @@ export default async function PricingPage({
 
       {/* Footer note */}
       <div className="mt-10 text-center text-xs text-zinc-600">
-        Every plan includes an AI advisor that knows your business. Team members can be added, swapped, or
+        Every plan includes an AI advisor that coordinates your team. Roles can be added, swapped, or
         paused anytime. Prices in USD.
       </div>
     </div>

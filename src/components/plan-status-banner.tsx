@@ -30,7 +30,7 @@ export function PlanStatusBanner({
         <span className="font-medium text-zinc-200">{hiredCount}</span>
         <span className="mx-0.5">/</span>
         <span>{agentCap}</span>
-        <span className="ml-1">agents</span>
+        <span className="ml-1">roles active</span>
       </div>
 
       {renewalLabel && (

@@ -72,7 +72,7 @@ export default async function AgentsPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">Agents</h1>
-            <p className="mt-1 text-sm wf-muted">Your workforce roster. Tap a card to open the agent profile.</p>
+            <p className="mt-1 text-sm wf-muted">Your AI team. Tap a card to open the role profile.</p>
           </div>
           <div className="flex flex-wrap gap-2">
           </div>
@@ -184,11 +184,11 @@ export default async function AgentsPage() {
               <div className="flex h-[415px] flex-col justify-between overflow-hidden rounded-[22px] border border-dashed border-[var(--border)] bg-[rgba(255,255,255,0.01)] p-5">
                 <div>
                   <div className="text-[10px] uppercase tracking-[0.16em] wf-muted">Workers</div>
-                  <div className="mt-2 text-xl font-semibold tracking-tight">No hired agents yet</div>
+                  <div className="mt-2 text-xl font-semibold tracking-tight">No roles active yet</div>
                   <p className="mt-2 text-sm wf-muted">
                     {hasPlan
-                      ? "You have agent slots available. Activate agents below to start building your workforce."
-                      : "Subscribe to a plan to start hiring AI agents for your workforce."}
+                      ? "You have roles available. Activate roles below to start building your AI team."
+                      : "Subscribe to a plan to bring your AI team online."}
                   </p>
                 </div>
                 {!hasPlan && (

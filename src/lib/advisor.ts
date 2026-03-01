@@ -389,19 +389,19 @@ function advisorSystemPrompt(
       "",
       "PLAN_CONTEXT",
       `The user is on the ${planContext.planName} plan (${planContext.tier} tier).`,
-      `Agent capacity: ${planContext.hiredCount}/${planContext.agentCap} slots used, ${planContext.slotsAvailable} available.`,
+      `Team roles: ${planContext.hiredCount}/${planContext.agentCap} filled, ${planContext.slotsAvailable} available.`,
     );
     if (planContext.slotsAvailable > 0) {
       planLines.push(
-        "The user has unused agent slots. When relevant, proactively recommend which agents to activate based on their Company Soul data (departments, goals, workflows).",
-        "Example: \"Based on your mission and departments, I'd recommend activating the Sales Rep and Marketing Coordinator agents. You have N slots available.\"",
+        "The user has available team roles. When relevant, proactively recommend which roles to activate based on their Company Soul data (departments, goals, workflows).",
+        "Example: \"Based on your mission and departments, I'd recommend activating the Sales Rep and Marketing Coordinator roles. You have N roles available.\"",
       );
     }
   } else {
     planLines.push(
       "",
       "PLAN_CONTEXT",
-      "The user does not have an active plan. They can subscribe at /pricing to start hiring AI agents.",
+      "The user does not have an active plan. They can subscribe at /pricing to bring their AI team online.",
     );
   }
 
@@ -411,8 +411,8 @@ function advisorSystemPrompt(
         "ONBOARDING_CONTEXT",
         ...(recentlyOnboarded ? ["This user just completed setup. Be welcoming."] : []),
         ...(!signals.hasCompanySoul ? ["Company Soul is empty or incomplete — ask the user to fill it in before making business-specific recommendations."] : []),
-        ...(signals.hiredAgentCount === 0 && planContext?.planName ? ["No agents have been activated yet. Recommend agents based on Company Soul."] : []),
-        ...(signals.hiredAgentCount === 0 && !planContext?.planName ? ["No agents have been hired yet. Suggest subscribing to a plan at /pricing."] : []),
+        ...(signals.hiredAgentCount === 0 && planContext?.planName ? ["No team roles have been activated yet. Recommend roles based on Company Soul."] : []),
+        ...(signals.hiredAgentCount === 0 && !planContext?.planName ? ["No team roles are active yet. Suggest subscribing to a plan at /pricing."] : []),
         ...(signals.projectCount === 0 ? ["No projects exist yet. Suggest creating a first project or using a template."] : []),
       ]
     : [];
@@ -427,7 +427,7 @@ function advisorSystemPrompt(
     "",
     "CORE_MANDATE",
     "Optimize for business outcomes, speed of learning, and safe execution.",
-    "Recommend the minimum viable agent workforce needed to move the business forward this week.",
+    "Recommend the minimum viable AI team needed to move the business forward this week.",
     "Prefer specific actions over abstract advice.",
     "",
     "OPERATING_POLICY",
@@ -477,14 +477,14 @@ function advisorSystemPrompt(
     "Data apps are viewable at /data-apps after creation.",
     "",
     "HIRING",
-    "You can hire agents directly by including the 'hireAgents' field in your JSON response.",
-    "CRITICAL: When the user explicitly asks to hire, add, activate, or set up an agent — you MUST include that agent in hireAgents. Do NOT just say you are hiring it in the answer field without also including it in hireAgents. The answer text alone does nothing; only hireAgents triggers the actual hire.",
-    "Only hire agents from the hireableAgents list in the context. Do NOT include agents already in the agents list.",
+    "You can activate team roles directly by including the 'hireAgents' field in your JSON response.",
+    "CRITICAL: When the user explicitly asks to hire, add, activate, or set up a role — you MUST include that role in hireAgents. Do NOT just say you are activating it in the answer field without also including it in hireAgents. The answer text alone does nothing; only hireAgents triggers the actual activation.",
+    "Only activate roles from the hireableAgents list in the context. Do NOT include roles already in the agents list.",
     planContext && planContext.slotsAvailable > 0
-      ? `There are ${planContext.slotsAvailable} open slot(s) on the current plan. You may hire up to ${planContext.slotsAvailable} more agent(s).`
+      ? `There are ${planContext.slotsAvailable} available role(s) on the current plan. You may activate up to ${planContext.slotsAvailable} more role(s).`
       : planContext && planContext.agentCap > 0
-        ? "The agent cap is full. Tell the user to deactivate an agent or upgrade the plan before hiring."
-        : "No active plan detected — hiring is disabled. Tell the user to subscribe at /pricing.",
+        ? "All team roles are filled. Tell the user to deactivate a role or upgrade the plan before activating more."
+        : "No active plan detected — role activation is disabled. Tell the user to subscribe at /pricing.",
     "",
     "STYLE",
     "Lead with the action or recommendation — no preamble, no filler.",

@@ -23,7 +23,7 @@ export function ChiefAdvisorDelegationPanel({
 
   async function delegateNow() {
     if (!hasTargets) {
-      setStatus("Hire a worker agent before delegating tasks.");
+      setStatus("Activate a team role before delegating tasks.");
       return;
     }
     if (!title.trim() || !instructions.trim()) {
@@ -177,13 +177,13 @@ export function ChiefAdvisorDelegationPanel({
       <div className="mt-4 flex items-center justify-between gap-3">
         <div className="text-sm wf-muted">
           {hasTargets
-            ? "Chief Advisor can delegate work, wake hired agents, and use scheduler ticks to trigger scheduled routines."
-            : "Hire at least one worker agent to enable delegation and scheduled routines."}
+            ? "Chief Advisor can delegate work, wake team roles, and use scheduler ticks to trigger scheduled routines."
+            : "Activate at least one team role to enable delegation and scheduled routines."}
           {!hasTargets ? (
             <>
               {" "}
               <Link href="/agents/hire" className="underline underline-offset-2 hover:text-white">
-                Hire Agents
+                Add Team Roles
               </Link>
             </>
           ) : null}

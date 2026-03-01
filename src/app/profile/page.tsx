@@ -279,7 +279,7 @@ export default async function ProfilePage({
                   <div className="text-xs font-medium uppercase tracking-wider text-teal-400/60 mb-1">Active Plan</div>
                   <div className="text-lg font-semibold text-white/90">{planStatus.plan.name}</div>
                   <div className="mt-1 text-sm text-white/50">
-                    {planStatus.hiredCount} of {planStatus.agentCap} agent slots used
+                    {planStatus.hiredCount} of {planStatus.agentCap} roles active
                   </div>
                   {planStatus.subscription?.currentPeriodEnd && (
                     <div className="mt-1 text-xs text-white/35">
@@ -290,14 +290,14 @@ export default async function ProfilePage({
                   {!planStatus.subscription?.cancelAtPeriodEnd && <CancelPlanButton />}
                 </div>
                 <Link href="/agents" className="shrink-0 rounded-lg border border-teal-500/30 bg-teal-500/15 px-4 py-2 text-sm font-medium text-teal-300 transition hover:bg-teal-500/25">
-                  Manage Agents
+                  Manage Team
                 </Link>
               </div>
             </div>
           ) : (
             <div className="rounded-xl border border-white/8 bg-white/[0.02] p-5 text-center">
               <div className="text-sm font-medium text-white/60 mb-1">No active plan</div>
-              <p className="text-xs text-white/35 mb-4">Subscribe to unlock AI agents for your workspace.</p>
+              <p className="text-xs text-white/35 mb-4">Subscribe to bring your AI team online.</p>
               <Link href="/pricing" className="inline-block rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-teal-500">
                 View Plans
               </Link>
@@ -320,7 +320,7 @@ export default async function ProfilePage({
                     )}
                     <div className="text-sm font-semibold text-white/80">{plan.name}</div>
                     <div className="mt-0.5 text-lg font-bold text-white/90">{plan.priceDisplay}<span className="text-xs font-normal text-white/35">{plan.priceNote}</span></div>
-                    <div className="mt-2 text-xs text-white/40">{plan.agentCap} agents</div>
+                    <div className="mt-2 text-xs text-white/40">{plan.agentCap} roles</div>
                     {!isCurrent && (
                       <Link
                         href={plan.ctaMode === "checkout" ? "/pricing" : "/pricing"}
@@ -362,8 +362,8 @@ export default async function ProfilePage({
         <div className="space-y-0 pt-6">
           <div className="flex items-center justify-between gap-2 pb-5 border-b border-white/[0.07]">
             <div>
-              <div className="text-sm font-medium">Manage Agents</div>
-              <p className="mt-0.5 text-sm text-white/45">Hire, inspect, and configure your workforce.</p>
+              <div className="text-sm font-medium">Team Roles</div>
+              <p className="mt-0.5 text-sm text-white/45">Activate, inspect, and configure your AI team.</p>
             </div>
             <Link href="/pricing" className="wf-btn-primary px-4 py-2 text-sm">View Plans</Link>
           </div>
@@ -373,9 +373,9 @@ export default async function ProfilePage({
           </div>
 
           <div className="pt-5">
-            <div className="text-xs uppercase tracking-wider text-white/35 mb-3">Purchased agents</div>
+            <div className="text-xs uppercase tracking-wider text-white/35 mb-3">Active roles</div>
             {hiredJobs.length === 0 ? (
-              <p className="text-sm text-white/35">No purchased agents yet.</p>
+              <p className="text-sm text-white/35">No active roles yet.</p>
             ) : (
               <div className="divide-y divide-white/[0.06]">
                 {hiredJobs.slice(0, 20).map((job) => (

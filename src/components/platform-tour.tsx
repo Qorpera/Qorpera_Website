@@ -31,7 +31,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     target: "nav-agents",
     title: "Agents",
-    description: "Hire, configure, and monitor your AI workforce.",
+    description: "Activate, configure, and monitor your AI team roles.",
     position: "right",
   },
   {

@@ -64,10 +64,10 @@ export default async function AgentProfilePage({
                 Back to Agents
               </Link>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight">{kind.replaceAll("_", " ")}</h1>
-              <p className="mt-1 text-sm wf-muted">This worker is not in your workforce yet.</p>
+              <p className="mt-1 text-sm wf-muted">This role isn't active yet.</p>
             </div>
-            <Link href="/agents/hire" className="wf-btn-primary px-4 py-2 text-sm">
-              Hire Agents
+            <Link href="/pricing" className="wf-btn-primary px-4 py-2 text-sm">
+              Activate this role
             </Link>
           </div>
           <AgentsSectionNav />
@@ -77,7 +77,7 @@ export default async function AgentProfilePage({
           <div className="max-w-2xl">
             <div className="text-lg font-semibold tracking-tight">Chief Advisor is included by default</div>
             <p className="mt-2 text-sm wf-muted">
-              Specialist workers like Assistant and Project Manager appear here after you hire them. Once hired, you can configure
+              Specialist roles like Assistant and Project Manager appear here after you activate them. Once active, you can configure
               their model, wake modes, integrations, and operating behavior.
             </p>
           </div>

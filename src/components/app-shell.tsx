@@ -255,7 +255,7 @@ if (ownerFlag) {
                   </div>
                   {planStatus.plan ? (
                     <div className="text-[11px] text-teal-400/60">
-                      {planStatus.plan.name} · {planStatus.hiredCount}/{planStatus.agentCap} agents
+                      {planStatus.plan.name} · {planStatus.hiredCount}/{planStatus.agentCap} roles
                     </div>
                   ) : (
                     <div className="text-[11px] text-white/28">No plan</div>
