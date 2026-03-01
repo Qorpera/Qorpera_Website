@@ -79,7 +79,7 @@ export function registerEventHandlers(): void {
       try {
         const row = await prisma.delegatedTask.findUnique({
           where: { id: event.taskId },
-          select: { completionDigest: true, chainDepth: true, title: true, toAgentTarget: true },
+          select: { completionDigest: true, chainDepth: true, title: true, toAgentTarget: true, goalStepId: true },
         });
         if (row && (row.chainDepth ?? 0) < 3) {
           const { evaluateTaskContinuation } = await import("@/lib/event-orchestrator");
@@ -91,8 +91,45 @@ export function registerEventHandlers(): void {
             chainDepth: row.chainDepth ?? 0,
           }).catch(() => {});
         }
+
+        // If this task is linked to a goal step, update goal progress
+        if (row?.goalStepId) {
+          const { onGoalStepTaskCompleted } = await import("@/lib/goal-store");
+          void onGoalStepTaskCompleted(event.userId, event.taskId, event.status).catch(() => {});
+        }
       } catch {
         // Non-critical continuation evaluation
+      }
+    }
+
+    // Extract entities from completed task text (fire-and-forget)
+    try {
+      const taskRow = await prisma.delegatedTask.findUnique({
+        where: { id: event.taskId },
+        select: { title: true, instructions: true, completionDigest: true },
+      });
+      if (taskRow) {
+        const combined = [taskRow.title, taskRow.instructions, taskRow.completionDigest ?? ""].join(" ");
+        const { extractEntitiesFromText } = await import("@/lib/entity-extractor");
+        void extractEntitiesFromText(event.userId, combined, "DELEGATED_TASK", event.taskId).catch(() => {});
+      }
+    } catch {
+      // Non-critical entity extraction
+    }
+
+    // Also handle FAILED tasks linked to goal steps
+    if (event.status === "FAILED") {
+      try {
+        const row = await prisma.delegatedTask.findUnique({
+          where: { id: event.taskId },
+          select: { goalStepId: true },
+        });
+        if (row?.goalStepId) {
+          const { onGoalStepTaskCompleted } = await import("@/lib/goal-store");
+          void onGoalStepTaskCompleted(event.userId, event.taskId, event.status).catch(() => {});
+        }
+      } catch {
+        // Non-critical goal step update
       }
     }
   });

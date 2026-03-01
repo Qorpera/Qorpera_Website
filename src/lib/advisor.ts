@@ -372,6 +372,7 @@ function advisorSystemPrompt(
   planContext?: { planName: string | null; tier: string | null; agentCap: number; hiredCount: number; slotsAvailable: number } | null,
   appliedOptimizations?: string | null,
   activeGoals?: Array<{ title: string; priority: string; progressPct: number; agentTarget: string | null; status: string }> | null,
+  entityCount?: number | null,
 ) {
   const runnerLines = runnerContext && runnerContext.onlineRunnerCount > 0
     ? ["", "RUNNER_CAPABILITIES", "When a runner is online you can ask to execute local commands or read/write files — these go through the runner approval queue."]
@@ -511,11 +512,14 @@ function advisorSystemPrompt(
           ),
         ]
       : []),
+    ...(entityCount && entityCount > 0
+      ? [`Entity knowledge base: ${entityCount} entities tracked across integrations. Agents can use lookup_entity and search_entities tools to access cross-integration context about people, companies, deals, and projects.`]
+      : []),
   ].join("\n");
 }
 
 export async function buildAdvisorContext(userId: string) {
-  const [projects, runs, inboxItems, prefs, agents, submissions, companySoul, chiefAdvisorSoul, businessLogs, businessFiles, owner, runnerContext, hiredJobs, planStatus, appliedOptimizationPatches, activeGoalsRaw] = await Promise.all([
+  const [projects, runs, inboxItems, prefs, agents, submissions, companySoul, chiefAdvisorSoul, businessLogs, businessFiles, owner, runnerContext, hiredJobs, planStatus, appliedOptimizationPatches, activeGoalsRaw, entityCount] = await Promise.all([
     getProjectsForUser(userId),
     getRunsForUser(userId),
     getInboxItems(userId),
@@ -537,6 +541,7 @@ export async function buildAdvisorContext(userId: string) {
       take: 5,
       select: { title: true, priority: true, progressPct: true, agentTarget: true, status: true },
     }).catch(() => [] as Array<{ title: string; priority: string; progressPct: number; agentTarget: string | null; status: string }>),
+    prisma.entity.count({ where: { userId, mergedIntoId: null } }).catch(() => 0),
   ]);
 
   // Backfill text extracts for files uploaded before extraction was enabled
@@ -644,6 +649,7 @@ export async function buildAdvisorContext(userId: string) {
     activeGoals: activeGoalsRaw.length > 0
       ? activeGoalsRaw.map((g) => ({ title: g.title, priority: g.priority, progressPct: g.progressPct, agentTarget: g.agentTarget, status: g.status }))
       : null,
+    entityCount: entityCount > 0 ? entityCount : null,
   };
 }
 
@@ -771,7 +777,11 @@ async function callOpenAIAdvisor({
     Array.isArray((context as { activeGoals?: unknown }).activeGoals)
       ? (context as { activeGoals: Array<{ title: string; priority: string; progressPct: number; agentTarget: string | null; status: string }> }).activeGoals
       : null;
-  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx, isRecentlyOnboarded, dataSignals, planCtx, appliedOpts, goalsCtx);
+  const entityCountCtx =
+    typeof context === "object" && context && "entityCount" in context
+      ? (context as { entityCount?: number | null }).entityCount ?? null
+      : null;
+  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx, isRecentlyOnboarded, dataSignals, planCtx, appliedOpts, goalsCtx, entityCountCtx);
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",

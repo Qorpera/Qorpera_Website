@@ -13,6 +13,9 @@ import { getRelevantMemories, ingestTaskCompletion } from "@/lib/agent-memory-st
 import { notifyApprovalNeeded, notifySubmissionReady, notifyTaskCompleted, notifyTaskFailed } from "@/lib/notifications";
 import { runOptimizerIfDue } from "@/lib/optimizer";
 import { getAppliedPatches } from "@/lib/optimizer/optimizer-store";
+import { recordTaskOutcome, type TaskOutcomeInput } from "@/lib/outcome-ledger";
+import { getAgentPerformanceProfile, formatPerformanceForPrompt } from "@/lib/outcome-ledger";
+import { getNextExecutableStep, executeGoalStep, inferTaskCategory } from "@/lib/goal-store";
 
 export type AgentTarget =
   | "CHIEF_ADVISOR"
@@ -553,6 +556,7 @@ export async function createDelegatedTask(
     escalatedFromId?: string | null;
     isLongRunning?: boolean;
     taskGroupId?: string | null;
+    goalStepId?: string | null;
   },
 ) {
   const title = input.title.trim().slice(0, 240);
@@ -610,6 +614,7 @@ export async function createDelegatedTask(
       escalatedFromId: input.escalatedFromId ?? null,
       isLongRunning,
       taskGroupId: input.taskGroupId ?? null,
+      goalStepId: input.goalStepId ?? null,
       status: DelegatedTaskStatus.QUEUED,
     },
   });
@@ -864,6 +869,31 @@ export async function runSchedulerTick(userId: string) {
     }
   } catch (e) {
     console.error("[scheduler] always-on daemon error:", e);
+  }
+
+  // Goal-aware wake: find active goals with executable steps, create tasks (max 5 per tick)
+  try {
+    const { listGoals } = await import("@/lib/goal-store");
+    const activeGoals = await listGoals(userId, { status: "ACTIVE", limit: 20 });
+    let goalTasksCreated = 0;
+    for (const goal of activeGoals) {
+      if (goalTasksCreated >= 5) break;
+      const step = await getNextExecutableStep(userId, goal.id);
+      if (!step) continue;
+      // Check if there's already an active task for this agent to avoid overloading
+      const existingActive = await prisma.delegatedTask.count({
+        where: {
+          userId,
+          toAgentTarget: step.agentTarget ?? "ASSISTANT",
+          status: { in: [DelegatedTaskStatus.QUEUED, DelegatedTaskStatus.RUNNING] },
+        },
+      });
+      if (existingActive >= 2) continue;
+      const taskId = await executeGoalStep(userId, step.id);
+      if (taskId) goalTasksCreated++;
+    }
+  } catch (e) {
+    console.error("[scheduler] goal-aware wake error:", e);
   }
 
   return { utcTime: nowKey, created };
@@ -1479,6 +1509,7 @@ async function _executeClaimedTask(
     outputSummary: string | null;
   }> = [];
   const loopTraces: typeof workerToolTraces = [];
+  const execStartMs = Date.now();
   let output = "";
   let adapterResult: Awaited<ReturnType<typeof runIntegrationAdaptersForTask>> | null = null;
   let reviewerIssues: string[] = [];
@@ -1492,11 +1523,14 @@ async function _executeClaimedTask(
   const agenticTools = await getToolsForAgentKind(row.toAgentTarget, config.integrations);
 
   if (agenticTools.length > 0) {
-    const [soul, recentLogs, taskDigests, agentMemoryIndex] = await Promise.all([
+    const [soul, recentLogs, taskDigests, agentMemoryIndex, perfProfile, entityContextBlock] = await Promise.all([
       getCompanySoul(userId),
       listBusinessLogs(userId, 30),
       getTaskDigestsForAgent(userId, row.toAgentTarget),
       getRelevantMemories(userId, row.toAgentTarget, { taskTitle: row.title, taskInstructions: row.instructions }),
+      getAgentPerformanceProfile(userId, row.toAgentTarget).catch(() => null),
+      import("@/lib/entity-store").then(({ extractEntityContextForTask }) =>
+        extractEntityContextForTask(userId, row.title, row.instructions)).catch(() => null),
     ]);
     const logSummaries = recentLogs
       .filter((l) => !String(l.relatedRef ?? "").startsWith("CHAT_LOG:"))
@@ -1505,6 +1539,13 @@ async function _executeClaimedTask(
     let agenticSystemPrompt = buildAgentSystemPrompt(row.toAgentTarget as AgentTarget, soul, logSummaries, taskDigests);
     if (agentMemoryIndex) {
       agenticSystemPrompt += `\n\n${agentMemoryIndex}`;
+    }
+    if (perfProfile) {
+      const perfBlock = formatPerformanceForPrompt(perfProfile);
+      if (perfBlock) agenticSystemPrompt += `\n\n${perfBlock}`;
+    }
+    if (entityContextBlock) {
+      agenticSystemPrompt += `\n\n${entityContextBlock}`;
     }
     agenticSystemPrompt += "\n\nYou have access to tools. Use them to gather information and take actions. "
       + "When ready to give your final answer, respond with plain text (no tool calls).";
@@ -1641,11 +1682,14 @@ async function _executeClaimedTask(
     let llmReasoning = "";
     const llmStart = Date.now();
     try {
-      const [soul, fallbackLogs, fallbackDigests, fallbackMemoryIndex] = await Promise.all([
+      const [soul, fallbackLogs, fallbackDigests, fallbackMemoryIndex, fallbackPerfProfile, fallbackEntityCtx] = await Promise.all([
         getCompanySoul(userId),
         listBusinessLogs(userId, 30),
         getTaskDigestsForAgent(userId, row.toAgentTarget),
         getRelevantMemories(userId, row.toAgentTarget, { taskTitle: row.title, taskInstructions: row.instructions }),
+        getAgentPerformanceProfile(userId, row.toAgentTarget).catch(() => null),
+        import("@/lib/entity-store").then(({ extractEntityContextForTask }) =>
+          extractEntityContextForTask(userId, row.title, row.instructions)).catch(() => null),
       ]);
       const fallbackLogSummaries = fallbackLogs
         .filter((l) => !String(l.relatedRef ?? "").startsWith("CHAT_LOG:"))
@@ -1654,6 +1698,13 @@ async function _executeClaimedTask(
       let systemPrompt = buildAgentSystemPrompt(row.toAgentTarget as AgentTarget, soul, fallbackLogSummaries, fallbackDigests);
       if (fallbackMemoryIndex) {
         systemPrompt += `\n\n${fallbackMemoryIndex}`;
+      }
+      if (fallbackPerfProfile) {
+        const perfBlock = formatPerformanceForPrompt(fallbackPerfProfile);
+        if (perfBlock) systemPrompt += `\n\n${perfBlock}`;
+      }
+      if (fallbackEntityCtx) {
+        systemPrompt += `\n\n${fallbackEntityCtx}`;
       }
       const taskPrompt = buildAgentTaskPrompt(row, {
         iteration,
@@ -1951,6 +2002,20 @@ async function _executeClaimedTask(
   if (digest) {
     ingestTaskCompletion(userId, row.toAgentTarget, digest).catch(() => {});
   }
+
+  // Record task outcome for performance profiling (fire-and-forget)
+  recordTaskOutcome(userId, {
+    taskId: row.id,
+    agentTarget: row.toAgentTarget,
+    outcome: finalStatus === "DONE" ? "SUCCESS" : finalStatus === "REVIEW" ? "PARTIAL" : "FAILURE",
+    category: inferTaskCategory(row.title, row.instructions),
+    toolsUsed: traceRows.map((t) => typeof t === "object" && t && "toolName" in t ? String((t as { toolName: string }).toolName) : "").filter(Boolean),
+    turnsUsed: loopTraces.length,
+    runtimeMs: Date.now() - execStartMs,
+    title: row.title,
+    instructions: row.instructions,
+    errorSummary: finalStatus !== "DONE" ? (terminationReason ?? undefined) : undefined,
+  } satisfies TaskOutcomeInput).catch(() => {});
 
   // A/B variant outcome recording (Phase 3C)
   try {
