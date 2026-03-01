@@ -40,6 +40,7 @@ type Message = {
   warning?: string | null;
   tasks?: TaskCard[];
   hiredAgents?: HiredAgent[];
+  isAutoAnalysis?: boolean;
 };
 
 const AGENT_LABELS: Record<string, string> = {
@@ -97,6 +98,7 @@ export function AdvisorChat({
   frameless = false,
   chatgptHome = false,
   firstTime = false,
+  analyzeMode: analyzeModeInit = false,
   sessionId,
   initialMessages,
 }: {
@@ -112,6 +114,7 @@ export function AdvisorChat({
   frameless?: boolean;
   chatgptHome?: boolean;
   firstTime?: boolean;
+  analyzeMode?: boolean;
   sessionId?: string | null;
   initialMessages?: Message[];
 }) {
@@ -143,8 +146,13 @@ export function AdvisorChat({
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const autoSentInitialRef = useRef(false);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [analyzePreChat, setAnalyzePreChat] = useState(analyzeModeInit);
   const hasUserMessages = messages.some((m) => m.role === "user");
-  const showCenteredComposer = chatgptHome && !hasUserMessages && !loading;
+  const manualUserMessageCount = messages.filter((m) => m.role === "user" && !m.isAutoAnalysis).length;
+  const freeMessagesUsed = analyzeModeInit ? manualUserMessageCount : 0;
+  const freeMessageLimit = 3;
+  const freeLimitReached = analyzeModeInit && freeMessagesUsed >= freeMessageLimit;
+  const showCenteredComposer = (chatgptHome && !hasUserMessages && !loading && !analyzePreChat) || analyzePreChat;
 
   // Collect all pending task IDs across messages for polling
   const pendingTaskIds = messages.flatMap(
@@ -215,13 +223,13 @@ export function AdvisorChat({
     }
   }, [initialDraft, autoFocusInput]);
 
-  const sendAdvisorText = useCallback(async (textInput: string) => {
+  const sendAdvisorText = useCallback(async (textInput: string, opts?: { isAutoAnalysis?: boolean }) => {
     const text = textInput.trim();
     if (!text || loading) return;
 
     setError(null);
     setErrorHelp([]);
-    const userMsg: Message = { id: `u-${Date.now()}`, role: "user", content: text };
+    const userMsg: Message = { id: `u-${Date.now()}`, role: "user", content: text, isAutoAnalysis: opts?.isAutoAnalysis };
     const historyForApi = [...messages, userMsg].map((m) => ({ role: m.role, content: m.content }));
     setMessages((curr) => [...curr, userMsg]);
     setInput("");
@@ -341,53 +349,82 @@ export function AdvisorChat({
         {showCenteredComposer ? (
           <div className="flex min-h-0 flex-1 items-center justify-center">
             <div className="w-full max-w-3xl">
-              <div className="mb-8 text-center text-2xl font-medium tracking-tight text-[var(--foreground)]/95">
-                {firstTime ? "Welcome. I'm your Chief Advisor." : "Let\u2019s put some agents to work"}
-              </div>
-              {firstTime && (
-                <p className="mb-6 text-center text-sm text-white/40">
-                  I have full context of your workspace — ask me anything to get started.
-                </p>
-              )}
-              <div className="rounded-3xl border border-[var(--border)] bg-[rgba(255,255,255,0.02)] p-3">
-                <textarea
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={onComposerKeyDown}
-                  placeholder="Ask the advisor about priorities, bottlenecks, agent hiring, or rollout planning..."
-                  className="h-20 w-full resize-none bg-transparent p-2 text-[1.3rem] leading-8 outline-none"
-                />
-                <div className="mt-2 flex items-center justify-between gap-2 px-2 pb-1">
-                  <div className="text-xs wf-muted">Advisor uses your company setup, inbox, projects, and runs.</div>
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={sendMessage}
-                    className="wf-btn-primary px-4 py-2 text-sm font-medium disabled:opacity-60"
-                  >
-                    {loading ? "Thinking..." : "Send"}
-                  </button>
-                </div>
-              </div>
-              {firstTime && (
-                <div className="mt-4 flex flex-wrap justify-center gap-2">
-                  {[
-                    "Which agents should I hire first?",
-                    "What should I work on this week?",
-                    "How does Qorpera work?",
-                    "Review my company setup and suggest improvements",
-                  ].map((prompt) => (
+              {analyzePreChat ? (
+                <>
+                  <div className="mb-3 text-center text-2xl font-medium tracking-tight text-[var(--foreground)]/95">
+                    Your business is mapped. Let&apos;s see what we can do.
+                  </div>
+                  <p className="mb-8 text-center text-sm text-white/40">
+                    We&apos;ll analyze your company data and show you exactly where Qorpera fits in.
+                  </p>
+                  <div className="flex justify-center">
                     <button
-                      key={prompt}
                       type="button"
-                      onClick={() => setInput(prompt)}
-                      className="rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1.5 text-xs text-white/60 hover:border-teal-500/40 hover:text-white/90 transition-colors"
+                      disabled={loading}
+                      onClick={() => {
+                        setAnalyzePreChat(false);
+                        void sendAdvisorText(
+                          "Analyze my business. Review everything I've shared — my company profile, files, and setup — and give me a short rundown of my operation. Then tell me specifically how Qorpera could add value: which agents would help, what work they could handle, and what types of decisions they could assist with.",
+                          { isAutoAnalysis: true },
+                        );
+                      }}
+                      className="rounded-xl bg-purple-600 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-purple-600/25 transition hover:bg-purple-500 disabled:opacity-50"
                     >
-                      {prompt}
+                      {loading ? "Analyzing..." : "Analyze my Business"}
                     </button>
-                  ))}
-                </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="mb-8 text-center text-2xl font-medium tracking-tight text-[var(--foreground)]/95">
+                    {firstTime ? "Welcome. I'm your Chief Advisor." : "Let\u2019s put some agents to work"}
+                  </div>
+                  {firstTime && (
+                    <p className="mb-6 text-center text-sm text-white/40">
+                      I have full context of your workspace — ask me anything to get started.
+                    </p>
+                  )}
+                  <div className="rounded-3xl border border-[var(--border)] bg-[rgba(255,255,255,0.02)] p-3">
+                    <textarea
+                      ref={inputRef}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={onComposerKeyDown}
+                      placeholder="Ask the advisor about priorities, bottlenecks, agent hiring, or rollout planning..."
+                      className="h-20 w-full resize-none bg-transparent p-2 text-[1.3rem] leading-8 outline-none"
+                    />
+                    <div className="mt-2 flex items-center justify-between gap-2 px-2 pb-1">
+                      <div className="text-xs wf-muted">Advisor uses your company setup, inbox, projects, and runs.</div>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={sendMessage}
+                        className="wf-btn-primary px-4 py-2 text-sm font-medium disabled:opacity-60"
+                      >
+                        {loading ? "Thinking..." : "Send"}
+                      </button>
+                    </div>
+                  </div>
+                  {firstTime && (
+                    <div className="mt-4 flex flex-wrap justify-center gap-2">
+                      {[
+                        "Which agents should I hire first?",
+                        "What should I work on this week?",
+                        "How does Qorpera work?",
+                        "Review my company setup and suggest improvements",
+                      ].map((prompt) => (
+                        <button
+                          key={prompt}
+                          type="button"
+                          onClick={() => setInput(prompt)}
+                          className="rounded-full border border-white/[0.1] bg-white/[0.03] px-3 py-1.5 text-xs text-white/60 hover:border-teal-500/40 hover:text-white/90 transition-colors"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -500,30 +537,51 @@ export function AdvisorChat({
           </div>
         ) : null}
 
-        <div data-tour="chat-input" className={`${showCenteredComposer ? "hidden" : ""} ${frameless ? "sticky bottom-0 bg-[linear-gradient(180deg,rgba(6,10,14,0)_0%,rgba(6,10,14,0.92)_22%,rgba(6,10,14,0.97)_100%)] pt-6" : "wf-soft rounded-2xl p-3"}`}>
-          <div className="mx-auto w-full max-w-4xl">
-            <div className={`${frameless ? "rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-3" : ""}`}>
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={onComposerKeyDown}
-                placeholder={mode === "home" ? "Ask what the business should focus on this week..." : "Ask how to orchestrate this project and which agents to hire..."}
-                className={`h-20 w-full resize-none bg-transparent ${frameless ? "" : "rounded-2xl border border-[var(--border)]"} p-2 text-[1.02rem] leading-7 outline-none`}
-              />
-              <div className="mt-1 flex items-center justify-end gap-2 px-2 pb-1">
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={sendMessage}
-                  className="wf-btn-primary px-4 py-2 text-sm font-medium disabled:opacity-60"
-                >
-                  {loading ? "Thinking..." : "Send"}
-                </button>
+        {freeLimitReached ? (
+          <div className={`${showCenteredComposer ? "hidden" : ""} ${frameless ? "sticky bottom-0 bg-[linear-gradient(180deg,rgba(6,10,14,0)_0%,rgba(6,10,14,0.92)_22%,rgba(6,10,14,0.97)_100%)] pt-6" : ""}`}>
+            <div className="mx-auto w-full max-w-4xl text-center py-8">
+              <a
+                href="/pricing"
+                className="inline-block rounded-xl bg-purple-600 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-purple-600/25 transition hover:bg-purple-500"
+              >
+                Hire Agents
+              </a>
+              <p className="mt-3 text-sm text-white/45">
+                Your business is now integrated with our AI. Let&apos;s build your agentic workforce.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div data-tour="chat-input" className={`${showCenteredComposer ? "hidden" : ""} ${frameless ? "sticky bottom-0 bg-[linear-gradient(180deg,rgba(6,10,14,0)_0%,rgba(6,10,14,0.92)_22%,rgba(6,10,14,0.97)_100%)] pt-6" : "wf-soft rounded-2xl p-3"}`}>
+            <div className="mx-auto w-full max-w-4xl">
+              <div className={`${frameless ? "rounded-3xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-3" : ""}`}>
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={onComposerKeyDown}
+                  placeholder={mode === "home" ? "Ask what the business should focus on this week..." : "Ask how to orchestrate this project and which agents to hire..."}
+                  className={`h-20 w-full resize-none bg-transparent ${frameless ? "" : "rounded-2xl border border-[var(--border)]"} p-2 text-[1.02rem] leading-7 outline-none`}
+                />
+                <div className="mt-1 flex items-center justify-between gap-2 px-2 pb-1">
+                  {analyzeModeInit && freeMessagesUsed > 0 ? (
+                    <div className="text-xs text-white/35">
+                      {freeMessageLimit - freeMessagesUsed} of {freeMessageLimit} free messages remaining
+                    </div>
+                  ) : <div />}
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={sendMessage}
+                    className="wf-btn-primary px-4 py-2 text-sm font-medium disabled:opacity-60"
+                  >
+                    {loading ? "Thinking..." : "Send"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   );

@@ -10,20 +10,20 @@ import { getCompanySoul } from "@/lib/company-soul-store";
 import { prisma } from "@/lib/db";
 
 export const metadata: Metadata = {
-  title: { absolute: "Qorpera — AI Workforce Platform" },
+  title: { absolute: "Qorpera — AI That Learns Your Business" },
   description:
-    "Get work done with AI agents that are safe, cheap, and reviewable. Project-based execution with permissions, approvals, and hybrid local/cloud orchestration.",
+    "Qorpera learns your customers, products, and way of working — then puts an AI team to work handling support, sales, finance, and more around the clock.",
   openGraph: {
-    title: "Qorpera — AI Workforce Platform",
+    title: "Qorpera — AI That Learns Your Business",
     description:
-      "Get work done with AI agents that are safe, cheap, and reviewable.",
+      "An AI team that actually understands your business — and gets better every day.",
   },
 };
 
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams?: Promise<{ session?: string | string[] | undefined }>;
+  searchParams?: Promise<{ session?: string | string[] | undefined; analyze?: string | string[] | undefined }>;
 }) {
   const resolved = (await searchParams) ?? {};
   const session = await getSession();
@@ -62,6 +62,8 @@ export default async function HomePage({
   ]);
 
   const isFirstTime = sessionCount === 0;
+  const analyzeParam = Array.isArray(resolved.analyze) ? resolved.analyze[0] : resolved.analyze;
+  const analyzeMode = analyzeParam === "1" && isFirstTime;
 
   const initialMessages = sessionThread?.messages.map((m) => ({
     id: m.id,
@@ -81,6 +83,7 @@ export default async function HomePage({
         frameless
         chatgptHome
         firstTime={isFirstTime}
+        analyzeMode={analyzeMode}
         sessionId={sessionThread?.id ?? null}
         initialMessages={initialMessages}
         seedQuestion=""
