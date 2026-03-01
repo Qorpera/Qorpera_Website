@@ -16,6 +16,7 @@ import { getAppliedPatches } from "@/lib/optimizer/optimizer-store";
 import { recordTaskOutcome, type TaskOutcomeInput } from "@/lib/outcome-ledger";
 import { getAgentPerformanceProfile, formatPerformanceForPrompt } from "@/lib/outcome-ledger";
 import { getNextExecutableStep, executeGoalStep, inferTaskCategory } from "@/lib/goal-store";
+import { detectMissingIntegrationsForTask, PROVIDER_LABELS, type IntegrationGap } from "@/lib/integration-adapters";
 
 export type AgentTarget =
   | "CHIEF_ADVISOR"
@@ -1522,6 +1523,46 @@ async function _executeClaimedTask(
   // Agentic tool-calling path: if tools are available in DB, use the agentic loop
   const agenticTools = await getToolsForAgentKind(row.toAgentTarget, config.integrations);
 
+  // Check for missing integrations before running — pause if OAuth connections are needed
+  const missingIntegrations = await detectMissingIntegrationsForTask(
+    userId, config.integrations, row.instructions, row.title,
+  ).catch(() => [] as IntegrationGap[]);
+
+  if (missingIntegrations.length > 0) {
+    const providerNames = missingIntegrations.map((g) => g.providerLabel).join(", ");
+    await prisma.delegatedTask.update({
+      where: { id: row.id },
+      data: { status: DelegatedTaskStatus.PAUSED },
+    });
+    const agentLabel = row.toAgentTarget.replaceAll("_", " ");
+    await prisma.inboxItem.create({
+      data: {
+        userId,
+        type: "system_update",
+        summary: `Connect ${providerNames} to continue: "${row.title}"`,
+        impact: `${agentLabel} needs ${providerNames} connected to execute this task.`,
+        owner: agentLabel,
+        department: "Integrations",
+        state: "OPEN",
+        stateLabel: "Awaiting connection",
+        sourceType: "DELEGATED_TASK",
+        sourceId: row.id,
+        pendingActionsJson: JSON.stringify(
+          missingIntegrations.map((g) => ({
+            type: "connect_integration",
+            provider: g.provider,
+            providerLabel: g.providerLabel,
+            connectUrl: g.connectUrl,
+            taskId: row.id,
+          })),
+        ),
+      },
+    });
+    return toTaskView(
+      await prisma.delegatedTask.findFirstOrThrow({ where: { id: row.id } }),
+    );
+  }
+
   if (agenticTools.length > 0) {
     const [soul, recentLogs, taskDigests, agentMemoryIndex, perfProfile, entityContextBlock] = await Promise.all([
       getCompanySoul(userId),
@@ -2328,4 +2369,79 @@ export async function approveAndExecuteDelegatedTaskConnectors(userId: string, t
   });
 
   return { task: toTaskView(updated), executed, failed };
+}
+
+/**
+ * Resume PAUSED tasks that were waiting for a specific integration connection.
+ * Called fire-and-forget after a successful OAuth callback.
+ */
+export async function resumeTasksAwaitingIntegration(userId: string, provider: string): Promise<number> {
+  // Find PAUSED tasks for this user
+  const pausedTasks = await prisma.delegatedTask.findMany({
+    where: { userId, status: DelegatedTaskStatus.PAUSED },
+    select: { id: true, title: true },
+  });
+  if (pausedTasks.length === 0) return 0;
+
+  // Find OPEN system_update inbox items linked to these tasks with connect_integration actions
+  const taskIds = pausedTasks.map((t) => t.id);
+  const inboxItems = await prisma.inboxItem.findMany({
+    where: {
+      userId,
+      sourceType: "DELEGATED_TASK",
+      sourceId: { in: taskIds },
+      state: "OPEN",
+      type: "system_update",
+    },
+  });
+
+  let resumed = 0;
+
+  for (const item of inboxItems) {
+    if (!item.pendingActionsJson) continue;
+
+    let actions: Array<{ type: string; provider: string; taskId: string }>;
+    try {
+      actions = JSON.parse(item.pendingActionsJson) as typeof actions;
+    } catch {
+      continue;
+    }
+
+    const connectActions = actions.filter((a) => a.type === "connect_integration");
+    if (connectActions.length === 0) continue;
+
+    // Check if ALL required providers are now connected
+    const { listConnections } = await import("@/lib/integrations/token-store");
+    const connections = await listConnections(userId);
+    const connectedProviders = new Set(
+      connections.filter((c) => c.status === "CONNECTED").map((c) => c.provider),
+    );
+
+    const allConnected = connectActions.every((a) => connectedProviders.has(a.provider));
+    if (!allConnected) continue;
+
+    const taskId = connectActions[0].taskId;
+
+    // Resume the task: PAUSED → QUEUED
+    const claimed = await prisma.delegatedTask.updateMany({
+      where: { id: taskId, userId, status: DelegatedTaskStatus.PAUSED },
+      data: { status: DelegatedTaskStatus.QUEUED },
+    });
+    if (claimed.count === 0) continue;
+
+    // Mark inbox item as approved
+    await prisma.inboxItem.update({
+      where: { id: item.id },
+      data: {
+        state: "APPROVED",
+        stateLabel: `${PROVIDER_LABELS[provider] ?? provider} connected — task resumed`,
+      },
+    });
+
+    // Fire-and-forget task execution
+    void executeDelegatedTask(userId, taskId).catch(() => null);
+    resumed++;
+  }
+
+  return resumed;
 }

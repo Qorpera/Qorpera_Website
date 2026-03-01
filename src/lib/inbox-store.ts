@@ -2,6 +2,7 @@ import { InboxItemState } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type { InboxItem } from "@/lib/workforce-ui";
 import { executePendingActions, type PendingAction } from "@/lib/pending-actions-executor";
+import { recordInboxDecision } from "@/lib/outcome-ledger";
 
 type InboxAction = "approve" | "edit" | "ask_agent" | "pause" | "terminate";
 
@@ -46,6 +47,7 @@ function mapRow(row: {
   state: InboxItemState;
   stateLabel: string;
   updatedAt: Date;
+  pendingActionsJson?: string | null;
 }): InboxItem {
   return {
     id: row.id,
@@ -57,6 +59,7 @@ function mapRow(row: {
     state: mapState(row.state),
     stateLabel: row.stateLabel,
     updatedAt: row.updatedAt.toISOString(),
+    pendingActionsJson: row.pendingActionsJson ?? null,
   };
 }
 
@@ -152,6 +155,11 @@ export async function applyInboxAction(userId: string, id: string, action: Inbox
         });
       }
     }
+  }
+
+  // Record inbox decision for outcome tracking (fire-and-forget)
+  if (item.sourceId && (action === "approve" || action === "terminate")) {
+    recordInboxDecision(userId, item.sourceId, action === "approve").catch(() => {});
   }
 
   return mapRow(updated);

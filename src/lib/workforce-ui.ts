@@ -45,6 +45,7 @@ export type InboxItem = {
   state?: "open" | "approved" | "needs_changes" | "agent_followup" | "paused";
   stateLabel?: string;
   updatedAt?: string;
+  pendingActionsJson?: string | null;
 };
 
 export type ProjectBoardColumn = {

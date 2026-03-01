@@ -532,6 +532,11 @@ export async function GET(
 
     await saveConnection(userId, provider, tokens);
 
+    // Resume any PAUSED tasks that were waiting for this integration
+    void import("@/lib/orchestration-store").then(({ resumeTasksAwaitingIntegration }) =>
+      resumeTasksAwaitingIntegration(userId, provider)
+    ).catch(() => {});
+
     // Auto-register Calendly webhook subscription after connecting
     if (provider === "calendly" && tokens.metadata?.user_uri) {
       void (async () => {

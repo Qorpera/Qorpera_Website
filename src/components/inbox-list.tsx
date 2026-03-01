@@ -145,13 +145,33 @@ export function InboxList({ initialItems }: { initialItems: InboxItem[] }) {
 
             <div className="flex flex-wrap gap-1.5 shrink-0">
               {item.type === "system_update" ? (
-                <button
-                  className="wf-btn-muted px-3 py-1.5 text-xs disabled:opacity-60"
-                  disabled={pending !== null}
-                  onClick={() => runAction(item.id, "approve")}
-                >
-                  {pending === `${item.id}:approve` ? "…" : "Dismiss"}
-                </button>
+                <>
+                  {(() => {
+                    try {
+                      const actions = item.pendingActionsJson ? JSON.parse(item.pendingActionsJson) as Array<{ type: string; provider: string; providerLabel: string; connectUrl: string }> : [];
+                      return actions
+                        .filter((a) => a.type === "connect_integration")
+                        .map((a) => (
+                          <a
+                            key={a.provider}
+                            href={a.connectUrl}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-teal-400/30 bg-teal-500/10 px-3 py-1.5 text-xs text-teal-300 transition hover:bg-teal-500/20"
+                          >
+                            Connect {a.providerLabel}
+                          </a>
+                        ));
+                    } catch {
+                      return null;
+                    }
+                  })()}
+                  <button
+                    className="wf-btn-muted px-3 py-1.5 text-xs disabled:opacity-60"
+                    disabled={pending !== null}
+                    onClick={() => runAction(item.id, "approve")}
+                  >
+                    {pending === `${item.id}:approve` ? "…" : "Dismiss"}
+                  </button>
+                </>
               ) : (
                 <>
                   <button

@@ -47,7 +47,7 @@ function includesAny(text: string, patterns: RegExp[]) {
   return patterns.some((p) => p.test(text));
 }
 
-function inferRequestedToolsFromInstructions(instructions: string) {
+export function inferRequestedToolsFromInstructions(instructions: string) {
   const text = instructions.toLowerCase();
   const requested = new Set<string>();
   if (includesAny(text, [/\bemail\b/, /\breply\b/, /\bsend\b/, /\binbox\b/])) requested.add("email");
@@ -1037,4 +1037,122 @@ export async function runIntegrationAdaptersForTask(input: {
   });
 
   return { traces, memoryFindings: memoryFindings.slice(0, 20), actions };
+}
+
+/* ── Integration gap detection ─────────────────────────────────── */
+
+export const PROVIDER_LABELS: Record<string, string> = {
+  hubspot: "HubSpot",
+  slack: "Slack",
+  google: "Google Workspace",
+  linear: "Linear",
+  calendly: "Calendly",
+  github: "GitHub",
+  notion: "Notion",
+  jira: "Jira",
+  quickbooks: "QuickBooks",
+  xero: "Xero",
+};
+
+/** Maps keywords found in Company Soul toolsAndSystems to OAuth provider names. */
+const SOUL_TOOL_TO_PROVIDER: Array<{ patterns: RegExp[]; provider: string }> = [
+  { patterns: [/\bgmail\b/, /\bgoogle\b/, /\bdrive\b/, /\bsheets\b/, /\bcalendar\b/, /\bgoogle\s*workspace\b/, /\bgdocs?\b/, /\bgoogle\s*docs?\b/], provider: "google" },
+  { patterns: [/\bhubspot\b/, /\bhub\s*spot\b/], provider: "hubspot" },
+  { patterns: [/\bslack\b/], provider: "slack" },
+  { patterns: [/\blinear\b/], provider: "linear" },
+  { patterns: [/\bcalendly\b/], provider: "calendly" },
+  { patterns: [/\bgithub\b/], provider: "github" },
+  { patterns: [/\bnotion\b/], provider: "notion" },
+  { patterns: [/\bjira\b/, /\batlassian\b/], provider: "jira" },
+  { patterns: [/\bquickbooks\b/, /\bqbo\b/], provider: "quickbooks" },
+  { patterns: [/\bxero\b/], provider: "xero" },
+];
+
+export type IntegrationGap = {
+  mentionedTool: string;
+  provider: string;
+  providerLabel: string;
+  connectUrl: string;
+  isOAuth: true;
+};
+
+/**
+ * Compare toolsAndSystems text from Company Soul against connected integrations.
+ * Returns gaps where the business mentions a tool but hasn't connected it.
+ */
+export async function detectIntegrationGaps(
+  userId: string,
+  toolsAndSystems: string | null | undefined,
+): Promise<IntegrationGap[]> {
+  if (!toolsAndSystems?.trim()) return [];
+
+  const text = toolsAndSystems.toLowerCase();
+  const matchedProviders = new Map<string, string>(); // provider → mentionedTool
+
+  for (const entry of SOUL_TOOL_TO_PROVIDER) {
+    for (const pattern of entry.patterns) {
+      const match = text.match(pattern);
+      if (match && !matchedProviders.has(entry.provider)) {
+        matchedProviders.set(entry.provider, match[0]);
+      }
+    }
+  }
+
+  if (matchedProviders.size === 0) return [];
+
+  const { listConnections } = await import("@/lib/integrations/token-store");
+  const connections = await listConnections(userId);
+  const connectedProviders = new Set(
+    connections.filter((c) => c.status === "CONNECTED").map((c) => c.provider),
+  );
+
+  const gaps: IntegrationGap[] = [];
+  for (const [provider, mentionedTool] of matchedProviders) {
+    if (connectedProviders.has(provider)) continue;
+    gaps.push({
+      mentionedTool,
+      provider,
+      providerLabel: PROVIDER_LABELS[provider] ?? provider,
+      connectUrl: `/api/integrations/${provider}/connect`,
+      isOAuth: true,
+    });
+  }
+
+  return gaps;
+}
+
+/**
+ * Detect missing integrations for a specific task based on agent config +
+ * instruction text analysis.
+ */
+export async function detectMissingIntegrationsForTask(
+  userId: string,
+  configuredIntegrations: string[],
+  instructions: string,
+  title: string,
+): Promise<IntegrationGap[]> {
+  const inferred = inferRequestedToolsFromInstructions(`${title} ${instructions}`);
+  const allKeys = [...new Set([...configuredIntegrations, ...inferred])];
+
+  const gaps: IntegrationGap[] = [];
+  const seenProviders = new Set<string>();
+
+  for (const key of allKeys) {
+    const provider = TOOL_TO_OAUTH_PROVIDER[key];
+    if (!provider || seenProviders.has(provider)) continue;
+    seenProviders.add(provider);
+
+    const availability = await getConnectorAvailability(key, userId);
+    if (availability.configured) continue;
+
+    gaps.push({
+      mentionedTool: key,
+      provider,
+      providerLabel: PROVIDER_LABELS[provider] ?? provider,
+      connectUrl: `/api/integrations/${provider}/connect`,
+      isOAuth: true,
+    });
+  }
+
+  return gaps;
 }

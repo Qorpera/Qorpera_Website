@@ -20,6 +20,7 @@ import { listRunnersForUser } from "@/lib/runner-control-plane";
 import { getPlanStatus } from "@/lib/plan-store";
 import { AGENT_HIRE_CATALOG } from "@/lib/agent-catalog";
 import { getAppliedPatches } from "@/lib/optimizer/optimizer-store";
+import { detectIntegrationGaps, type IntegrationGap } from "@/lib/integration-adapters";
 
 export type AdvisorMode = "home" | "new_project";
 
@@ -373,6 +374,7 @@ function advisorSystemPrompt(
   appliedOptimizations?: string | null,
   activeGoals?: Array<{ title: string; priority: string; progressPct: number; agentTarget: string | null; status: string }> | null,
   entityCount?: number | null,
+  integrationGaps?: IntegrationGap[] | null,
 ) {
   const runnerLines = runnerContext && runnerContext.onlineRunnerCount > 0
     ? ["", "RUNNER_CAPABILITIES", "When a runner is online you can ask to execute local commands or read/write files — these go through the runner approval queue."]
@@ -515,6 +517,14 @@ function advisorSystemPrompt(
     ...(entityCount && entityCount > 0
       ? [`Entity knowledge base: ${entityCount} entities tracked across integrations. Agents can use lookup_entity and search_entities tools to access cross-integration context about people, companies, deals, and projects.`]
       : []),
+    ...(integrationGaps && integrationGaps.length > 0
+      ? [
+          "",
+          "INTEGRATION_GAPS",
+          "The user's Company Soul mentions tools that are not yet connected. When contextually relevant (e.g. the user asks about a topic where the tool would help, or delegates a task that needs it), suggest connecting with the markdown link below. Mention each gap at most once per conversation — do not nag.",
+          ...integrationGaps.map((g) => `- ${g.providerLabel}: [Connect ${g.providerLabel}](${g.connectUrl})`),
+        ]
+      : []),
   ].join("\n");
 }
 
@@ -543,6 +553,9 @@ export async function buildAdvisorContext(userId: string) {
     }).catch(() => [] as Array<{ title: string; priority: string; progressPct: number; agentTarget: string | null; status: string }>),
     prisma.entity.count({ where: { userId, mergedIntoId: null } }).catch(() => 0),
   ]);
+
+  // Detect integration gaps (tools mentioned in Company Soul but not connected)
+  const integrationGaps = await detectIntegrationGaps(userId, companySoul?.toolsAndSystems).catch(() => [] as IntegrationGap[]);
 
   // Backfill text extracts for files uploaded before extraction was enabled
   await backfillMissingExtracts(businessFiles);
@@ -650,6 +663,7 @@ export async function buildAdvisorContext(userId: string) {
       ? activeGoalsRaw.map((g) => ({ title: g.title, priority: g.priority, progressPct: g.progressPct, agentTarget: g.agentTarget, status: g.status }))
       : null,
     entityCount: entityCount > 0 ? entityCount : null,
+    integrationGaps: integrationGaps.length > 0 ? integrationGaps : null,
   };
 }
 
@@ -781,7 +795,11 @@ async function callOpenAIAdvisor({
     typeof context === "object" && context && "entityCount" in context
       ? (context as { entityCount?: number | null }).entityCount ?? null
       : null;
-  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx, isRecentlyOnboarded, dataSignals, planCtx, appliedOpts, goalsCtx, entityCountCtx);
+  const integrationGapsCtx =
+    typeof context === "object" && context && "integrationGaps" in context
+      ? (context as { integrationGaps?: IntegrationGap[] | null }).integrationGaps ?? null
+      : null;
+  const systemPrompt = advisorSystemPrompt(ownerUsername, chiefAdvisorSoulPrompt, runnerCtx, isRecentlyOnboarded, dataSignals, planCtx, appliedOpts, goalsCtx, entityCountCtx, integrationGapsCtx);
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
