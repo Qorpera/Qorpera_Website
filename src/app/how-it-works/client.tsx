@@ -17,12 +17,12 @@ import { useRef } from "react";
 const LEARNING_CARDS = [
   {
     title: "Absorbs your operating manual",
-    desc: "Every worker reads your company file — products, policies, tone, rules — before touching a single task.",
+    desc: "Every agent across every team reads your company file — products, policies, tone, rules — before touching a single task.",
     icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253",
   },
   {
     title: "Gets trained by your corrections",
-    desc: "Every edit you make before approving becomes training data. Your workers adapt — no retraining, no re-explaining.",
+    desc: "Every edit you make before approving becomes training data. Your teams adapt — no retraining, no re-explaining.",
     icon: "m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z M19.5 7.125 16.875 4.5",
   },
   {
@@ -33,10 +33,10 @@ const LEARNING_CARDS = [
 ];
 
 const WORKFLOW_STEPS = [
-  { step: "1", title: "Worker does the job", desc: "Your AI worker handles the task — drafting emails, writing reports, answering tickets — based on your business context." },
+  { step: "1", title: "Your team does the job", desc: "Your agent team handles the task — drafting emails, writing reports, answering tickets — with multiple agents collaborating based on your business context." },
   { step: "2", title: "Queues for review", desc: "The output appears in your inbox with a clear summary of what was done and why." },
-  { step: "3", title: "You decide", desc: "One click to approve. Or edit inline — your worker sees exactly what you changed and why." },
-  { step: "4", title: "Worker improves", desc: "Every correction feeds back. Unlike a human hire that plateaus, your AI workers keep compounding in capability." },
+  { step: "3", title: "You decide", desc: "One click to approve. Or edit inline — the whole team learns from exactly what you changed and why." },
+  { step: "4", title: "The team improves", desc: "Every correction feeds back to every agent. Unlike a human hire that plateaus, your agent teams keep compounding in capability." },
 ];
 
 const COMPANY_FIELDS = [
@@ -79,18 +79,18 @@ export function HowItWorksClient() {
   return (
     <>
       {/* --- Teach your business --- */}
-      <Section label="Step 1" title="Describe the roles you need filled">
+      <Section label="Step 1" title="Name the functions you need covered">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
           <FadeIn>
             <div className="space-y-4 text-[#b8c5ce]">
               <p>
                 You fill out your Company Identity — a structured profile that
-                tells your AI workforce who you are, what you sell, how you
+                tells your agent teams who you are, what you sell, how you
                 operate, and what the rules are.
               </p>
               <p>
                 This isn't a chatbot prompt. It's the operating manual your
-                digital workers follow — the same way a new hire would read your
+                agent teams follow — the same way new hires would read your
                 handbook before their first day.
               </p>
             </div>
@@ -169,10 +169,10 @@ export function HowItWorksClient() {
                 Week 1
               </p>
               <h3 className="mt-2 text-base font-semibold text-white">
-                New hires ramping up
+                New teams ramping up
               </h3>
               <p className="mt-2 text-sm text-[#b8c5ce]">
-                Workers rely heavily on your company file. Outputs are close but
+                Teams rely heavily on your company file. Outputs are close but
                 need frequent edits. Every correction sharpens them — fast.
               </p>
               <div className="mt-5 space-y-3">
@@ -205,7 +205,7 @@ export function HowItWorksClient() {
         <FadeIn delay={0.2}>
           <p className="mt-8 text-center text-[#b8c5ce]">
             The earlier you start, the bigger your advantage. Every week of
-            corrections builds a workforce that competitors who start later
+            corrections builds agent teams that competitors who start later
             can never catch up to.
           </p>
         </FadeIn>

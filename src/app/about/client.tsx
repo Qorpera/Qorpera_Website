@@ -17,17 +17,17 @@ import { useRef } from "react";
 const TWIN_CARDS = [
   {
     title: "Your Customers",
-    desc: "Who they are, what they buy, how they talk, what matters to them. Every agent interaction draws from this.",
+    desc: "Who they are, what they buy, how they talk. Every agent across every team references this in every interaction.",
     icon: "M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z",
   },
   {
     title: "Your Processes",
-    desc: "How work gets done — approval chains, escalation paths, SOPs. Agents follow the same rules your team does.",
+    desc: "Approval chains, escalation paths, SOPs. Your agent teams follow the same rules your human team does — no shortcuts, no drift.",
     icon: "M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z",
   },
   {
     title: "Your Standards",
-    desc: "Tone of voice, formatting preferences, quality bars. Agents don't just do the work — they do it your way.",
+    desc: "Tone, formatting, quality bars. Your agent teams don't just do the work — they do it your way. Every time, consistently.",
     icon: "M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z",
   },
 ];
@@ -79,7 +79,7 @@ function ComparisonBlock() {
           Generic AI
         </p>
         <div className="mt-4 space-y-2">
-          {["Re-explain context every time", "Corrects never stick", "Same mistakes, different day"].map((item) => (
+          {["You still need the hire", "AI assists — you still do the work", "Costs saved: marginal at best"].map((item) => (
             <div key={item} className="flex items-center gap-2 text-sm text-white/40">
               <span className="text-rose-400/60">&#x2717;</span>
               {item}
@@ -97,7 +97,7 @@ function ComparisonBlock() {
           Qorpera
         </p>
         <div className="mt-4 space-y-2">
-          {["Knows your business from day one", "Every correction makes it smarter", "Gets better the more you use it"].map((item) => (
+          {["A full team per function, not one bot", "Gets better — no retraining needed", "Costs saved: 80-95% per function"].map((item) => (
             <div key={item} className="flex items-center gap-2 text-sm text-white/60">
               <span className="text-emerald-400/70">&#x2713;</span>
               {item}
@@ -115,19 +115,19 @@ export function AboutClient() {
   return (
     <>
       {/* --- The problem --- */}
-      <Section label="The gap" title="Why generic AI falls short">
+      <Section label="The problem" title="Most AI makes you slightly faster. That's not enough.">
         <div className="space-y-8">
           <FadeIn>
             <div className="max-w-2xl space-y-4 text-[#b8c5ce]">
               <p>
-                General-purpose AI doesn't know your customers, your products, or
-                your rules. Every time you use it, you're starting from zero —
-                re-explaining context, correcting tone, fixing details.
+                Generic AI tools don't know your customers, your products, or
+                your rules. You're still doing the work — just slightly faster.
+                You still need the hires. You still pay the salaries.
               </p>
               <p>
-                The result: AI that's fast but wrong. Outputs that need so much
-                editing they barely save time. A tool that never gets better no
-                matter how much you use it.
+                AI shouldn't be understood as a productivity trend. It's a cost
+                structure disruption. The question isn't "how do I make my team
+                faster?" — it's "which functions can an AI team handle entirely?"
               </p>
             </div>
           </FadeIn>
@@ -136,27 +136,26 @@ export function AboutClient() {
       </Section>
 
       {/* --- AI that learns your business --- */}
-      <Section label="The approach" title="Start with what you know">
+      <Section label="The approach" title="Agent teams, not chatbot assistants">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
           <FadeIn>
             <div className="space-y-4 text-[#b8c5ce]">
               <p>
-                Qorpera flips the model. Instead of starting with AI and trying to
-                bolt on business context, we start with your business and give it
-                AI capabilities.
+                Qorpera doesn't give you a chatbot and wish you luck. You describe
+                your business — customers, products, processes, standards — and we
+                give you coordinated agent teams that take full responsibility for each function.
               </p>
               <p>
-                You create a company file — a structured profile of your business
-                identity, customers, processes, and standards. Every agent reads
-                from it. When they draft an email, build a report, or answer a
-                customer, they already know the context.
+                Every agent reads your company file like a new hire reads the handbook.
+                They follow your rules, use your tone, and check with you before
+                anything goes out. No coding. No setup complexity. Pay and play.
               </p>
             </div>
           </FadeIn>
           <FadeIn delay={0.15}>
             <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6">
               <p className="mb-3 text-xs font-medium uppercase tracking-wider text-white/30">
-                How agents internalize your rules
+                How your teams internalize your business
               </p>
               <StaggerGroup className="space-y-3" stagger={0.08}>
                 {INTERNALIZATION_STEPS.map((item, i) => (
@@ -180,8 +179,9 @@ export function AboutClient() {
         <FadeIn>
           <p className="max-w-2xl text-[#b8c5ce]">
             Over time, Qorpera builds a working model of how your business
-            operates — not a copy, but a reflection that gets clearer with every
-            interaction.
+            operates. Your workforce absorbs your customers, your processes,
+            and your standards — creating institutional knowledge that's yours
+            alone.
           </p>
         </FadeIn>
         <div className="relative mt-8">
@@ -211,14 +211,15 @@ export function AboutClient() {
             <OrbitRing />
             <div className="relative max-w-2xl space-y-4 text-[#b8c5ce]">
               <p>
-                Every agent output goes through your inbox before it reaches anyone.
-                You review, approve, edit, or decline. There are no autonomous
-                customer-facing actions.
+                Every output goes through your inbox before it reaches anyone.
+                You review, approve, edit, or decline. Your agent teams have
+                responsibility, not autonomy — nothing goes out without your sign-off.
               </p>
               <p>
-                When you do edit, the correction isn't wasted. The agent sees exactly
-                what you changed and why, and uses that to do better next time.
-                Over weeks, you'll find yourself editing less and approving more.
+                When you edit, the correction becomes training data. Every agent
+                on the team sees what you changed and adapts. Over weeks, you'll spend
+                less time reviewing and more time on the work that actually
+                requires you.
               </p>
             </div>
           </div>
@@ -226,31 +227,31 @@ export function AboutClient() {
       </Section>
 
       {/* --- Getting smarter --- */}
-      <Section label="Trajectory" title="Getting smarter, not just faster">
+      <Section label="Early-mover advantage" title="The longer you use it, the wider your moat">
         <FadeIn>
           <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6">
             <GlowRing className="-left-16 -top-16 h-48 w-48" />
             <div className="relative grid gap-8 sm:grid-cols-2">
               <div>
                 <h3 className="text-base font-semibold text-white">
-                  Feedback loops
+                  Compounding intelligence
                 </h3>
                 <p className="mt-2 text-sm text-[#b8c5ce]">
-                  Every approval, every edit, every correction feeds back into the
-                  agent's understanding. Patterns emerge. Your agents learn which
-                  customers need formal language, which reports need charts, which
-                  tickets can be resolved with a template.
+                  Every approval, every edit, every correction feeds back into
+                  every agent across your teams. This training data is yours
+                  alone. Competitors who start later can never buy their way to
+                  the depth of knowledge your teams have accumulated.
                 </p>
               </div>
               <div>
                 <h3 className="text-base font-semibold text-white">
-                  Continuous improvement
+                  Permanent cost advantage
                 </h3>
                 <p className="mt-2 text-sm text-[#b8c5ce]">
-                  Unlike a hire that plateaus, your AI workforce keeps compounding.
-                  The company file grows. Corrections accumulate. Approval rates
-                  climb. What starts as a useful tool becomes an indispensable
-                  part of how you operate.
+                  Early adopters will be able to undercut prices and out-execute
+                  competitors permanently. Your agent teams get cheaper to run
+                  and more capable over time — while your competitors are still
+                  paying full salaries for the same functions.
                 </p>
               </div>
             </div>

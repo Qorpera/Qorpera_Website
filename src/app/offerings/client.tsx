@@ -15,15 +15,15 @@ import { useRef, useState } from "react";
 /* ── Data ─────────────────────────────────────────────────────── */
 
 const AGENTS = [
-  { name: "Mara", role: "Support", desc: "Knows your products and policies. Answers customers in your voice. Sorts and replies to tickets — escalating only when needed." },
-  { name: "Kai", role: "Sales", desc: "Learns who your ideal buyer is. Finds leads that match. Writes outreach that sounds like you, not a template." },
-  { name: "Zoe", role: "Customer Success", desc: "Remembers every client relationship. Spots problems early. Schedules check-ins and flags renewal risks." },
-  { name: "Ava", role: "Marketing", desc: "Understands your brand voice. Writes content across channels. Plans campaigns based on what's actually working." },
-  { name: "Max", role: "Finance", desc: "Knows your chart of accounts. Matches invoices. Builds reports you actually use, formatted how you like them." },
-  { name: "Jordan", role: "Operations", desc: "Learns your processes and documents them. Keeps vendors and tasks on track. Flags bottlenecks before they escalate." },
-  { name: "Sam", role: "Exec Assistant", desc: "Knows your priorities. Manages your inbox. Writes briefings, agendas, and follow-ups the way you like them." },
-  { name: "Nova", role: "Research", desc: "Understands your industry context. Digs into topics you assign. Delivers summaries tailored to your goals and decisions." },
-  { name: "Sage", role: "SEO", desc: "Audits your site for technical and content gaps. Finds the right keywords. Writes content briefs that match how people search." },
+  { name: "Mara", role: "Support Team", desc: "A team of agents that runs your entire support queue. Triages, replies, escalates — all coordinated, all in your voice." },
+  { name: "Kai", role: "Sales Team", desc: "A team that owns your outbound pipeline. Prospecting, research, outreach, follow-up — multiple agents working the funnel together." },
+  { name: "Zoe", role: "Success Team", desc: "A team that manages every client relationship. Health checks, churn alerts, check-ins, renewals — all coordinated." },
+  { name: "Ava", role: "Marketing Team", desc: "A team that runs your content engine. Writing, campaigns, performance tracking — multiple agents collaborating across channels." },
+  { name: "Max", role: "Finance Team", desc: "A team that handles invoices, reconciliation, and reporting end to end. Multiple agents matching, checking, and building reports together." },
+  { name: "Jordan", role: "Ops Team", desc: "A team that owns your processes. SOPs, vendor tracking, bottleneck alerts — coordinated agents keeping the business running." },
+  { name: "Sam", role: "Admin Team", desc: "A team that manages your inbox, calendar, and briefings. Multiple agents triaging, scheduling, and drafting in sync." },
+  { name: "Nova", role: "Research Team", desc: "A team that delivers competitor intel, market analysis, and decision-ready briefs. Multiple agents researching in parallel." },
+  { name: "Sage", role: "SEO Team", desc: "A team that audits your site, finds keywords, and writes content briefs. Technical and content agents working together." },
 ];
 
 const INTEGRATIONS = [
@@ -34,10 +34,10 @@ const INTEGRATIONS = [
 ];
 
 const COMPANY_FILE_FIELDS = [
-  { field: "Company identity", desc: "Name, pitch, mission, values — the foundation agents build on." },
-  { field: "Customers & offerings", desc: "Who you serve and what you sell. Agents reference this in every interaction." },
-  { field: "Processes & rules", desc: "Approval workflows, escalation paths, and operating procedures." },
-  { field: "Business documents", desc: "Upload SOPs, product sheets, pricing guides — agents read and reference them." },
+  { field: "Company identity", desc: "Name, pitch, mission, values — the operating manual every agent team reads on day one." },
+  { field: "Customers & offerings", desc: "Who you serve and what you sell. Every agent across every team references this in every interaction." },
+  { field: "Processes & rules", desc: "Approval workflows, escalation paths, SOPs — your agent teams follow the same rules your human team does." },
+  { field: "Business documents", desc: "Upload product sheets, pricing guides, handbooks — your agent teams read and reference them like new hires." },
 ];
 
 /* ── Agent card with shimmer ──────────────────────────────────── */
@@ -109,7 +109,7 @@ export function OfferingsClient() {
   return (
     <>
       {/* --- Agent Roster --- */}
-      <Section label="The team" title="Agent roster">
+      <Section label="The workforce" title="Agent teams you can hire">
         <StaggerGroup className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" stagger={0.06}>
           {AGENTS.map((a) => (
             <StaggerItem key={a.name}>
@@ -120,19 +120,19 @@ export function OfferingsClient() {
       </Section>
 
       {/* --- Custom Agents --- */}
-      <Section label="Extend the team" title="Custom agents">
+      <Section label="Any function" title="Custom agent teams">
         <FadeIn>
           <div className="relative overflow-hidden rounded-2xl border border-dashed border-white/[0.10] bg-white/[0.015] p-8">
             <FloatingDots count={10} />
             <div className="relative">
               <h3 className="text-lg font-semibold text-white">
-                Build agents for your exact workflow
+                Build a team for any function in your business
               </h3>
               <p className="mt-3 max-w-2xl text-sm text-[#b8c5ce]">
-                Define a custom agent with its own system instructions, tool access,
-                and approval rules. It reads from the same company file as every other
-                agent and learns from your corrections the same way. Use it for
-                niche processes that don't fit a standard role.
+                Need a function that doesn't fit the standard roster? We build
+                custom agent teams for your exact workflows — same company file,
+                same learning loop, same approval rules. Any function you need
+                covered, with agents that collaborate.
               </p>
             </div>
           </div>
@@ -159,34 +159,35 @@ export function OfferingsClient() {
       </Section>
 
       {/* --- Hybrid Processing --- */}
-      <Section label="Infrastructure" title="Hybrid processing">
+      <Section label="Why it's so cheap" title="Hybrid processing">
         <div className="grid gap-6 sm:grid-cols-2">
           <FadeIn>
-            <HybridBar label="Local processing" percent={80} delay={0.2} />
+            <HybridBar label="Handled locally" percent={80} delay={0.2} />
             <p className="mt-3 text-sm text-[#b8c5ce]">
-              Routine tasks run on local AI models on your infrastructure.
-              Faster, cheaper, and your data stays on your machines.
+              Most work runs on efficient local models — fast, private, and
+              practically free. This is why your AI workforce costs a fraction
+              of a human hire.
             </p>
           </FadeIn>
           <FadeIn delay={0.12}>
             <HybridBar label="Cloud escalation" percent={20} delay={0.5} />
             <p className="mt-3 text-sm text-[#b8c5ce]">
-              Complex reasoning and multi-step tasks route to cloud models when
-              needed. You control the threshold.
+              Complex reasoning and high-stakes tasks route to cloud models
+              automatically. You get premium intelligence only when it's needed.
             </p>
           </FadeIn>
         </div>
       </Section>
 
       {/* --- Scheduling --- */}
-      <Section label="Automation" title="Scheduling">
+      <Section label="Automation" title="They work on your schedule">
         <FadeIn>
           <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6">
             <p className="text-[#b8c5ce]">
-              Set agents to run on daily, weekly, or monthly schedules. Morning
-              inbox triage, weekly reports, monthly audits — define the cadence and
-              let agents handle the rest. Each run produces output that goes
-              through the same approval flow.
+              Set your agent teams to run on daily, weekly, or monthly schedules.
+              Morning inbox triage, weekly reports, monthly audits — define the
+              cadence and your teams handle the rest. Like having departments
+              that never need reminding.
             </p>
             <StaggerGroup className="mt-6 grid gap-3 sm:grid-cols-3" stagger={0.1}>
               {[
@@ -207,12 +208,12 @@ export function OfferingsClient() {
       </Section>
 
       {/* --- The Company File --- */}
-      <Section label="Knowledge base" title="The company file">
+      <Section label="Knowledge base" title="The operating manual">
         <FadeIn>
           <p className="max-w-2xl text-[#b8c5ce]">
-            Every agent reads from the same source of truth — your company file.
-            It's structured data about who you are, how you operate, and what the
-            rules are. Update it once and every agent picks up the change.
+            Every agent across every team reads from the same source of truth — your company file.
+            Think of it as the employee handbook for your AI workforce. Update it
+            once and every team picks up the change instantly.
           </p>
         </FadeIn>
         <StaggerGroup className="mt-6 grid gap-4 sm:grid-cols-2" stagger={0.08}>

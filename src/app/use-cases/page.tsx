@@ -6,15 +6,15 @@ import { UseCasesClient } from "./client";
 export const metadata: Metadata = {
   title: "Use Cases | Qorpera",
   description:
-    "See how solo founders, e-commerce stores, service firms, and SaaS teams use Qorpera AI agents.",
+    "See which roles Qorpera's AI workforce can fill across sales, operations, customer experience, and research.",
 };
 
 export default function UseCasesPage() {
   return (
     <MarketingPageShell
       label="Use cases"
-      title="Built for how you actually work"
-      subtitle="Every business is different. Here's how teams like yours put Qorpera agents to work."
+      title="The roles your AI workforce fills"
+      subtitle="Every department has work that doesn't need a full-time hire. Here's how Qorpera replaces headcount with AI workers who learn your business."
     >
       <UseCasesClient />
       <MarketingCta />

@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { HeroParticleCanvas } from "./hero-particle-canvas";
 import { TiltCard } from "./tilt-card";
+import { ProductMock } from "./product-mock";
 import {
   FadeIn,
   StaggerGroup,
   StaggerItem,
-  AnimatedLine,
+  SectionDivider,
   GlowRing,
   StepConnector,
 } from "./motion-primitives";
@@ -17,27 +18,27 @@ import { useRef, useState } from "react";
 /* ── Data ─────────────────────────────────────────────────────── */
 
 const AGENTS = [
-  { name: "Mara", role: "Support", tasks: "Takes over your support queue · answers customers in your voice · escalates only when needed" },
-  { name: "Kai", role: "Sales", tasks: "Runs your outbound pipeline · finds leads, writes outreach, follows up — all in your voice" },
-  { name: "Zoe", role: "Customer Success", tasks: "Owns client relationships · spots churn risk early · keeps every account warm" },
-  { name: "Ava", role: "Marketing", tasks: "Runs your content engine · writes, plans campaigns, and tracks what converts" },
-  { name: "Max", role: "Finance", tasks: "Handles invoices, reconciliation, and reporting · does the work of a bookkeeper" },
-  { name: "Jordan", role: "Operations", tasks: "Manages processes, vendors, and SOPs · keeps the business running without your input" },
-  { name: "Sam", role: "Exec Assistant", tasks: "Owns your inbox, calendar, and briefings · replaces the need for a PA" },
-  { name: "Nova", role: "Research", tasks: "Delivers competitor intel, market research, and decision-ready briefs on demand" },
-  { name: "Sage", role: "SEO", tasks: "Audits your site, finds keywords, writes briefs · does the job of an SEO specialist" },
+  { name: "Mara", role: "Support Team", tasks: "A team of agents that runs your entire support queue — triaging, replying, escalating — all in your voice" },
+  { name: "Kai", role: "Sales Team", tasks: "A team that owns your outbound pipeline — finding leads, researching prospects, writing outreach, following up" },
+  { name: "Zoe", role: "Success Team", tasks: "A team that owns every client relationship — health checks, churn alerts, renewals, upsells" },
+  { name: "Ava", role: "Marketing Team", tasks: "A team that runs your content engine — writing, planning campaigns, tracking what converts" },
+  { name: "Max", role: "Finance Team", tasks: "A team that handles invoices, reconciliation, reporting, and anomaly detection end to end" },
+  { name: "Jordan", role: "Ops Team", tasks: "A team that manages processes, vendors, and SOPs — keeping the business running without your input" },
+  { name: "Sam", role: "Admin Team", tasks: "A team that owns your inbox, calendar, and briefings — nothing falls through the cracks" },
+  { name: "Nova", role: "Research Team", tasks: "A team that delivers competitor intel, market analysis, and decision-ready briefs on demand" },
+  { name: "Sage", role: "SEO Team", tasks: "A team that audits your site, finds keywords, and writes content briefs — full SEO coverage" },
 ];
 
 const STEPS = [
   {
     n: "01",
-    title: "Describe the roles you need filled",
-    body: "Tell Qorpera about your company — customers, products, processes, tone. This becomes the operating manual your AI workers follow from day one.",
+    title: "Name the functions you need covered",
+    body: "Tell Qorpera about your company — customers, products, processes, tone. This becomes the operating manual your agent teams follow from day one.",
   },
   {
     n: "02",
-    title: "Your AI team starts working",
-    body: "Pre-built digital workers plug into the tools you already use — email, Slack, your CRM — and start handling real responsibilities, not just tasks.",
+    title: "Your agent teams start working",
+    body: "Pre-built teams of agents plug into the tools you already use — email, Slack, your CRM — and start handling real responsibilities, not just tasks.",
   },
   {
     n: "03",
@@ -49,8 +50,8 @@ const STEPS = [
 const BENEFITS = [
   {
     icon: "M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
-    title: "They replace roles, not just tasks",
-    body: "These aren't assistants that wait for prompts. They own entire responsibilities — support queues, sales pipelines, financial reporting — end to end.",
+    title: "Each function gets a full team",
+    body: "Not one bot per task — a coordinated team of agents per function. Your sales team prospects, researches, writes, and follows up together. Your support team triages, replies, and escalates in sync.",
   },
   {
     icon: "M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941",
@@ -69,8 +70,8 @@ const PLANS = [
     name: "Solo",
     price: "$299",
     period: "/mo",
-    agents: "Up to 4 roles filled",
-    desc: "Less than a day of freelance help — but your AI team works all month, around the clock.",
+    agents: "Up to 4 agent teams",
+    desc: "Less than a day of freelance help — but your agent teams work all month, around the clock.",
     cta: "Get started",
     href: "/pricing",
     highlight: false,
@@ -79,18 +80,18 @@ const PLANS = [
     name: "Small Business",
     price: "From $1,500",
     period: "/mo",
-    agents: "Up to 8 roles filled",
-    desc: "Replace the cost of multiple hires with an AI workforce that covers sales, support, ops, and more.",
+    agents: "Up to 8 agent teams",
+    desc: "Full agent teams across sales, support, ops, and more — coordinated and working together around the clock.",
     cta: "Get in touch",
     href: "/pricing",
-    highlight: true,
+    highlight: false,
   },
   {
     name: "Mid-size",
     price: "From $5,000",
     period: "/mo",
-    agents: "Up to 20 roles filled",
-    desc: "Full departmental coverage. Custom agents, dedicated support, and AI across every function.",
+    agents: "Up to 20 agent teams",
+    desc: "Full departmental coverage. Custom teams, dedicated support, and coordinated AI across every function.",
     cta: "Get in touch",
     href: "/pricing",
     highlight: false,
@@ -188,7 +189,7 @@ function DepartmentStrip() {
     <div className="border-y border-white/[0.06]">
       <div className="flex flex-wrap items-center gap-x-1 gap-y-1 py-3">
         <span className="mr-3 text-xs font-medium uppercase tracking-widest text-white/25">
-          Replaces roles in
+          Agent teams for
         </span>
         {DEPARTMENTS.map((dept) => {
           const isOpen = open === dept.name;
@@ -241,7 +242,7 @@ function DepartmentStrip() {
                     </div>
                     <div>
                       <span className="text-sm font-semibold text-white">{dept.agent}</span>
-                      <span className="ml-2 text-xs text-white/35">fills your {dept.name.toLowerCase()} role</span>
+                      <span className="ml-2 text-xs text-white/35">leads your {dept.name.toLowerCase()} team</span>
                     </div>
                   </div>
                   <ul className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -331,7 +332,7 @@ export function MarketingLandingClient() {
 
           <FadeIn delay={0.1}>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[#b8c5ce] sm:text-xl">
-              Qorpera gives you pre-built AI workers that learn your business and take over real roles — support, sales, finance, operations. Not chatbots. Not assistants. Digital workers that own responsibilities and get better every day.
+              AI workers that learn how your business runs, then take action on their own — finding leads, resolving tickets, chasing invoices, writing outreach. They don't wait to be told. Just name the role and they automate it.
             </p>
           </FadeIn>
 
@@ -354,7 +355,7 @@ export function MarketingLandingClient() {
 
           <FadeIn delay={0.3}>
             <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-white/40">
-              <span className="flex items-center gap-1.5"><span className="h-1 w-1 rounded-full bg-white/30" />A fraction of the cost of a single hire</span>
+              <span className="flex items-center gap-1.5"><span className="h-1 w-1 rounded-full bg-white/30" />Full teams, not single agents</span>
               <span className="flex items-center gap-1.5"><span className="h-1 w-1 rounded-full bg-white/30" />No coding, no setup — pay and play</span>
               <span className="flex items-center gap-1.5"><span className="h-1 w-1 rounded-full bg-white/30" />Nothing goes out without your OK</span>
             </div>
@@ -365,78 +366,7 @@ export function MarketingLandingClient() {
         <FadeIn delay={0.35}>
           <TiltCard className="relative mt-16">
             <div className="pointer-events-none absolute inset-x-4 -bottom-8 top-8 mx-auto max-w-4xl rounded-3xl bg-black/30 blur-2xl" />
-            <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a1014] shadow-2xl shadow-black/60">
-              <div className="flex items-center gap-2 border-b border-white/[0.06] px-5 py-3">
-                <span className="h-3 w-3 rounded-full bg-white/10" />
-                <span className="h-3 w-3 rounded-full bg-white/10" />
-                <span className="h-3 w-3 rounded-full bg-white/10" />
-                <span className="ml-3 text-xs text-white/25">qorpera.com — your AI workforce</span>
-                <span className="ml-auto flex items-center gap-1.5 text-xs text-white/25">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/60" />
-                  3 agents online
-                </span>
-              </div>
-
-              <div className="flex min-h-[320px] divide-x divide-white/[0.05]">
-                <div className="hidden w-[180px] shrink-0 flex-col gap-0.5 p-3 sm:flex">
-                  {[
-                    { label: "Chat", active: false },
-                    { label: "Review", active: false, badge: "2" },
-                    { label: "Projects", active: false },
-                    { label: "Metrics", active: false },
-                    { label: "Agents", active: true },
-                  ].map((item) => (
-                    <div
-                      key={item.label}
-                      className={`flex items-center justify-between rounded-lg px-3 py-2 text-xs ${
-                        item.active
-                          ? "bg-white/[0.06] text-white/70"
-                          : "text-white/35"
-                      }`}
-                    >
-                      <span>{item.label}</span>
-                      {item.badge && (
-                        <span className="rounded-full bg-white/[0.08] px-1.5 py-0.5 text-[10px] text-white/40">
-                          {item.badge}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex-1 p-4">
-                  <div className="mb-3 flex items-center justify-between">
-                    <div className="text-xs font-medium uppercase tracking-widest text-white/25">Active agents</div>
-                    <div className="text-xs text-white/25">6 active</div>
-                  </div>
-                  <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                    {AGENTS.slice(0, 6).map((a) => (
-                      <div key={a.name} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-emerald-400/70" />
-                          <span className="text-sm font-medium text-white/80">{a.name}</span>
-                          <span className="ml-auto truncate text-xs text-white/30">{a.role}</span>
-                        </div>
-                        <div className="mt-1.5 text-xs leading-relaxed text-white/25">{a.tasks}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-3 rounded-xl border border-white/[0.08] bg-white/[0.025] p-3.5">
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400/60" />
-                      <span className="font-medium text-white/60">Waiting for your OK</span>
-                      <span className="ml-auto hidden text-white/30 sm:block">Kai wrote a proposal for Acme Corp — ready to send?</span>
-                    </div>
-                    <div className="mt-2.5 flex gap-2">
-                      <button className="rounded-full bg-white/[0.07] px-3.5 py-1 text-xs font-medium text-white/70 transition hover:bg-white/[0.12]">Approve</button>
-                      <button className="rounded-full bg-white/[0.04] px-3.5 py-1 text-xs text-white/40 transition hover:bg-white/[0.08]">Edit first</button>
-                      <button className="rounded-full bg-white/[0.04] px-3.5 py-1 text-xs text-white/40 transition hover:bg-white/[0.08]">Decline</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <ProductMock />
           </TiltCard>
         </FadeIn>
       </section>
@@ -448,7 +378,7 @@ export function MarketingLandingClient() {
 
       {/* ── HOW IT WORKS ─────────────────────────────────────────── */}
       <section className="py-20">
-        <AnimatedLine />
+        <SectionDivider />
         <div className="pt-12">
           <FadeIn>
             <div className="mb-12 max-w-xl">
@@ -483,7 +413,7 @@ export function MarketingLandingClient() {
 
       {/* ── AGENT ROSTER ─────────────────────────────────────────── */}
       <section className="py-20">
-        <AnimatedLine />
+        <SectionDivider />
         <div className="pt-12">
           <div className="grid gap-12 lg:grid-cols-[1fr_1.6fr] lg:items-start">
             <FadeIn>
@@ -493,7 +423,7 @@ export function MarketingLandingClient() {
                   Pre-built teams.<br />Ready to hire.
                 </h2>
                 <p className="mt-4 text-sm leading-relaxed text-[#b8c5ce]">
-                  Each agent is a digital worker trained for a specific role — not a generic chatbot with a label on it. They learn your business, follow your rules, and take full responsibility for their domain.
+                  Each function gets a coordinated team of agents — not one bot with a label on it. They learn your business, follow your rules, and work together to cover the entire function.
                 </p>
                 <Link
                   href="/use-cases"
@@ -532,10 +462,10 @@ export function MarketingLandingClient() {
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className="font-semibold text-white/60">+ Custom agent</span>
+                    <span className="font-semibold text-white/60">+ Custom team</span>
                   </div>
                   <div className="mt-2.5 text-xs leading-relaxed text-white/35">
-                    Got a role that doesn't fit the roster? We build custom digital workers for your exact workflows — onboarding, compliance, inventory, whatever you need filled.
+                    Need a function we haven't listed? We build custom agent teams for your exact workflows — onboarding, compliance, inventory, whatever you need covered.
                   </div>
                 </motion.div>
               </StaggerItem>
@@ -546,7 +476,7 @@ export function MarketingLandingClient() {
 
       {/* ── HYBRID ORCHESTRATION ─────────────────────────────────── */}
       <section className="py-20">
-        <AnimatedLine />
+        <SectionDivider />
         <div className="pt-12">
           <FadeIn>
             <div className="max-w-xl">
@@ -555,7 +485,7 @@ export function MarketingLandingClient() {
                 A full team for less<br />than one hire.
               </h2>
               <p className="mt-4 text-sm leading-relaxed text-[#b8c5ce]">
-                A single employee costs $40k–$80k a year. Qorpera gives you an entire AI workforce for a fraction of that — and they work 24/7, never take sick days, and get better every month.
+                A single employee costs $40k–$80k a year. Qorpera gives you full agent teams across every function for a fraction of that — and they work 24/7, never take sick days, and get better every month.
               </p>
             </div>
           </FadeIn>
@@ -610,7 +540,7 @@ export function MarketingLandingClient() {
 
       {/* ── WHY QORPERA ──────────────────────────────────────────── */}
       <section className="py-20">
-        <AnimatedLine />
+        <SectionDivider />
         <div className="pt-12">
           <FadeIn>
             <div className="mb-12 max-w-xl">
@@ -645,13 +575,13 @@ export function MarketingLandingClient() {
 
       {/* ── PRICING PREVIEW ──────────────────────────────────────── */}
       <section className="py-20">
-        <AnimatedLine />
+        <SectionDivider />
         <div className="pt-12">
           <FadeIn>
             <div className="mb-12 max-w-xl">
               <div className="text-xs font-medium uppercase tracking-wider text-white/30">Pricing</div>
               <h2 className="mt-3 text-3xl font-bold tracking-tight text-white">
-                Replace roles, not just hours.
+                Full teams, not hourly help.
               </h2>
             </div>
           </FadeIn>
@@ -700,19 +630,20 @@ export function MarketingLandingClient() {
       </section>
 
       {/* ── FINAL CTA ─────────────────────────────────────────────── */}
-      <section className="border-t border-white/[0.06] py-24">
-        <div className="relative">
+      <section className="py-24">
+        <SectionDivider />
+        <div className="relative pt-12">
           <div className="pointer-events-none absolute inset-x-0 top-1/2 h-40 -translate-y-1/2 rounded-full bg-slate-500/[0.03] blur-3xl" />
           <GlowRing className="left-1/4 top-0 h-48 w-48" />
 
           <FadeIn>
             <div className="relative">
               <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                Start hiring AI workers<br />
-                today.
+                Start building your<br />
+                AI teams today.
               </h2>
               <p className="mt-5 max-w-lg text-base leading-relaxed text-[#b8c5ce]">
-                Build your company file for free, see which roles AI can fill, and get a consult — no credit card, no commitment. The earlier you start, the smarter your team gets.
+                Build your company file for free, see which functions agent teams can cover, and get a consult — no credit card, no commitment. The earlier you start, the smarter your teams get.
               </p>
             </div>
           </FadeIn>

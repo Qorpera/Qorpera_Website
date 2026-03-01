@@ -6,15 +6,15 @@ import { AboutClient } from "./client";
 export const metadata: Metadata = {
   title: "Qorpera Explained",
   description:
-    "Why generic AI falls short for business, and how Qorpera builds AI that actually learns how you operate.",
+    "AI isn't a productivity hack — it's a cost structure disruption. Qorpera gives you digital workers that replace roles, not just hours.",
 };
 
 export default function AboutPage() {
   return (
     <MarketingPageShell
       label="Qorpera explained"
-      title="AI that learns your business"
-      subtitle="Most AI tools give you a blank prompt and wish you luck. Qorpera starts with your business and builds from there."
+      title="A cost structure disruption, not a productivity hack"
+      subtitle="Most AI tools make your team slightly faster. Qorpera replaces the roles you'd otherwise need to hire for — at a fraction of the cost."
     >
       <AboutClient />
       <MarketingCta />

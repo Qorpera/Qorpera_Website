@@ -196,6 +196,82 @@ export function AnimatedLine() {
   );
 }
 
+/* ── Rich section divider (landing page) ─────────────────────── */
+export function SectionDivider() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-20px" });
+
+  return (
+    <div ref={ref} className="relative flex items-center justify-center py-1">
+      {/* Persistent base line that fades in */}
+      <motion.div
+        className="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent"
+        initial={{ opacity: 0 }}
+        animate={inView ? { opacity: 1 } : { opacity: 0 }}
+        transition={{ duration: 0.8, delay: 0.6 }}
+      />
+
+      {/* Sweep flash */}
+      <div className="absolute inset-x-0 h-px overflow-hidden">
+        <motion.div
+          className="h-full w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent"
+          initial={{ x: "-100%" }}
+          animate={inView ? { x: "400%" } : { x: "-100%" }}
+          transition={{ duration: 1.2, ease: [0.21, 0.47, 0.32, 0.98] }}
+        />
+      </div>
+
+      {/* Center diamond dot */}
+      <motion.div
+        className="relative z-10 flex h-5 w-5 items-center justify-center"
+        initial={{ opacity: 0, scale: 0 }}
+        animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
+        transition={{ duration: 0.4, delay: 0.5, ease: "backOut" }}
+      >
+        <motion.div
+          className="h-1.5 w-1.5 rotate-45 rounded-[1px] bg-white/20"
+          animate={{ opacity: [0.2, 0.5, 0.2] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        />
+        {/* Glow behind the dot */}
+        <motion.div
+          className="absolute h-6 w-6 rounded-full bg-purple-400/[0.06]"
+          animate={{
+            scale: [1, 1.8, 1],
+            opacity: [0.06, 0, 0.06],
+          }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </motion.div>
+
+      {/* Spark particles that fire outward on reveal */}
+      {inView && (
+        <>
+          {[-1, 1].map((dir) => (
+            <motion.div
+              key={dir}
+              className="absolute h-px bg-gradient-to-r from-white/20 to-transparent"
+              style={{ width: 40 }}
+              initial={{ x: 0, opacity: 0.6 }}
+              animate={{ x: dir * 120, opacity: 0 }}
+              transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
+            />
+          ))}
+          {[-1, 1].map((dir) => (
+            <motion.div
+              key={`dot-${dir}`}
+              className="absolute h-0.5 w-0.5 rounded-full bg-white/30"
+              initial={{ x: 0, opacity: 0.8 }}
+              animate={{ x: dir * 80, opacity: 0 }}
+              transition={{ duration: 0.6, delay: 0.55, ease: "easeOut" }}
+            />
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ── Step connector (vertical animated pulse) ──────────────────── */
 export function StepConnector() {
   return (

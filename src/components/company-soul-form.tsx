@@ -101,9 +101,10 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="text-xs uppercase tracking-wider text-white/35">Company Identity</div>
-            <h1 className="mt-1 text-xl font-semibold tracking-tight">Teach the platform how your business works</h1>
+            <h1 className="mt-1 text-xl font-semibold tracking-tight">This is how your AI teams learn your business</h1>
             <p className="mt-1 text-sm text-white/45 max-w-2xl">
-              This profile becomes the shared operating context for the advisor and future agent orchestration. Write it in plain language.
+              Everything you write here gets read by every agent on every team before they touch any work.
+              The more detail you give, the less you'll need to correct later — and the faster your teams compound.
             </p>
           </div>
           <div className="flex items-center gap-4 shrink-0">
@@ -141,7 +142,7 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
         <div className="grid gap-0 md:grid-cols-2 md:gap-x-8">
           <Field
             label="Organisation name"
-            description="What's your organisation's name?"
+            description="Your agents use this in every email, report, and draft they write."
             value={form.companyName}
             onChange={(v) => patch("companyName", v)}
             multiline={false}
@@ -149,7 +150,7 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
           />
           <Field
             label="One-line pitch"
-            description="What do you do, for whom, and why it matters?"
+            description="This is how your agents introduce your business to prospects and customers."
             value={form.oneLinePitch}
             onChange={(v) => patch("oneLinePitch", v)}
             multiline={false}
@@ -159,7 +160,7 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
 
         <Field
           label="Mission"
-          description="Longer purpose and strategic direction (2–8 sentences)."
+          description="When your agents make a judgement call — which client to prioritise, which deal to push — this is what guides them."
           value={form.mission}
           onChange={(v) => patch("mission", v)}
           placeholder="Why this company exists and what it is building toward..."
@@ -168,14 +169,14 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
         <div className="grid gap-0 md:grid-cols-2 md:gap-x-8">
           <Field
             label="Ideal customers"
-            description="One customer segment per line."
+            description="Your sales team uses this to score leads. Your support team uses it to prioritise tickets. One segment per line."
             value={form.idealCustomers}
             onChange={(v) => patch("idealCustomers", v)}
             placeholder={"Mid-market SaaS founders\nOps leaders in multi-location retail"}
           />
           <Field
             label="Core offers"
-            description="Products/services and the outcome each creates (one per line)."
+            description="Your agents reference this in outreach, proposals, and support answers. One product/service per line with the outcome it creates."
             value={form.coreOffers}
             onChange={(v) => patch("coreOffers", v)}
             placeholder={"Managed implementation - launches workflows in 30 days\nAnalytics retainer - weekly KPI and optimization"}
@@ -185,14 +186,14 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
         <div className="grid gap-0 md:grid-cols-2 md:gap-x-8">
           <Field
             label="Revenue model"
-            description="How the business makes money and pricing constraints."
+            description="Your finance team uses this for reporting. Your sales team uses it to frame pricing in proposals."
             value={form.revenueModel}
             onChange={(v) => patch("revenueModel", v)}
             placeholder="Subscription + setup fee, annual contracts preferred..."
           />
           <Field
             label="Brand voice"
-            description="How agents should sound when drafting external-facing content."
+            description="Every email, every support reply, every piece of content your agents write will sound like this."
             value={form.brandVoice}
             onChange={(v) => patch("brandVoice", v)}
             placeholder="Confident, practical, no hype, no jargon..."
@@ -201,7 +202,7 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
 
         <Field
           label="Strategic goals"
-          description="Top goals for the next 1–2 quarters. One goal per line."
+          description="Your advisor uses these to prioritise what your teams work on. Your agents weigh decisions against them. One goal per line."
           value={form.strategicGoals}
           onChange={(v) => patch("strategicGoals", v)}
           placeholder={"Increase retention from 88% to 92%\nReduce onboarding cycle time from 21 days to 10 days"}
@@ -209,7 +210,7 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
 
         <Field
           label="Constraints / non-negotiables"
-          description="Legal, regulatory, privacy, cash, staffing, timing, or quality constraints."
+          description="Hard lines your agents will never cross — even if it seems efficient. Legal, privacy, quality, regulatory."
           value={form.constraints}
           onChange={(v) => patch("constraints", v)}
           placeholder={"No customer data sent to unapproved tools\nAll outbound legal messaging requires approval"}
@@ -218,14 +219,14 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
         <div className="grid gap-0 md:grid-cols-2 md:gap-x-8">
           <Field
             label="Departments / structure"
-            description="Teams, ownership, and interfaces. One line per team."
+            description="Your agents use this to know who owns what, who to escalate to, and how teams hand off work. One line per team."
             value={form.departments}
             onChange={(v) => patch("departments", v)}
             placeholder={"Support - owns inbound tickets and escalations\nSales Ops - owns CRM hygiene and lead routing"}
           />
           <Field
             label="Operating cadence"
-            description="Rituals and review cycles (daily, weekly, monthly)."
+            description="Your agents will proactively run work on this schedule — triage, reports, reviews — without being asked."
             value={form.operatingCadence}
             onChange={(v) => patch("operatingCadence", v)}
             placeholder={"Daily support triage at 9am\nWeekly KPI review every Monday"}
@@ -234,7 +235,7 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
 
         <Field
           label="Approval rules"
-          description="What agents can do automatically vs what always needs human approval."
+          description="This is your safety net. Define what your agents can ship on their own vs what always comes to you first."
           value={form.approvalRules}
           onChange={(v) => patch("approvalRules", v)}
           placeholder={"Customer emails over $500 refund need manager approval\nContract redlines always reviewed by legal"}
@@ -243,14 +244,14 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
         <div className="grid gap-0 md:grid-cols-2 md:gap-x-8">
           <Field
             label="Tools and systems"
-            description="Core apps and where truth lives (one per line)."
+            description="Your agents connect to these and treat them as source of truth. One per line."
             value={form.toolsAndSystems}
             onChange={(v) => patch("toolsAndSystems", v)}
             placeholder={"HubSpot - CRM source of truth\nNotion - SOPs and project docs"}
           />
           <Field
             label="Key metrics"
-            description="KPIs that define success. One metric per line."
+            description="Your agents track these proactively and flag when something moves. One metric per line."
             value={form.keyMetrics}
             onChange={(v) => patch("keyMetrics", v)}
             placeholder={"First response time\nNet revenue retention\nOnboarding completion time"}
@@ -260,14 +261,14 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
         <div className="grid gap-0 md:grid-cols-2 md:gap-x-8">
           <Field
             label="Glossary / vocabulary"
-            description="Terms, acronyms, internal names, and what they mean."
+            description="Without this, your agents will misuse your internal terms. Define acronyms, product names, and jargon here."
             value={form.glossary}
             onChange={(v) => patch("glossary", v)}
             placeholder={"ICP - ideal customer profile\nP1 - critical issue impacting production"}
           />
           <Field
             label="Notes for agents"
-            description="Anything future agents should always keep in mind."
+            description="Standing instructions every agent reads before every task. Think of it as your 'things I always say in 1:1s'."
             value={form.notesForAgents}
             onChange={(v) => patch("notesForAgents", v)}
             placeholder="Prioritize retention and safety over speed. Escalate low-confidence decisions."
@@ -275,15 +276,16 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
         </div>
       </div>
 
-      {/* How it's used + Next steps — bottom of page */}
+      {/* What this unlocks + Next steps — bottom of page */}
       <div className="mx-auto max-w-2xl border-t border-white/[0.07] pt-8 pb-10 grid gap-8 sm:grid-cols-2">
         <div>
-          <div className="text-xs uppercase tracking-wider text-white/35 mb-4">How it&#39;s used</div>
+          <div className="text-xs uppercase tracking-wider text-white/35 mb-4">What this unlocks</div>
           <div className="space-y-3">
             {[
-              ["Advisor planning", "Prioritizes work against your goals, constraints, and approval rules."],
-              ["Agent roster suggestions", "Recommends roles that fit your departments and operating cadence."],
-              ["Safer onboarding", "Uses your approval policy to default autonomy and review gates correctly."],
+              ["Agents that sound like you", "Your brand voice, your terminology, your tone — in every email, reply, and report."],
+              ["Work aligned to your goals", "Your advisor and agent teams prioritise tasks against the goals you set here."],
+              ["Guardrails you control", "Your approval rules and constraints become hard limits no agent will cross."],
+              ["Teams that improve together", "Every correction you make feeds back to every agent. This file is how the compounding starts."],
             ].map(([title, desc]) => (
               <div key={title} className="border-b border-white/[0.05] pb-3 last:border-0 last:pb-0">
                 <div className="text-sm font-medium">{title}</div>
@@ -297,13 +299,13 @@ export function CompanySoulForm({ initial }: { initial: CompanySoulProfile }) {
           <div className="text-xs uppercase tracking-wider text-white/35 mb-3">Next steps</div>
           <div className="space-y-1">
             <Link href="/" className="block rounded-md px-3 py-2 text-sm text-white/60 transition hover:bg-white/[0.04] hover:text-white/85">
-              Ask the Advisor →
-            </Link>
-            <Link href="/projects/new" className="block rounded-md px-3 py-2 text-sm text-white/60 transition hover:bg-white/[0.04] hover:text-white/85">
-              Start a new project →
+              Talk to your Advisor →
             </Link>
             <Link href="/agents" className="block rounded-md px-3 py-2 text-sm text-white/60 transition hover:bg-white/[0.04] hover:text-white/85">
-              Review agent roster →
+              See your agent teams →
+            </Link>
+            <Link href="/pricing" className="block rounded-md px-3 py-2 text-sm text-white/60 transition hover:bg-white/[0.04] hover:text-white/85">
+              Bring teams online →
             </Link>
           </div>
         </div>

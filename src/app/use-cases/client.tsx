@@ -23,54 +23,54 @@ interface UseCase {
 const USE_CASES: UseCase[] = [
   {
     label: "Sales & outreach",
-    title: "From lead to conversation, handled",
+    title: "A full sales team, not a single SDR",
     color: "from-blue-500/20 to-cyan-500/20",
     description:
-      "Finding leads, researching prospects, writing outreach, following up — your agents handle the full pipeline so opportunities don't slip through the cracks.",
+      "An SDR costs $50k+/year and works alone. Your AI sales team is a group of agents working together — prospecting, researching, writing outreach, and following up in coordination.",
     agents: [
-      { name: "Kai", role: "Sales Rep", task: "Finds leads, scores them, and writes personalized outreach" },
-      { name: "Nova", role: "Research Analyst", task: "Digs into prospects, industries, and competitors" },
-      { name: "Ava", role: "Marketing", task: "Creates campaigns and content that drive inbound" },
-      { name: "Zoe", role: "Customer Success", task: "Follows up with warm leads and nurtures relationships" },
+      { name: "Kai", role: "Lead agent", task: "Coordinates the team — owns pipeline, delegates research and outreach" },
+      { name: "Nova", role: "Research", task: "Builds prospect briefs and competitive intelligence for the team" },
+      { name: "Ava", role: "Campaigns", task: "Runs inbound campaigns that feed leads into Kai's pipeline" },
+      { name: "Zoe", role: "Nurture", task: "Warms leads and keeps relationships alive post-contact" },
     ],
   },
   {
     label: "Operations & process",
-    title: "The work behind the work, automated",
+    title: "A full ops team, not one coordinator",
     color: "from-emerald-500/20 to-teal-500/20",
     description:
-      "SOPs, vendor tracking, inbox triage, invoices, scheduling — the operational load that keeps you from focusing on growth. Your agents take it on.",
+      "SOPs, vendor tracking, inbox triage, invoices, scheduling — work that normally requires 1-2 full-time hires. Your AI ops team is a group of agents that handle it together.",
     agents: [
-      { name: "Jordan", role: "Operations", task: "Documents processes, tracks vendors, flags blockers" },
-      { name: "Sam", role: "Exec Assistant", task: "Triages your inbox and manages scheduling" },
-      { name: "Max", role: "Finance", task: "Builds reports, matches invoices, spots anomalies" },
-      { name: "Ren", role: "Assistant", task: "Handles everything else that falls through the cracks" },
+      { name: "Jordan", role: "Lead agent", task: "Coordinates the team — owns processes, vendors, and bottleneck alerts" },
+      { name: "Sam", role: "Admin", task: "Runs inbox triage and calendar management for the team" },
+      { name: "Max", role: "Finance", task: "Handles reporting, invoice matching, and anomaly detection" },
+      { name: "Ren", role: "General", task: "Picks up everything that falls between the cracks" },
     ],
   },
   {
     label: "Customer experience",
-    title: "Every customer feels like your only customer",
+    title: "A full CX team, not one support rep",
     color: "from-violet-500/20 to-purple-500/20",
     description:
-      "Check-ins, support tickets, churn risk, upsell moments — your agents keep every relationship warm without you having to remember.",
+      "A support rep costs $35k+/year and works 8 hours. Your AI customer team is a group of agents working together 24/7 — resolving tickets, monitoring health, and catching churn risk.",
     agents: [
-      { name: "Zoe", role: "Customer Success", task: "Monitors client health and catches churn risk early" },
-      { name: "Mara", role: "Support", task: "Answers questions in your voice, around the clock" },
-      { name: "Kai", role: "Sales Rep", task: "Spots upsell and expansion opportunities" },
-      { name: "Sam", role: "Exec Assistant", task: "Keeps client meetings and follow-ups on track" },
+      { name: "Zoe", role: "Lead agent", task: "Coordinates the team — owns client health and early churn detection" },
+      { name: "Mara", role: "Support", task: "Answers tickets in your voice, around the clock" },
+      { name: "Kai", role: "Expansion", task: "Identifies upsell and cross-sell opportunities" },
+      { name: "Sam", role: "Scheduling", task: "Manages client meetings and follow-up cadence" },
     ],
   },
   {
     label: "Research & strategy",
-    title: "Decisions backed by data, not guesswork",
+    title: "A full research team, not one analyst",
     color: "from-amber-500/20 to-orange-500/20",
     description:
-      "Competitor moves, market trends, financial forecasts, content gaps — your agents surface what matters so you can act on it.",
+      "Competitor tracking, market analysis, financial modeling, SEO audits — work that's expensive to outsource and slow to do alone. Your AI research team delivers it on demand, together.",
     agents: [
-      { name: "Nova", role: "Research Analyst", task: "Tracks competitors, surfaces trends, delivers briefs" },
+      { name: "Nova", role: "Lead agent", task: "Coordinates the team — assigns research, compiles briefs, surfaces trends" },
       { name: "Max", role: "Finance", task: "Models scenarios and builds financial forecasts" },
       { name: "Sage", role: "SEO", task: "Audits visibility and writes content briefs" },
-      { name: "Ava", role: "Marketing", task: "Analyzes what's working and recommends next moves" },
+      { name: "Ava", role: "Analysis", task: "Analyzes what's converting and recommends next moves" },
     ],
   },
 ];
@@ -136,15 +136,15 @@ export function UseCasesClient() {
       ))}
 
       {/* Custom agents callout */}
-      <Section label="Beyond the roster" title="Need something custom?">
+      <Section label="Beyond the roster" title="Need a team we haven't listed?">
         <FadeIn>
           <div className="relative overflow-hidden rounded-2xl border border-dashed border-white/[0.10] bg-white/[0.015] p-8 text-center">
             <FloatingDots count={8} />
-            <h3 className="relative text-lg font-semibold text-white">Custom agents</h3>
+            <h3 className="relative text-lg font-semibold text-white">Custom agent teams</h3>
             <p className="relative mx-auto mt-3 max-w-lg text-sm text-[#b8c5ce]">
-              If your workflow doesn't fit a standard role, you can define a
-              custom agent with its own instructions, tools, and approval rules.
-              It still learns from your company file and gets smarter with use.
+              If a function doesn't fit the standard roster, we build a custom
+              team of agents for your exact workflow — same company file, same
+              learning loop, same approval rules. Any function your business needs covered.
             </p>
           </div>
         </FadeIn>

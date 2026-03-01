@@ -14,11 +14,11 @@ export function MarketingCta() {
             Get started
           </p>
           <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Map your business — free
+            Start building your AI teams today
           </h2>
           <p className="mt-4 text-[#b8c5ce]">
-            Set up your company file in minutes. Your AI workforce starts learning
-            from day one.
+            Build your company file for free. See which functions agent teams can cover.
+            The earlier you start, the bigger your advantage.
           </p>
         </FadeIn>
         <FadeIn delay={0.15}>
