@@ -6,5 +6,5 @@ export async function POST(request: Request) {
   const sameOrigin = verifySameOrigin(request);
   if (!sameOrigin.ok) return sameOrigin.response;
   await clearSession();
-  return NextResponse.json({ ok: true });
+  return NextResponse.redirect(new URL("/login", request.url));
 }
