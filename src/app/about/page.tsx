@@ -4,17 +4,17 @@ import { MarketingCta } from "@/components/marketing-cta";
 import { AboutClient } from "./client";
 
 export const metadata: Metadata = {
-  title: "Qorpera Explained",
+  title: "Qorpera — The Platform",
   description:
-    "AI isn't a productivity hack — it's a cost structure disruption. Qorpera gives you digital workers that replace roles, not just hours.",
+    "Map your business entities, build governance layers, and deploy secure AI that operates within permission-aware, fully auditable boundaries.",
 };
 
 export default function AboutPage() {
   return (
     <MarketingPageShell
-      label="Qorpera explained"
-      title="A cost structure disruption, not a productivity hack"
-      subtitle="Most AI tools make your team slightly faster. Qorpera replaces the roles you'd otherwise need to hire for — at a fraction of the cost."
+      label="The platform"
+      title="Map your business. Govern your AI."
+      subtitle="Qorpera maps your entities, properties, and relationships into a unified operational model — then builds the security and intelligence layers for AI to reason and act within governed boundaries."
     >
       <AboutClient />
       <MarketingCta />

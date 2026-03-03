@@ -13,27 +13,21 @@ export function MarketingCta() {
           <p className="text-xs font-medium uppercase tracking-wider text-white/30">
             Get started
           </p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Start building your AI teams today
+          <h2 className="mt-3 text-3xl font-medium tracking-[-0.03em] text-white sm:text-4xl">
+            See it working on your business.
           </h2>
           <p className="mt-4 text-[#b8c5ce]">
-            Build your company file for free. See which functions agent teams can cover.
-            The earlier you start, the bigger your advantage.
+            Book a pilot conversation and see how Qorpera maps your entities, defines
+            governance rules, and begins executing governed workflows — tailored to your operations.
           </p>
         </FadeIn>
         <FadeIn delay={0.15}>
           <div className="mt-8 flex items-center justify-center gap-4">
             <Link
-              href="/signup"
+              href="/contact"
               className="rounded-lg bg-white px-7 py-3 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-200"
             >
-              Start for free
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-lg border border-white/[0.10] bg-white/[0.04] px-7 py-3 text-sm text-white/80 transition-colors hover:bg-white/[0.07]"
-            >
-              Log in
+              Book a pilot conversation
             </Link>
           </div>
         </FadeIn>

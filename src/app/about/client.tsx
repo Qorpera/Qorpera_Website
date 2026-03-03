@@ -7,37 +7,37 @@ import {
   StaggerItem,
   FloatingDots,
   GlowRing,
-  AnimatedLine,
 } from "@/components/motion-primitives";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 
 /* ── Data ─────────────────────────────────────────────────────── */
 
-const TWIN_CARDS = [
+const PILLARS = [
   {
-    title: "Your Customers",
-    desc: "Who they are, what they buy, how they talk. Every agent across every team references this in every interaction.",
-    icon: "M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z",
+    title: "Mapped Entities",
+    desc: "People, companies, deals, projects — resolved across every connected system into a unified operational graph. The structural foundation AI reasons from.",
+    icon: "M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15",
   },
   {
-    title: "Your Processes",
-    desc: "Approval chains, escalation paths, SOPs. Your agent teams follow the same rules your human team does — no shortcuts, no drift.",
-    icon: "M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z",
+    title: "Permission Systems",
+    desc: "Every AI action passes through your governance layer. Define who approves what, set boundaries per role and function, and know nothing happens outside your rules.",
+    icon: "M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z",
   },
   {
-    title: "Your Standards",
-    desc: "Tone, formatting, quality bars. Your agent teams don't just do the work — they do it your way. Every time, consistently.",
-    icon: "M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z",
+    title: "Decision Logging",
+    desc: "Every action retains what data was used, which entities were touched, what rule allowed it, and whether human approval was required. Complete supervision and outcome visibility.",
+    icon: "M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z",
   },
 ];
 
-const INTERNALIZATION_STEPS = [
-  "Read your company file before every task",
-  "Reference uploaded business documents",
-  "Apply your approval rules and escalation paths",
-  "Adapt tone and formatting to your standards",
-  "Incorporate corrections from previous reviews",
+const LAYER_STEPS = [
+  "Connect sources and ingest raw data",
+  "Normalize into governed entities and events",
+  "Map relationships in an operational entity graph",
+  "Define policies, permissions, and approval rules",
+  "AI reasons and acts within governed boundaries",
+  "Every action logged for review and audit",
 ];
 
 /* ── Orbit animation (decorative) ──────────────────────────────── */
@@ -76,10 +76,10 @@ function ComparisonBlock() {
         transition={{ duration: 0.5 }}
       >
         <p className="text-xs font-medium uppercase tracking-wider text-white/30">
-          Generic AI
+          Unstructured AI
         </p>
         <div className="mt-4 space-y-2">
-          {["You still need the hire", "AI assists — you still do the work", "Costs saved: marginal at best"].map((item) => (
+          {["No entity awareness — AI doesn't know your business", "No governance — AI acts without boundaries", "AI just drafts faster — no real workflow execution"].map((item) => (
             <div key={item} className="flex items-center gap-2 text-sm text-white/40">
               <span className="text-rose-400/60">&#x2717;</span>
               {item}
@@ -97,7 +97,7 @@ function ComparisonBlock() {
           Qorpera
         </p>
         <div className="mt-4 space-y-2">
-          {["A full team per function, not one bot", "Gets better — no retraining needed", "Costs saved: 80-95% per function"].map((item) => (
+          {["Full workflow execution grounded in your entity graph", "Entity graph reasoning across every connected system", "Every action logged — complete audit trail and traceability"].map((item) => (
             <div key={item} className="flex items-center gap-2 text-sm text-white/60">
               <span className="text-emerald-400/70">&#x2713;</span>
               {item}
@@ -115,19 +115,20 @@ export function AboutClient() {
   return (
     <>
       {/* --- The problem --- */}
-      <Section label="The problem" title="Most AI makes you slightly faster. That's not enough.">
+      <Section label="The problem" title="AI without structure is a liability, not an advantage.">
         <div className="space-y-8">
           <FadeIn>
             <div className="max-w-2xl space-y-4 text-[#b8c5ce]">
               <p>
-                Generic AI tools don't know your customers, your products, or
-                your rules. You're still doing the work — just slightly faster.
-                You still need the hires. You still pay the salaries.
+                Most companies integrating AI face the same problem: the AI
+                doesn't know your business, has no guardrails, and leaves no
+                trail. You get speed without safety, and output without
+                accountability.
               </p>
               <p>
-                AI shouldn't be understood as a productivity trend. It's a cost
-                structure disruption. The question isn't "how do I make my team
-                faster?" — it's "which functions can an AI team handle entirely?"
+                The real challenge isn't making AI faster — it's building the
+                operational infrastructure that lets AI act securely, within
+                governed boundaries, grounded in your actual business structure.
               </p>
             </div>
           </FadeIn>
@@ -135,30 +136,32 @@ export function AboutClient() {
         </div>
       </Section>
 
-      {/* --- AI that learns your business --- */}
-      <Section label="The approach" title="Agent teams, not chatbot assistants">
+      {/* --- The approach --- */}
+      <Section label="The approach" title="Governed operations, not chatbot assistants">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
           <FadeIn>
             <div className="space-y-4 text-[#b8c5ce]">
               <p>
-                Qorpera doesn't give you a chatbot and wish you luck. You describe
-                your business — customers, products, processes, standards — and we
-                give you coordinated agent teams that take full responsibility for each function.
+                Qorpera builds the infrastructure AI needs to operate
+                responsibly inside your business. We connect your systems, map
+                your entities and relationships, and construct governance layers
+                that enforce your rules.
               </p>
               <p>
-                Every agent reads your company file like a new hire reads the handbook.
-                They follow your rules, use your tone, and check with you before
-                anything goes out. No coding. No setup complexity. Pay and play.
+                AI doesn't act on raw data. It queries a mapped operational
+                model, checks permissions and policies, and only then proposes
+                or executes actions — with full human oversight where
+                consequences matter.
               </p>
             </div>
           </FadeIn>
           <FadeIn delay={0.15}>
             <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6">
               <p className="mb-3 text-xs font-medium uppercase tracking-wider text-white/30">
-                How your teams internalize your business
+                The six-layer architecture
               </p>
               <StaggerGroup className="space-y-3" stagger={0.08}>
-                {INTERNALIZATION_STEPS.map((item, i) => (
+                {LAYER_STEPS.map((item, i) => (
                   <StaggerItem key={i}>
                     <div className="flex gap-3 text-sm text-[#b8c5ce]">
                       <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/[0.10] bg-white/[0.04] text-[10px] font-bold text-white/60">
@@ -174,19 +177,18 @@ export function AboutClient() {
         </div>
       </Section>
 
-      {/* --- The digital twin --- */}
-      <Section label="The model" title="A digital twin of your business">
+      {/* --- Core values --- */}
+      <Section label="Values" title="What we build on">
         <FadeIn>
           <p className="max-w-2xl text-[#b8c5ce]">
-            Over time, Qorpera builds a working model of how your business
-            operates. Your workforce absorbs your customers, your processes,
-            and your standards — creating institutional knowledge that's yours
-            alone.
+            Qorpera is built on four principles: mapped entities and systems of
+            truth, permission and approval systems, supervision and decision
+            logging, and precise and educated decision making.
           </p>
         </FadeIn>
         <div className="relative mt-8">
           <StaggerGroup className="grid gap-6 sm:grid-cols-3" stagger={0.1}>
-            {TWIN_CARDS.map((c) => (
+            {PILLARS.map((c) => (
               <StaggerItem key={c.title}>
                 <div className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 transition-colors hover:border-white/[0.12] hover:bg-white/[0.04]">
                   <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03]">
@@ -204,54 +206,52 @@ export function AboutClient() {
       </Section>
 
       {/* --- Human in the loop --- */}
-      <Section label="Trust" title="Nothing happens without your OK">
+      <Section label="Governance" title="Nothing with consequences happens without approval">
         <FadeIn>
           <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-8">
             <FloatingDots count={8} />
             <OrbitRing />
             <div className="relative max-w-2xl space-y-4 text-[#b8c5ce]">
               <p>
-                Every output goes through your inbox before it reaches anyone.
-                You review, approve, edit, or decline. Your agent teams have
-                responsibility, not autonomy — nothing goes out without your sign-off.
+                Every output with cross-entity consequences, anything that
+                can't be undone, and any action categorized as critical requires
+                human approval. AI proposes — you decide.
               </p>
               <p>
-                When you edit, the correction becomes training data. Every agent
-                on the team sees what you changed and adapts. Over weeks, you'll spend
-                less time reviewing and more time on the work that actually
-                requires you.
+                Every action is logged: what data was used, which entities were
+                touched, what rule allowed it, whether human approval was
+                required. Complete traceability from input to outcome.
               </p>
             </div>
           </div>
         </FadeIn>
       </Section>
 
-      {/* --- Getting smarter --- */}
-      <Section label="Early-mover advantage" title="The longer you use it, the wider your moat">
+      {/* --- Mission --- */}
+      <Section label="Mission" title="Disrupting the cost structure of digital work">
         <FadeIn>
           <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6">
             <GlowRing className="-left-16 -top-16 h-48 w-48" />
             <div className="relative grid gap-8 sm:grid-cols-2">
               <div>
                 <h3 className="text-base font-semibold text-white">
-                  Compounding intelligence
+                  The mission
                 </h3>
                 <p className="mt-2 text-sm text-[#b8c5ce]">
-                  Every approval, every edit, every correction feeds back into
-                  every agent across your teams. This training data is yours
-                  alone. Competitors who start later can never buy their way to
-                  the depth of knowledge your teams have accumulated.
+                  Disrupt the cost structure of digital work through the
+                  distribution of secure, cheap, and reliable intelligence —
+                  built on permission-awareness, outcome visibility, and human
+                  oversight where consequences matter.
                 </p>
               </div>
               <div>
                 <h3 className="text-base font-semibold text-white">
-                  Permanent cost advantage
+                  The promise
                 </h3>
                 <p className="mt-2 text-sm text-[#b8c5ce]">
-                  Early adopters will be able to undercut prices and out-execute
-                  competitors permanently. Your agent teams get cheaper to run
-                  and more capable over time — while your competitors are still
-                  paying full salaries for the same functions.
+                  A secure and tailored operating system with reliable security
+                  and intelligence layers that AI works in, not around. Your
+                  business mapped. Your rules enforced. Your decisions educated.
                 </p>
               </div>
             </div>

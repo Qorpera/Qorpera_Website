@@ -1,21 +1,36 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, EB_Garamond } from "next/font/google";
 import "./globals.css";
-import { AppShell } from "@/components/app-shell";
+import { MarketingShell } from "@/components/operator-shell";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const ebGaramond = EB_Garamond({
+  subsets: ["latin"],
+  weight: ["600"],
+  variable: "--font-heading",
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0d1117",
+  themeColor: "#080c10",
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://qorpera.com"),
   title: {
-    default: "Qorpera — AI That Learns Your Business",
+    default: "Qorpera — Map Your Company. Build Secure AI for Operations.",
     template: "%s | Qorpera",
   },
   description:
-    "Qorpera learns your customers, your products, and your way of working — then puts an AI team to work that handles support, sales, finance, and more around the clock.",
+    "Qorpera maps your business entities, builds governance layers, and deploys secure AI that reasons and acts within permission-aware, fully auditable boundaries.",
   openGraph: {
     type: "website",
     siteName: "Qorpera",
@@ -27,15 +42,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="bg-zinc-950 text-zinc-100">
-        <AppShell>{children}</AppShell>
+    <html lang="en" className={`${inter.variable} ${ebGaramond.variable}`}>
+      <body className="bg-[rgb(8,12,16)] text-zinc-100">
+        <MarketingShell>{children}</MarketingShell>
       </body>
     </html>
   );

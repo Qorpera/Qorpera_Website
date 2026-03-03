@@ -4,55 +4,24 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
-    "migrate": "prisma migrate deploy",
+    "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "runner": "node runner/daemon.mjs",
-    "scheduler": "node runner/scheduler.mjs",
-    "agent-daemon": "node runner/agent-daemon.mjs",
-    "stripe:setup": "tsx scripts/stripe-setup.ts --write"
+    "lint": "eslint"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1000.0",
-    "@aws-sdk/s3-request-presigner": "^3.1000.0",
-    "@prisma/client": "^6.19.2",
-    "@sentry/nextjs": "^10.40.0",
-    "@types/pg": "^8.16.0",
-    "@types/qrcode": "^1.5.6",
-    "@upstash/ratelimit": "^2.0.8",
-    "@upstash/redis": "^1.36.3",
-    "@xyflow/react": "^12.10.1",
-    "bcryptjs": "^3.0.3",
     "framer-motion": "^12.34.3",
-    "mammoth": "^1.11.0",
     "next": "16.1.6",
-    "node-pty": "^1.1.0",
-    "otplib": "^13.3.0",
-    "pdf-lib": "^1.17.1",
-    "pdf-parse": "^2.4.5",
-    "pg": "^8.19.0",
-    "playwright": "^1.58.2",
-    "postgres": "^3.4.8",
-    "qrcode": "^1.5.4",
     "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "zod": "^4.3.6"
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "prisma": "^6.19.2",
     "tailwindcss": "^4",
-    "tsx": "^4.21.0",
-    "typescript": "^5",
-    "vitest": "^4.0.18"
+    "typescript": "^5"
   }
 }

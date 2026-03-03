@@ -1,2 +1,0 @@
--- Add RESEARCH_ANALYST to AgentKind enum
-ALTER TYPE "AgentKind" ADD VALUE 'RESEARCH_ANALYST';

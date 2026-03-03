@@ -22,7 +22,7 @@ export function MarketingPageShell({
           </p>
         </FadeIn>
         <FadeIn delay={0.1}>
-          <h1 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
+          <h1 className="mt-3 text-3xl font-medium tracking-[-0.03em] text-white sm:text-4xl lg:text-5xl">
             {title}
           </h1>
         </FadeIn>
@@ -52,7 +52,7 @@ export function Section({
           <p className="text-xs font-medium uppercase tracking-wider text-white/30">
             {label}
           </p>
-          <h2 className="mt-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+          <h2 className="mt-3 text-2xl font-medium tracking-[-0.03em] text-white sm:text-3xl">
             {title}
           </h2>
         </FadeIn>
