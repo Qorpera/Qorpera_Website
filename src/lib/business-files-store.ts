@@ -263,29 +263,3 @@ export async function backfillMissingExtracts(
     }),
   );
 }
-
-export function summarizeBusinessFilesForAdvisor(
-  rows: Array<{
-    name: string;
-    category: BusinessFileCategory;
-    source: BusinessLogSource;
-    mimeType: string | null;
-    sizeBytes: number;
-    textExtract: string | null;
-    authorLabel: string | null;
-    relatedRef: string | null;
-    createdAt: Date;
-  }>,
-) {
-  return rows.map((row) => ({
-    name: row.name,
-    category: row.category,
-    source: row.source,
-    mimeType: row.mimeType,
-    sizeBytes: row.sizeBytes,
-    author: row.authorLabel,
-    relatedRef: row.relatedRef,
-    createdAt: row.createdAt.toISOString(),
-    textExtract: row.textExtract ? (row.textExtract.length > 1500 ? row.textExtract.slice(0, 1500) + "..." : row.textExtract) : null,
-  }));
-}

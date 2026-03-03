@@ -70,27 +70,3 @@ export async function createBusinessLog(userId: string, input: BusinessLogInput)
 
   return row;
 }
-
-export function summarizeBusinessLogsForAdvisor(
-  rows: Array<{
-    title: string;
-    category: BusinessLogCategory;
-    source: BusinessLogSource;
-    authorLabel: string | null;
-    body: string;
-    createdAt: Date;
-    relatedRef: string | null;
-  }>,
-) {
-  return rows
-    .filter((row) => !row.relatedRef?.startsWith("CHAT_LOG:"))
-    .map((row) => ({
-      title: row.title,
-      category: row.category,
-      source: row.source,
-      author: row.authorLabel,
-      relatedRef: row.relatedRef,
-      createdAt: row.createdAt.toISOString(),
-      body: row.body.length > 800 ? row.body.slice(0, 800) + "..." : row.body,
-    }));
-}

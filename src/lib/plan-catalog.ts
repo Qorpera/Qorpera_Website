@@ -12,6 +12,10 @@ export type PlanCatalogItem = {
   priceDisplay: string;
   priceNote: string;
   agentCap: number;
+  entityCapDisplay: string;
+  connectorSlots: number;
+  governedWorkflows: number;
+  approvalSeats: number;
   features: string[];
   ctaText: string;
   ctaMode: "checkout" | "contact";
@@ -23,17 +27,21 @@ export const PLAN_CATALOG: PlanCatalogItem[] = [
     slug: "solo",
     tier: "SOLO",
     name: "Solo",
-    headline: "A coordinated AI team built around your business",
+    headline: "Governed AI operations for a single operator",
     priceDisplay: "$299",
     priceNote: "/mo",
     agentCap: 4,
+    entityCapDisplay: "500",
+    connectorSlots: 2,
+    governedWorkflows: 10,
+    approvalSeats: 1,
     features: [
-      "Up to 4 AI roles — coordinated by one advisor",
-      "Shared business memory across every role",
-      "Advisor routes the right work to the right role automatically",
-      "Human approval on every external action",
-      "Your team learns from every task it completes",
-      "Connects to the tools you already use",
+      "500 mapped entities across connected systems",
+      "2 integration connectors",
+      "10 governed workflows with full audit trail",
+      "1 approval seat with human-in-the-loop sign-off",
+      "Shared operational memory across every workflow",
+      "AI advisor that routes work automatically",
     ],
     ctaText: "Subscribe",
     ctaMode: "checkout",
@@ -42,17 +50,22 @@ export const PLAN_CATALOG: PlanCatalogItem[] = [
     slug: "small-business",
     tier: "SMALL_BUSINESS",
     name: "Small Business",
-    headline: "AI teams across every department — coordinated and context-aware",
+    headline: "Cross-department AI operations — governed and context-aware",
     priceDisplay: "From $1,500",
     priceNote: "/mo",
     agentCap: 8,
+    entityCapDisplay: "5,000",
+    connectorSlots: 4,
+    governedWorkflows: 50,
+    approvalSeats: 5,
     features: [
-      "Up to 8 roles spanning multiple departments",
+      "5,000 mapped entities across connected systems",
+      "4 integration connectors",
+      "50 governed workflows",
+      "5 approval seats",
       "Everything in Solo",
       "Cross-department handoffs — sales to support to ops, seamlessly",
-      "Multi-role workflows for complex tasks",
-      "Team-wide performance dashboard",
-      "Guided setup — we help you design the right team structure",
+      "Guided setup — we help you design the right governance structure",
       "Priority support",
     ],
     ctaText: "Talk to us",
@@ -62,17 +75,21 @@ export const PLAN_CATALOG: PlanCatalogItem[] = [
     slug: "mid-size",
     tier: "MID_SIZE",
     name: "Mid-size",
-    headline: "Enterprise AI teams that operate as one — across every function",
+    headline: "Enterprise-grade governed operations across every function",
     priceDisplay: "From $5,000",
     priceNote: "/mo",
     agentCap: 20,
+    entityCapDisplay: "Unlimited",
+    connectorSlots: 99,
+    governedWorkflows: 999,
+    approvalSeats: 99,
     features: [
-      "Up to 20 specialized roles across every function",
+      "Unlimited entities, connectors, and workflows",
+      "Unlimited approval seats",
       "Everything in Small Business",
-      "Custom roles designed around your org's specific workflows",
-      "Deep integration with your internal systems and data sources",
+      "Custom governance rules designed around your org",
+      "Deep integration with internal systems and data sources",
       "Dedicated success manager",
-      "Guaranteed response times",
       "Enterprise-grade security and compliance",
     ],
     ctaText: "Talk to us",
@@ -80,6 +97,3 @@ export const PLAN_CATALOG: PlanCatalogItem[] = [
   },
 ];
 
-export function getPlanCatalogItem(slug: PlanTierSlug) {
-  return PLAN_CATALOG.find((p) => p.slug === slug) ?? null;
-}

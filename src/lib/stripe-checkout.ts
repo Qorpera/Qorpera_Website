@@ -97,14 +97,6 @@ export function isStripeCheckoutEnabledForPlan(kind: HireAgentKind, schedule: Hi
   return Boolean(stripeSecretKey() && stripeRecurringPriceId(kind, schedule));
 }
 
-export function isStripeCheckoutEnabledForKind(kind: HireAgentKind) {
-  return (
-    isStripeCheckoutEnabledForPlan(kind, "DAILY") ||
-    isStripeCheckoutEnabledForPlan(kind, "WEEKLY") ||
-    isStripeCheckoutEnabledForPlan(kind, "MONTHLY")
-  );
-}
-
 async function stripeRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const key = stripeSecretKey();
   if (!key) {
@@ -183,59 +175,6 @@ export async function createStripeCheckoutSession(input: {
   body.set("subscription_data[metadata][orderId]", input.orderId);
   body.set("subscription_data[metadata][agentKind]", input.agentKind);
   body.set("subscription_data[metadata][schedule]", input.schedule);
-
-  return stripeRequest<StripeSession>("/checkout/sessions", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: body.toString(),
-  });
-}
-
-export async function createStripeBasketCheckoutSession(input: {
-  baseUrl: string;
-  userId: string;
-  orderIds: string[];
-  items: { agentKind: HireAgentKind; schedule: HireSchedule }[];
-}) {
-  const body = new URLSearchParams();
-  body.set("mode", "subscription");
-  body.set("client_reference_id", input.orderIds[0]);
-  body.set(
-    "success_url",
-    `${input.baseUrl}/agents/hire/basket?checkout=success&order_ids=${encodeURIComponent(input.orderIds.join(","))}`,
-  );
-  body.set("cancel_url", `${input.baseUrl}/agents/hire/basket?checkout=cancelled`);
-
-  let lineIdx = 0;
-  for (const item of input.items) {
-    const recurringPriceId = stripeRecurringPriceId(item.agentKind, item.schedule);
-    const setupPriceId = stripePriceId(item.agentKind);
-    if (!recurringPriceId) continue;
-    body.set(`line_items[${lineIdx}][price]`, recurringPriceId);
-    body.set(`line_items[${lineIdx}][quantity]`, "1");
-    lineIdx++;
-    if (setupPriceId) {
-      body.set(`line_items[${lineIdx}][price]`, setupPriceId);
-      body.set(`line_items[${lineIdx}][quantity]`, "1");
-      lineIdx++;
-    }
-  }
-
-  body.set("metadata[userId]", input.userId);
-  body.set("metadata[orderIds]", input.orderIds.join(","));
-  // Single-item backward compat fields
-  if (input.items.length === 1) {
-    body.set("metadata[orderId]", input.orderIds[0]);
-    body.set("metadata[agentKind]", input.items[0].agentKind);
-    body.set("metadata[schedule]", input.items[0].schedule);
-    body.set("subscription_data[metadata][userId]", input.userId);
-    body.set("subscription_data[metadata][orderId]", input.orderIds[0]);
-    body.set("subscription_data[metadata][agentKind]", input.items[0].agentKind);
-    body.set("subscription_data[metadata][schedule]", input.items[0].schedule);
-  } else {
-    body.set("subscription_data[metadata][userId]", input.userId);
-    body.set("subscription_data[metadata][orderIds]", input.orderIds.join(","));
-  }
 
   return stripeRequest<StripeSession>("/checkout/sessions", {
     method: "POST",

@@ -9,22 +9,10 @@ export async function getActivePlanForUser(userId: string) {
   return sub;
 }
 
-export async function getUserAgentCap(userId: string): Promise<number> {
-  const sub = await getActivePlanForUser(userId);
-  return sub?.plan.agentCap ?? 0;
-}
-
-export async function getHiredAgentCount(userId: string): Promise<number> {
+async function getHiredAgentCount(userId: string): Promise<number> {
   return prisma.hiredJob.count({
     where: { userId, enabled: true },
   });
-}
-
-export async function canHireMoreAgents(userId: string): Promise<boolean> {
-  const cap = await getUserAgentCap(userId);
-  if (cap <= 0) return false;
-  const count = await getHiredAgentCount(userId);
-  return count < cap;
 }
 
 export async function createPlanSubscription(userId: string, planSlug: string) {

@@ -61,18 +61,3 @@ export async function markOrderCheckoutFailed(input: { orderId: string; reason: 
   });
 }
 
-export async function getOrderForUserById(userId: string, orderId: string) {
-  const delegate = orderDelegate();
-  if (!delegate) return null;
-  return delegate.findFirst({
-    where: { id: orderId, userId },
-  });
-}
-
-export async function getOrderForUserByCheckoutSession(userId: string, checkoutSessionId: string) {
-  const delegate = orderDelegate();
-  if (!delegate) return null;
-  return delegate.findFirst({
-    where: { checkoutSessionId, userId },
-  });
-}
