@@ -14,11 +14,11 @@ export function MarketingCta() {
             Get started
           </p>
           <h2 className="mt-3 text-3xl font-medium tracking-[-0.03em] text-white sm:text-4xl">
-            See it working on your business.
+            See Qorpera working on your business.
           </h2>
           <p className="mt-4 text-[#b8c5ce]">
-            Book a pilot conversation and see how Qorpera maps your entities, defines
-            governance rules, and begins executing governed workflows — tailored to your operations.
+            Book a demo and see how Qorpera detects real situations in your operations,
+            reasons about what to do, and acts within governed boundaries — all within 25 minutes.
           </p>
         </FadeIn>
         <FadeIn delay={0.15}>
@@ -27,7 +27,13 @@ export function MarketingCta() {
               href="/contact"
               className="rounded-lg bg-white px-7 py-3 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-200"
             >
-              Book a pilot conversation
+              Request a Demo
+            </Link>
+            <Link
+              href="/how-it-works"
+              className="rounded-lg border border-white/[0.10] px-7 py-3 text-sm font-medium text-white/60 transition-colors hover:border-white/[0.15] hover:text-white/80"
+            >
+              See How It Works
             </Link>
           </div>
         </FadeIn>

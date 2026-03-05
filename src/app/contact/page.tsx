@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { QorperaLogo } from "@/components/operator-shell";
 import { ContactForm } from "@/components/contact-form";
+import { MarketingFooter } from "@/components/marketing-footer";
 
 export const metadata: Metadata = {
   title: "Contact — Qorpera",
-  description: "Get in touch with the Qorpera team to learn how we can map your business operations.",
+  description: "Get in touch with the Qorpera team to see how AI-driven situation detection can transform your operations.",
 };
 
 export default function ContactPage() {
@@ -29,7 +29,7 @@ export default function ContactPage() {
 
             <p className="mt-5 text-[15px] leading-relaxed text-white/45">
               Qorpera works with companies on a contract basis. Tell us about your business and
-              we&apos;ll show you how entity mapping and governed AI can transform your operations.
+              we&apos;ll show you how situation-driven AI can detect what matters and act on it — within 25 minutes.
             </p>
 
             <div className="mt-10 space-y-6">
@@ -40,7 +40,7 @@ export default function ContactPage() {
                   </svg>
                 }
                 title="Personalized Demo"
-                description="Walk through Qorpera using your actual business processes and entity types."
+                description="Connect your tools live and see the situations Qorpera detects in your actual operations."
               />
               <InfoRow
                 icon={
@@ -51,7 +51,7 @@ export default function ContactPage() {
                   </svg>
                 }
                 title="Custom Implementation"
-                description="We tailor the entity model, policy rules, and connector integrations for your workflows."
+                description="We configure situation types, governance rules, and integrations tailored to your workflows."
               />
               <InfoRow
                 icon={
@@ -59,8 +59,8 @@ export default function ContactPage() {
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                   </svg>
                 }
-                title="Enterprise-Grade Security"
-                description="Full audit trails, policy governance, and human-in-the-loop approval for every AI action."
+                title="Governed from Day One"
+                description="Full audit trails, trust gradient, and human-in-the-loop approval — AI earns autonomy, you stay in control."
               />
             </div>
           </div>
@@ -77,15 +77,7 @@ export default function ContactPage() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.04] py-8">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6">
-          <div className="flex items-center gap-2">
-            <QorperaLogo className="h-5 w-auto" />
-            <span className="text-[13px] text-white/30">Qorpera</span>
-          </div>
-          <span className="text-[12px] text-white/20">Secure AI for business operations</span>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 }

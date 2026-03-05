@@ -26,11 +26,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://qorpera.com"),
   title: {
-    default: "Qorpera — Map Your Company. Build Secure AI for Operations.",
+    default: "Qorpera — The Operating System for AI-Driven Work",
     template: "%s | Qorpera",
   },
   description:
-    "Qorpera maps your business entities, builds governance layers, and deploys secure AI that reasons and acts within permission-aware, fully auditable boundaries.",
+    "AI that watches your business, detects situations that need attention, reasons about what to do, and acts within governed boundaries. The operating system for AI-driven work.",
   openGraph: {
     type: "website",
     siteName: "Qorpera",

@@ -11,7 +11,10 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
           </Link>
           <nav className="flex items-center gap-1">
             {[
-              { href: "/about", label: "Platform" },
+              { href: "/platform", label: "Platform" },
+              { href: "/how-it-works", label: "How It Works" },
+              { href: "/use-cases", label: "Use Cases" },
+              { href: "/vision", label: "Vision" },
               { href: "/contact", label: "Contact" },
             ].map((link) => (
               <Link
@@ -22,13 +25,6 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
                 {link.label}
               </Link>
             ))}
-            <span className="mx-2 h-4 w-px bg-white/[0.08]" />
-            <Link
-              href="/contact"
-              className="rounded-lg bg-purple-500 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-purple-400"
-            >
-              Request a Demo
-            </Link>
           </nav>
         </div>
       </header>
