@@ -5,7 +5,7 @@ import { MarketingFooter } from "@/components/marketing-footer";
 export const metadata: Metadata = {
   title: { absolute: "Qorpera — See Your Business Clearly" },
   description:
-    "Your understanding of operations is assembled from reports, meetings, and whatever your team happens to surface. Qorpera gives you the full picture — every situation developing across every tool, with the context to understand what it means.",
+    "Every leader's view of their business is assembled from dashboards, meetings, and team updates — each one partial, each one delayed. Qorpera shows you the actual situations developing across every tool, directly.",
   openGraph: {
     title: "Qorpera — See Your Business Clearly",
     description:

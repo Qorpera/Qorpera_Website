@@ -197,9 +197,9 @@ export function LandingClient() {
 
           <FadeUp delay={150}>
             <h1 className="mt-6 text-center text-4xl font-medium leading-[1.08] tracking-[-0.03em] text-white sm:text-5xl lg:text-6xl">
-              You don&apos;t know what&apos;s happening{" "}
+              The full picture of your business.{" "}
               <span className="bg-gradient-to-r from-purple-400 to-purple-200 bg-clip-text text-transparent">
-                in your own business.
+                Not the filtered one.
               </span>
             </h1>
           </FadeUp>
