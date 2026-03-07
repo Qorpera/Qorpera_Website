@@ -4,50 +4,170 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 /* ────────────────────────────────────────────
-   Animated signal convergence demo
-   Shows 4 signals from different tools merging
-   into a single cross-system situation card
+   Scenario carousel — signals converge into
+   cross-system situation cards, auto-rotating
    ──────────────────────────────────────────── */
 
-const SIGNALS = [
-  { tool: "Stripe", event: "Invoice #4071 — 16 days overdue", color: "#635BFF" },
-  { tool: "HubSpot", event: "Email response time ↑ 3.2×", color: "#FF7A59" },
-  { tool: "Gmail", event: "Contract end date inquiry received", color: "#4285F4" },
-  { tool: "HubSpot", event: "Support ticket — negative sentiment", color: "#FF7A59" },
+interface Scenario {
+  signals: { tool: string; event: string; color: string }[];
+  title: string;
+  badge: string;
+  badgeColor: string;
+  description: string;
+  response: string;
+}
+
+const SCENARIOS: Scenario[] = [
+  {
+    signals: [
+      { tool: "Stripe", event: "Invoice #4071 \u2014 16 days overdue", color: "#635BFF" },
+      { tool: "HubSpot", event: "Email response time \u2191 3.2\u00d7", color: "#FF7A59" },
+      { tool: "Gmail", event: "Contract end date inquiry received", color: "#4285F4" },
+      { tool: "HubSpot", event: "Support ticket \u2014 negative sentiment", color: "#FF7A59" },
+    ],
+    title: "Churn Risk \u2014 Meridian Corp",
+    badge: "High \u00b7 $45K ARR",
+    badgeColor: "#ef4444",
+    description:
+      "This isn\u2019t a late payment. Email response time has tripled, they asked about their contract end date, and their last support ticket was negative. The $8,400 invoice is a symptom \u2014 the real risk is $45K in annual revenue.",
+    response:
+      "Alert Sarah (account owner) with full context. She saved a similar account 3 months ago by scheduling a face-to-face.",
+  },
+  {
+    signals: [
+      { tool: "Stripe", event: "Widget Pro orders \u2191 340% in 6 weeks", color: "#635BFF" },
+      { tool: "HubSpot", event: "14 new enterprise inquiries this month", color: "#FF7A59" },
+      { tool: "Gmail", event: "Shenzhen Micro \u2014 lead time now 12 weeks", color: "#4285F4" },
+      { tool: "Research", event: "Component shortage across 3 competing markets", color: "#8B5CF6" },
+    ],
+    title: "Supply Bottleneck \u2014 Widget Pro",
+    badge: "Urgent \u00b7 $280K pipeline",
+    badgeColor: "#f59e0b",
+    description:
+      "Demand is accelerating faster than your supply chain can support. Your primary supplier is seeing industry-wide spikes and has extended lead times to 12 weeks. At current growth, you\u2019ll hit allocation limits within 45 days \u2014 while $280K in pipeline depends on normal fulfillment.",
+    response:
+      "Open conversation with Shenzhen Micro about reserved allocation. Identify backup supplier. Consider temporary order caps for new accounts.",
+  },
+  {
+    signals: [
+      { tool: "Stripe", event: "Apex Industries = 34% of monthly revenue", color: "#635BFF" },
+      { tool: "HubSpot", event: "Apex champion (VP Eng) changed roles", color: "#FF7A59" },
+      { tool: "LinkedIn", event: "New VP Eng at Apex \u2014 no prior relationship", color: "#0A66C2" },
+      { tool: "Gmail", event: "Renewal discussion pushed back 3 weeks", color: "#4285F4" },
+    ],
+    title: "Concentration Risk \u2014 Apex Industries",
+    badge: "High \u00b7 $180K ARR",
+    badgeColor: "#ef4444",
+    description:
+      "Your largest account is 34% of revenue. Their VP of Engineering \u2014 your primary champion \u2014 just changed roles. The incoming VP has no relationship with your team, and the renewal conversation has stalled. Not a renewal risk yet, but a concentration risk that needs immediate attention.",
+    response:
+      "Schedule intro with new VP through existing contacts. Prepare business review showing ROI. Brief CEO for potential executive-to-executive outreach.",
+  },
+  {
+    signals: [
+      { tool: "HubSpot", event: "Orion Healthcare requested feature comparison", color: "#FF7A59" },
+      { tool: "Gmail", event: "Orion contact forwarded competitor pricing", color: "#4285F4" },
+      { tool: "HubSpot", event: "Deal stage: Negotiation \u2192 Evaluation", color: "#FF7A59" },
+      { tool: "Research", event: "Competitor launched healthcare module last week", color: "#8B5CF6" },
+    ],
+    title: "Competitive Threat \u2014 Orion Healthcare",
+    badge: "High \u00b7 $62K deal",
+    badgeColor: "#ef4444",
+    description:
+      "Orion is re-evaluating. They requested a feature comparison, forwarded a competitor\u2019s pricing internally, and regressed from Negotiation to Evaluation \u2014 all within 5 days of a competitor announcing a healthcare-specific module. This deal needs intervention before the evaluation window closes.",
+    response:
+      "Schedule technical deep-dive on integration advantages. Prepare healthcare-specific ROI case. Escalate to VP Sales for strategic pricing discussion.",
+  },
+  {
+    signals: [
+      { tool: "Analytics", event: "Brightpath usage at 94% of plan limit", color: "#F9AB00" },
+      { tool: "HubSpot", event: "Contract renewal in 38 days", color: "#FF7A59" },
+      { tool: "Stripe", event: "18 months \u2014 never missed a payment", color: "#635BFF" },
+      { tool: "Gmail", event: "CEO mentioned expansion plans in last email", color: "#4285F4" },
+    ],
+    title: "Expansion \u2014 Brightpath Education",
+    badge: "$24K \u2192 $48K potential",
+    badgeColor: "#10b981",
+    description:
+      "Brightpath is hitting their plan ceiling at exactly the right moment. They\u2019re 38 days from renewal, their CEO just mentioned expansion plans, and they\u2019ve been a perfect-payment customer for 18 months. This is an upgrade conversation, not a renewal conversation.",
+    response:
+      "Prepare upgrade proposal with usage data. Lead with their growth trajectory, not pricing. Time the outreach for 2\u20133 weeks before renewal.",
+  },
+  {
+    signals: [
+      { tool: "Stripe", event: "3 largest invoices ($45K, $38K, $27K) due same week", color: "#635BFF" },
+      { tool: "Xero", event: "Payroll + vendor payments = $92K due same period", color: "#13B5EA" },
+      { tool: "Gmail", event: "Apex Industries historically 15\u201320 days late in Q2", color: "#4285F4" },
+      { tool: "Calendar", event: "Board meeting in 3 weeks \u2014 cash position on agenda", color: "#4285F4" },
+    ],
+    title: "Cash Flow Pinch \u2014 Q2 Week 3",
+    badge: "Moderate \u00b7 $202K exposure",
+    badgeColor: "#f59e0b",
+    description:
+      "Three major receivables and your largest outgoing obligations converge in the same 10-day window. Based on history, Apex will likely be 15\u201320 days late \u2014 creating a $45K gap right when your board meeting requires a clean cash position.",
+    response:
+      "Send Apex a friendly early-payment reminder with incentive. Shift one vendor payment by 5 days (within terms). Brief CFO on the timing overlap.",
+  },
 ];
 
-function SignalDemo() {
+function SignalCarousel() {
   const ref = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState(0); // 0=hidden, 1-4=signals, 5=divider, 6=card
+  const [started, setStarted] = useState(false);
+  const [active, setActive] = useState(0);
+  const [step, setStep] = useState(0);
 
+  // Start on scroll into view
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          let i = 0;
-          const interval = setInterval(() => {
-            i++;
-            setStep(i);
-            if (i >= 7) clearInterval(interval);
-          }, 600);
+          setStarted(true);
           obs.disconnect();
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.2 }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
+  // Animate signals in, then auto-advance
+  useEffect(() => {
+    if (!started) return;
+    setStep(0);
+    let i = 0;
+    const animInterval = setInterval(() => {
+      i++;
+      setStep(i);
+      if (i >= 7) clearInterval(animInterval);
+    }, 500);
+
+    // Auto-advance after animation + viewing pause
+    const advanceTimeout = setTimeout(() => {
+      setActive((prev) => (prev + 1) % SCENARIOS.length);
+    }, 9000);
+
+    return () => {
+      clearInterval(animInterval);
+      clearTimeout(advanceTimeout);
+    };
+  }, [started, active]);
+
+  const goTo = (idx: number) => {
+    if (idx !== active) setActive(idx);
+  };
+
+  const scenario = SCENARIOS[active];
+
   return (
     <div ref={ref} className="mx-auto mt-16 max-w-lg">
       {/* Signals */}
       <div className="space-y-2">
-        {SIGNALS.map((s, i) => (
+        {scenario.signals.map((s, i) => (
           <div
-            key={i}
+            key={`${active}-${i}`}
             className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 transition-all duration-500"
             style={{
               opacity: step > i ? 1 : 0,
@@ -85,32 +205,71 @@ function SignalDemo() {
           transform: step >= 6 ? "translateY(0) scale(1)" : "translateY(16px) scale(0.97)",
         }}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.5)]" />
-            <span className="font-heading text-[15px] font-medium text-white">
-              Churn Risk — Meridian Corp
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{
+                backgroundColor: scenario.badgeColor,
+                boxShadow: `0 0 12px ${scenario.badgeColor}80`,
+              }}
+            />
+            <span className="truncate font-heading text-[15px] font-medium text-white">
+              {scenario.title}
             </span>
           </div>
-          <span className="rounded-full bg-red-500/10 px-2.5 py-1 font-mono text-[10px] text-red-400">
-            High · $45K ARR
+          <span
+            className="shrink-0 rounded-full px-2.5 py-1 font-mono text-[10px]"
+            style={{
+              backgroundColor: `${scenario.badgeColor}18`,
+              color: scenario.badgeColor,
+            }}
+          >
+            {scenario.badge}
           </span>
         </div>
         <p className="mt-3 text-[13px] leading-relaxed text-white/50">
-          This isn&apos;t a late payment. Email response time has tripled, they asked
-          about their contract end date, and their last support ticket was negative.
-          The $8,400 invoice is a symptom — the real risk is $45K in annual revenue.
+          {scenario.description}
         </p>
         <div className="mt-4 rounded-lg border border-white/[0.05] bg-white/[0.02] px-4 py-3">
           <span className="text-[10px] font-medium uppercase tracking-[1.5px] text-white/25">
             Recommended response
           </span>
           <p className="mt-1.5 text-[12px] leading-relaxed text-white/40">
-            Alert Sarah (account owner) with full context. She saved a similar
-            account 3 months ago by scheduling a face-to-face.
+            {scenario.response}
           </p>
         </div>
       </div>
+
+      {/* Navigation dots */}
+      <div className="mt-6 flex items-center justify-center gap-2">
+        {SCENARIOS.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => goTo(i)}
+            aria-label={`Scenario ${i + 1}`}
+            className="group relative h-2 rounded-full transition-all duration-300"
+            style={{ width: i === active ? 24 : 8, backgroundColor: i === active ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.12)" }}
+          >
+            {i === active && (
+              <span
+                className="absolute inset-y-0 left-0 rounded-full bg-white/60"
+                style={{
+                  animation: "dot-fill 9s linear",
+                  width: "100%",
+                }}
+              />
+            )}
+          </button>
+        ))}
+      </div>
+
+      <style jsx>{`
+        @keyframes dot-fill {
+          from { width: 0%; }
+          to { width: 100%; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -231,8 +390,8 @@ export function LandingClient() {
             </div>
           </FadeUp>
 
-          {/* Live demo: signals → situation */}
-          <SignalDemo />
+          {/* Live demo: signals → situation carousel */}
+          <SignalCarousel />
         </div>
       </section>
 
