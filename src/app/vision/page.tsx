@@ -5,9 +5,9 @@ import { MarketingFooter } from "@/components/marketing-footer";
 import { VisionClient } from "./client";
 
 export const metadata: Metadata = {
-  title: "Vision — The Information Gap at the Top",
+  title: "Vision — See Your Business Clearly",
   description:
-    "The person making the biggest decisions has the most mediated, least reliable view of what's actually going on. Qorpera exists to close that gap.",
+    "The people making the biggest decisions have the most mediated view of what's actually happening. Qorpera exists to close that gap.",
 };
 
 export default function VisionPage() {
@@ -15,8 +15,8 @@ export default function VisionPage() {
     <>
       <MarketingPageShell
         label="Our vision"
-        title="The information gap at the top."
-        subtitle="The person making the biggest decisions has the most mediated, least reliable view of what's actually going on. Qorpera exists to close that gap."
+        title="See your business clearly. Act on what matters."
+        subtitle="The people making the biggest decisions have the most mediated view of what's actually happening. Qorpera exists to close that gap."
       >
         <VisionClient />
         <MarketingCta />

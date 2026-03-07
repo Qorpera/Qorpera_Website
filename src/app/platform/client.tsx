@@ -161,8 +161,8 @@ export function PlatformClient() {
               <p>
                 Qorpera inverts this. Instead of relying on your team to watch tools and
                 report back, AI watches every connected system directly — detecting the
-                situations developing across your business and surfacing them with full
-                context and relationship awareness.
+                situations developing across your business and surfacing them with the
+                full context needed to understand what they mean and why they matter.
               </p>
             </div>
           </FadeIn>
@@ -173,11 +173,11 @@ export function PlatformClient() {
       {/* Layer 01 */}
       <LayerSection
         num="01"
-        label="How events flow in"
-        title="Event Stream — the AI's sensory input."
-        description="Every connected tool feeds raw events into Qorpera: CRM updates, support tickets, emails, calendar changes, invoice statuses, project updates. This is how the system sees your business in real time — not through someone's summary, but through the actual data."
+        label="The AI's eyes and ears"
+        title="Event Stream — everything that happens, in real time."
+        description="Every connected tool feeds raw events into Qorpera: CRM updates, support tickets, emails, calendar changes, invoice statuses, project updates. This is how the system sees your business — not through someone's summary, but through the actual data as it happens."
         details={[
-          "OAuth connectors for HubSpot, Google, Linear, Slack, and more",
+          "OAuth connectors for HubSpot, Stripe, Gmail, Google Sheets, and more",
           "Real-time event ingestion — changes appear in seconds",
           "CSV and API import for custom data sources",
           "Event normalization across different tool formats",
@@ -189,12 +189,12 @@ export function PlatformClient() {
       <LayerSection
         num="02"
         label="How entities are resolved"
-        title="Knowledge Graph — automatic entity resolution."
-        description="Raw events mention people, companies, deals, and projects — but each tool uses its own IDs. The knowledge graph engine automatically resolves entities across systems, building a unified operational model. This is what gives Qorpera the cross-system awareness that no single person on your team can match."
+        title="Knowledge Graph — a unified model of your business."
+        description="The AI automatically builds a structured model of your business from events and your description of your organization. A contact in HubSpot and a customer in Stripe become one person with full context. This cross-system entity resolution is what gives Qorpera the awareness that no single tool — and no single person on your team — can match."
         details={[
           "Cross-system entity resolution (email, domain, name matching)",
           "Automatic relationship discovery between entities",
-          "Property merging from multiple sources of truth",
+          "Your team structure — who manages what, who should know",
           "Queryable graph with multi-hop traversal",
         ]}
         color="#06b6d4"
@@ -203,9 +203,9 @@ export function PlatformClient() {
       {/* Layer 03 */}
       <LayerSection
         num="03"
-        label="How situations are detected"
-        title="Situation Engine — pattern detection at scale."
-        description="The situation engine watches the event stream and knowledge graph for patterns that need attention. When a pattern matches, it assembles a complete situation: what triggered it, what context surrounds it, and how urgent it is. This is the layer that turns raw data into the operational awareness you've never had."
+        label="Qorpera's core"
+        title="Situation Engine — cross-system pattern detection."
+        description="The situation engine continuously monitors the event stream and knowledge graph for patterns that require attention. Each situation combines a trigger, cross-system context, and organizational context. It doesn't just detect anomalies — it assembles the full picture needed to make a good decision."
         details={[
           "Configurable situation types — describe in plain language",
           "Trigger detection across multiple event sources",
@@ -220,12 +220,12 @@ export function PlatformClient() {
         num="04"
         label="How decisions are made"
         title="Reasoning + Action — governed decision-making."
-        description="For each detected situation, the AI reasons about the best response using full entity context. Every proposed action passes through your governance layer before execution. You decide what the system handles autonomously and what requires your approval."
+        description="For each detected situation, the AI reasons about what it means and what to do. It considers the available actions, the governance constraints, and the outcomes of similar past situations. It then presents its assessment — or, once it has earned trust, acts directly through your existing tools."
         details={[
           "Full-context reasoning grounded in your knowledge graph",
           "Policy checks before every action (ALLOW / DENY / REQUIRE_APPROVAL)",
           "Human-in-the-loop for anything with consequences",
-          "Cross-system action execution (send email, update CRM, create ticket)",
+          "Actions flow through your existing tools — email, CRM, invoicing",
         ]}
         color="#f59e0b"
       />
@@ -234,8 +234,8 @@ export function PlatformClient() {
       <LayerSection
         num="05"
         label="How the system improves"
-        title="Continuous Learning — accuracy that compounds."
-        description="Every situation outcome is tracked. The system measures its accuracy per situation type, identifies patterns in your approvals and rejections, and improves over time. The more you use it, the better it gets at showing you what actually matters."
+        title="Learning — accuracy that compounds with every decision."
+        description="Every situation, assessment, action, and outcome cycle is recorded. Did the reminder email result in payment? Did the churn intervention save the customer? This feedback loop is what makes Qorpera fundamentally different from a monitoring tool. Dashboards are static. Qorpera gets better at your business with every decision."
         details={[
           "Outcome tracking per situation type",
           "Approval rate metrics drive the trust gradient",
@@ -255,8 +255,9 @@ export function PlatformClient() {
               <p>
                 Every action with consequences requires your approval until you say
                 otherwise. Qorpera starts fully supervised — it surfaces situations
-                and proposes responses. As it proves accuracy on each situation type,
-                you choose what to let it handle autonomously.
+                and presents its assessment. As it proves accuracy on each situation type,
+                you choose what to let it handle autonomously. And you can revoke that
+                autonomy at any time.
               </p>
               <p>
                 Every action is logged: what data was used, which entities were
@@ -269,7 +270,7 @@ export function PlatformClient() {
       </Section>
 
       {/* Mission */}
-      <Section label="Mission" title="Closing the information gap at the top.">
+      <Section label="Mission" title="See your business clearly.">
         <FadeIn>
           <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6">
             <GlowRing className="-left-16 -top-16 h-48 w-48" />
@@ -277,9 +278,9 @@ export function PlatformClient() {
               <div>
                 <h3 className="text-base font-semibold text-white">The mission</h3>
                 <p className="mt-2 text-sm text-[#b8c5ce]">
-                  Give every leader unmediated operational intelligence — the same
-                  situational awareness that today requires a $10M+ Palantir deployment,
-                  at a fraction of the cost, live in minutes.
+                  Give every leader unmediated operational intelligence — the
+                  cross-system situational awareness that today requires a $10M+
+                  Palantir deployment, at a fraction of the cost, live in 25 minutes.
                 </p>
               </div>
               <div>
@@ -287,7 +288,8 @@ export function PlatformClient() {
                 <p className="mt-2 text-sm text-[#b8c5ce]">
                   You finally see your own business clearly. Not through dashboards,
                   not through your team&apos;s filtered reports — but the actual
-                  situations developing across your operations, with full context.
+                  situations developing across your operations, with full context
+                  to understand what they mean and why they matter.
                 </p>
               </div>
             </div>

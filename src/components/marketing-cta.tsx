@@ -14,12 +14,12 @@ export function MarketingCta() {
             Get started
           </p>
           <h2 className="mt-3 text-3xl font-medium tracking-[-0.03em] text-white sm:text-4xl">
-            See what&apos;s actually happening in your business.
+            See your business clearly.
           </h2>
           <p className="mt-4 text-[#b8c5ce]">
-            Book a demo and we&apos;ll connect your tools live — showing you the
-            developing situations in your operations that your dashboards and team
-            updates aren&apos;t surfacing.
+            We&apos;ll connect your tools, show you the situations Qorpera finds in
+            your data, and walk through what you&apos;ve been missing — live, on your
+            business.
           </p>
         </FadeIn>
         <FadeIn delay={0.15}>
@@ -28,7 +28,7 @@ export function MarketingCta() {
               href="/contact"
               className="rounded-lg bg-white px-7 py-3 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-200"
             >
-              Request a Demo
+              Request Early Access
             </Link>
             <Link
               href="/how-it-works"

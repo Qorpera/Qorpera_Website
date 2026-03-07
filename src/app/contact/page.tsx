@@ -4,7 +4,7 @@ import { MarketingFooter } from "@/components/marketing-footer";
 
 export const metadata: Metadata = {
   title: "Contact — Qorpera",
-  description: "See what's actually happening in your business. Book a demo and we'll connect your tools live.",
+  description: "See what's actually happening in your business. We'll connect your tools and show you the situations Qorpera finds — live, on your data.",
 };
 
 export default function ContactPage() {
@@ -28,9 +28,9 @@ export default function ContactPage() {
             </h1>
 
             <p className="mt-5 text-[15px] leading-relaxed text-white/45">
-              Tell us about your business and we&apos;ll show you the situations
-              developing across your operations right now — the ones your dashboards
-              and team updates aren&apos;t surfacing.
+              We&apos;ll connect your tools, show you the situations Qorpera finds
+              in your data, and walk through what you&apos;ve been missing — live,
+              on your business.
             </p>
 
             <div className="mt-10 space-y-6">
@@ -40,7 +40,7 @@ export default function ContactPage() {
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
                 }
-                title="Live Demo"
+                title="Live on Your Data"
                 description="We connect your actual tools and show you the situations Qorpera finds — in your data, not a demo environment."
               />
               <InfoRow
@@ -51,8 +51,8 @@ export default function ContactPage() {
                     <path d="M9 21V9" />
                   </svg>
                 }
-                title="Custom Configuration"
-                description="We configure situation types and governance rules tailored to what matters most to your leadership team."
+                title="Your Concerns, Your Language"
+                description="Tell us what keeps you up at night. The AI converts your operational concerns into situation detection — no configuration required."
               />
               <InfoRow
                 icon={
@@ -61,14 +61,14 @@ export default function ContactPage() {
                   </svg>
                 }
                 title="You Stay in Control"
-                description="Full audit trails, trust gradient, and human-in-the-loop approval. You decide how much to delegate."
+                description="Full audit trails, trust gradient, and human-in-the-loop approval. The AI earns autonomy — you decide how much to delegate."
               />
             </div>
           </div>
 
           {/* Right — Form */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8">
-            <h2 className="text-lg font-semibold text-white">Get in Touch</h2>
+            <h2 className="text-lg font-semibold text-white">Request Early Access</h2>
             <p className="mt-1 text-[13px] text-white/35">
               Fill out the form and our team will get back to you within one business day.
             </p>

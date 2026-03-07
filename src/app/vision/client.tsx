@@ -15,64 +15,64 @@ const COMPARISONS = [
     name: "Palantir / Foundry",
     color: "#3b82f6",
     them: [
-      "Built for governments and Fortune 500",
+      "Requires humans to map the ontology, build the logic, design the workflows",
+      "Months of professional services before you see anything",
       "$10M+ implementation cost",
-      "6-12 month deployment cycles",
-      "Requires dedicated engineering teams",
+      "You build the lens before you can see",
     ],
     us: [
-      "Built for companies where the CEO still feels the business",
-      "Fraction of the cost",
-      "Live in 25 minutes",
-      "No engineering required — describe what matters in plain language",
+      "AI builds the ontology, detects the situations, assembles the context",
+      "Shows you the picture first, lets you refine the focus",
+      "Fraction of the cost, live in 25 minutes",
+      "You connect your tools and describe what matters — the AI does the rest",
     ],
   },
   {
     name: "Dashboards & BI Tools",
     color: "#a855f7",
     them: [
-      "Show you lagging metrics — what already happened",
-      "You know revenue is down 8%, but not why",
-      "Require someone to build the right report first",
-      "No context, no relationships, no narrative",
+      "Show you metrics — accounts receivable is $127K",
+      "Answer the questions you think to ask",
+      "Static — the same view regardless of what's happening",
+      "No context, no relationships, no judgment",
     ],
     us: [
-      "Show you developing situations — what's happening now",
-      "You see the three churning accounts, stalled deals, and escalations that explain the number",
-      "AI surfaces what matters without you having to ask",
-      "Full context from across every connected system",
+      "Show you situations — three invoices overdue, two routine, one a churn signal",
+      "Surface the things you didn't know to look for",
+      "Dynamic — the picture changes as your business does",
+      "Full context across every connected system",
     ],
   },
   {
-    name: "ChatGPT / Claude / AI Copilots",
+    name: "Workflow Tools (Zapier, Make, n8n)",
     color: "#f59e0b",
     them: [
-      "You bring the context every time you interact",
-      "No persistent memory of your business",
-      "Reactive — waits for you to ask",
-      "Produces text, not operational awareness",
+      "Automate decisions humans have already made",
+      "\"When invoice is overdue, send this template\"",
+      "Can't reason about context or adapt based on outcomes",
+      "Break on edge cases and exceptions",
     ],
     us: [
-      "Persistent knowledge graph of your entire operation",
-      "Always-on — detects situations as they emerge",
-      "Proactive — surfaces what matters before you know to ask",
-      "Produces the unmediated picture of your business you've never had",
+      "Understand the situation before deciding what to do about it",
+      "The response depends on who the customer is and what else is happening",
+      "Learn from outcomes — what worked, what didn't",
+      "Handle edge cases through reasoning, not rigid rules",
     ],
   },
   {
     name: "Your Team's Updates",
     color: "#10b981",
     them: [
-      "Filtered through each person's incomplete mental model",
-      "Delayed — you find out after the fact",
-      "Partial — each person only sees their own tools",
-      "Shaped by what they think you want to hear",
+      "Filtered through individual perspectives and priorities",
+      "Delayed by communication cycles",
+      "Fragmented across tools that don't talk to each other",
+      "One vacation away from organizational blindness",
     ],
     us: [
-      "Unmediated — drawn directly from your systems",
+      "Drawn directly from your systems — unmediated",
       "Real-time — situations surfaced as they develop",
-      "Complete — intelligence across every connected system",
-      "Objective — the picture as it actually is",
+      "Unified across every connected system",
+      "Always on — never sick, never on vacation, never forgets",
     ],
   },
 ];
@@ -141,48 +141,58 @@ export function VisionClient() {
   return (
     <>
       {/* The Problem */}
-      <Section label="The problem" title="A game of telephone at the top of every company.">
+      <Section label="The problem" title="The most mediated view in the company.">
         <FadeIn>
           <div className="max-w-2xl space-y-4 text-[#b8c5ce]">
             <p>
-              A CEO or COO has dashboards that show them lagging metrics. Revenue is
-              down 8% this month — but why? They ask their team. The team gives them
-              a filtered, partial, delayed picture based on whatever each person happens
-              to have noticed.
+              Every company runs on dozens of tools. CRMs, invoicing systems, support
+              desks, email, Slack, spreadsheets, project managers. Each tool sees one
+              slice of the business. No tool sees the whole picture.
             </p>
             <p>
-              The CEO&apos;s understanding of their own operations is basically a game
-              of telephone played across six tools and four people&apos;s incomplete
-              mental models. Each person sees one slice, remembers what they remember,
-              and reports what they think the boss wants to hear.
+              The people making the biggest decisions — the ones steering the company —
+              have the most mediated view of what&apos;s actually happening. Their
+              understanding is assembled from reports, meetings, dashboard glances, and
+              whatever their team happens to surface. Filtered through individual
+              perspectives, delayed by communication cycles, fragmented across tools
+              that don&apos;t talk to each other.
             </p>
             <p>
-              That&apos;s terrifying when you think about it. The person making the
-              biggest decisions has the most mediated, least reliable view of what&apos;s
-              actually going on.
+              The ops person who comes closest — the one who &ldquo;just knows&rdquo;
+              that Meridian is about to churn, that the Q3 invoices need attention, that
+              deal #4071 has been stalled too long — that person is one vacation, one
+              sick day, one resignation away from organizational blindness.
+            </p>
+            <p className="font-medium text-white/90">
+              The problem isn&apos;t that operational work is hard to do. It&apos;s that
+              the people who need to understand their business have no direct way to see it.
             </p>
           </div>
         </FadeIn>
       </Section>
 
       {/* The Insight */}
-      <Section label="The insight" title="What if you could see your own business directly?">
+      <Section label="The insight" title="The fundamental unit of operational reality is a situation.">
         <FadeIn>
           <div className="max-w-2xl space-y-4 text-[#b8c5ce]">
             <p>
-              Right now, the only way you know what&apos;s really happening in your
-              business is by asking the people who work in it. Every answer is filtered
-              through someone else&apos;s attention, priorities, and interpretation.
+              An overdue invoice is a data point. An overdue invoice <em>from a customer
+              whose email sentiment has dropped, who just asked about their contract end
+              date, and whose support tickets have turned negative</em> — that&apos;s a
+              situation. It means something entirely different from a simple late payment.
+              It&apos;s a $45K churn risk that no single tool would flag.
             </p>
             <p>
-              Qorpera gives you the full picture directly — not dashboards, not metrics,
-              but the actual situations developing across your CRM, payments, email, and
-              support, with the context to understand what matters and why.
+              These situations develop continuously across every business. Most go
+              unnoticed because the signals live in different tools. The few that get
+              caught are caught by experienced people who happen to connect the dots at
+              the right moment — people who built their operational intuition over years
+              of watching patterns.
             </p>
-            <p>
-              It&apos;s the operational awareness you&apos;d have if you could personally
-              watch every tool and every account simultaneously. Not &ldquo;we help your
-              team work faster&rdquo; — you finally see your own business clearly.
+            <p className="font-medium text-white/90">
+              What if the people running the company could see every situation developing
+              across every tool, in real time, with the full context to understand what
+              it means and why it matters?
             </p>
           </div>
         </FadeIn>
@@ -192,9 +202,10 @@ export function VisionClient() {
       <Section label="Positioning" title="Why nothing else gives you this.">
         <FadeIn>
           <p className="max-w-2xl text-[#b8c5ce]">
-            The market has dashboards, AI chatbots, automation tools, and your team&apos;s
-            updates. None of them give you an unmediated, real-time picture of what&apos;s
-            actually happening across your business.
+            Dashboards show metrics. Workflow tools automate decisions. AI copilots
+            answer when asked. Your team reports what they happen to notice. None of
+            them give you unmediated, real-time operational awareness across your
+            entire business.
           </p>
         </FadeIn>
         <div className="mt-10 space-y-6">
@@ -204,28 +215,26 @@ export function VisionClient() {
         </div>
       </Section>
 
-      {/* The Mission */}
-      <Section label="The mission" title="Unmediated operational intelligence.">
+      {/* The North Star */}
+      <Section label="The north star" title="Perfect operational awareness.">
         <FadeIn>
           <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-8">
             <GlowRing className="-left-16 -top-16 h-48 w-48" />
             <div className="relative max-w-2xl space-y-4 text-[#b8c5ce]">
               <p>
-                Qorpera&apos;s mission is to close the information gap at the top of
-                every growing company. The people steering the business should have
-                the clearest view of it — not the most mediated one.
+                The end state is a world where the people running a business have
+                perfect operational awareness. Not through more dashboards, more
+                meetings, or more reports — but through an AI that sees everything,
+                understands the context, knows what matters, and acts on the routine
+                so humans can focus on the strategic.
               </p>
               <p>
-                Today, operational intelligence at this level is a luxury reserved for
-                companies that can afford $10M+ Palantir implementations. We believe
-                every leader deserves to see their own business clearly — at a fraction
-                of the cost, deployed in minutes, not months.
+                The human becomes the teacher, the policy-maker, and the handler of
+                genuinely novel situations. The AI becomes the tireless observer that
+                never forgets, never overlooks, and never stops learning.
               </p>
-              <p>
-                This isn&apos;t a productivity tool. It&apos;s a strategic one. The
-                sell isn&apos;t &ldquo;we help your team work faster.&rdquo; It&apos;s
-                &ldquo;you finally see your own business clearly.&rdquo; That changes
-                how you make decisions, how fast you respond, and how confidently you lead.
+              <p className="font-medium text-white/90">
+                Connect your tools. See your business clearly. Let the AI handle the rest.
               </p>
             </div>
           </div>

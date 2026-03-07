@@ -16,7 +16,7 @@ export function MarketingFooter() {
           <Link href="/vision" className="transition hover:text-white/50">Vision</Link>
           <Link href="/contact" className="transition hover:text-white/50">Contact</Link>
         </nav>
-        <span className="text-[12px] text-white/20">Operational intelligence for the people steering the company</span>
+        <span className="text-[12px] text-white/20">See your business clearly.</span>
       </div>
     </footer>
   );
