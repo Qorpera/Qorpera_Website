@@ -197,19 +197,20 @@ export function LandingClient() {
 
           <FadeUp delay={150}>
             <h1 className="mt-6 text-center text-4xl font-medium leading-[1.08] tracking-[-0.03em] text-white sm:text-5xl lg:text-6xl">
-              The full picture of your business.{" "}
+              The{" "}
               <span className="bg-gradient-to-r from-purple-400 to-purple-200 bg-clip-text text-transparent">
-                Not the filtered one.
+                full picture
               </span>
+              {" "}of your business.
             </h1>
           </FadeUp>
 
           <FadeUp delay={300}>
             <p className="mx-auto mt-6 max-w-xl text-[17px] leading-relaxed text-white/40">
-              Right now, the only way you know what&apos;s really happening is by asking
-              the people who work in it. Qorpera gives you the full picture directly —
-              every situation developing across every tool, with the context to
-              understand what it means.
+              Qorpera connects to your tools and continuously surfaces the situations
+              that matter — churn risks, stalled deals, overdue invoices, developing
+              problems — with full cross-system context and the reasoning to
+              understand why they matter.
             </p>
           </FadeUp>
 
