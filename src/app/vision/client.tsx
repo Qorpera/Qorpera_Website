@@ -3,8 +3,6 @@
 import { Section } from "@/components/marketing-page-shell";
 import {
   FadeIn,
-  StaggerGroup,
-  StaggerItem,
   GlowRing,
 } from "@/components/motion-primitives";
 import { motion, useInView } from "framer-motion";
@@ -23,26 +21,26 @@ const COMPARISONS = [
       "Requires dedicated engineering teams",
     ],
     us: [
-      "Built for growing companies (10-500 people)",
+      "Built for companies where the CEO still feels the business",
       "Fraction of the cost",
       "Live in 25 minutes",
-      "No engineering required — describe situations in plain language",
+      "No engineering required — describe what matters in plain language",
     ],
   },
   {
-    name: "Zapier / Make / n8n",
+    name: "Dashboards & BI Tools",
     color: "#a855f7",
     them: [
-      "Connects point A to point B",
-      "No understanding of your business context",
-      "Breaks on edge cases and exceptions",
-      "You build and maintain every workflow manually",
+      "Show you lagging metrics — what already happened",
+      "You know revenue is down 8%, but not why",
+      "Require someone to build the right report first",
+      "No context, no relationships, no narrative",
     ],
     us: [
-      "Understands entities, relationships, and situations",
-      "Full business context from the knowledge graph",
-      "Handles edge cases through reasoning, not rigid rules",
-      "AI builds and adapts responses to situations",
+      "Show you developing situations — what's happening now",
+      "You see the three churning accounts, stalled deals, and escalations that explain the number",
+      "AI surfaces what matters without you having to ask",
+      "Full context from across every connected system",
     ],
   },
   {
@@ -52,29 +50,29 @@ const COMPARISONS = [
       "You bring the context every time you interact",
       "No persistent memory of your business",
       "Reactive — waits for you to ask",
-      "Produces text, not operational outcomes",
+      "Produces text, not operational awareness",
     ],
     us: [
       "Persistent knowledge graph of your entire operation",
       "Always-on — detects situations as they emerge",
-      "Proactive — acts before you know there's a problem",
-      "Produces governed actions with real business impact",
+      "Proactive — surfaces what matters before you know to ask",
+      "Produces the unmediated picture of your business you've never had",
     ],
   },
   {
-    name: "CRM / Support / Domain Tools",
+    name: "Your Team's Updates",
     color: "#10b981",
     them: [
-      "Each tool sees only its own data silo",
-      "AI features are bolted-on copilots for that one tool",
-      "Can't reason across systems or departments",
-      "You're the integration layer between tools",
+      "Filtered through each person's incomplete mental model",
+      "Delayed — you find out after the fact",
+      "Partial — each person only sees their own tools",
+      "Shaped by what they think you want to hear",
     ],
     us: [
-      "Cross-system intelligence — sees the whole picture",
-      "AI is the operating layer, not a feature in a feature",
-      "Reasons across every connected system simultaneously",
-      "Qorpera is the integration layer — you focus on decisions",
+      "Unmediated — drawn directly from your systems",
+      "Real-time — situations surfaced as they develop",
+      "Complete — intelligence across every connected system",
+      "Objective — the picture as it actually is",
     ],
   },
 ];
@@ -108,7 +106,7 @@ function ComparisonCard({
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <div>
           <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-white/25">
-            What they do
+            What they give you
           </p>
           <div className="space-y-2">
             {them.map((t) => (
@@ -121,7 +119,7 @@ function ComparisonCard({
         </div>
         <div>
           <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-white/25">
-            What Qorpera does
+            What Qorpera gives you
           </p>
           <div className="space-y-2">
             {us.map((u) => (
@@ -143,59 +141,60 @@ export function VisionClient() {
   return (
     <>
       {/* The Problem */}
-      <Section label="The problem" title="Not a lack of tools. A lack of attention.">
+      <Section label="The problem" title="A game of telephone at the top of every company.">
         <FadeIn>
           <div className="max-w-2xl space-y-4 text-[#b8c5ce]">
             <p>
-              The average growing company uses 50-100 SaaS tools. Each one captures
-              data in its own silo. Each one sends its own notifications. And somewhere
-              in the gaps between these tools, situations emerge that nobody sees in time.
+              A CEO or COO has dashboards that show them lagging metrics. Revenue is
+              down 8% this month — but why? They ask their team. The team gives them
+              a filtered, partial, delayed picture based on whatever each person happens
+              to have noticed.
             </p>
             <p>
-              An overdue invoice from a customer who also has an open support ticket.
-              A stalled deal where the champion just changed jobs. A vendor contract
-              expiring next month that nobody remembered to renew.
+              The CEO&apos;s understanding of their own operations is basically a game
+              of telephone played across six tools and four people&apos;s incomplete
+              mental models. Each person sees one slice, remembers what they remember,
+              and reports what they think the boss wants to hear.
             </p>
             <p>
-              These aren&apos;t exotic scenarios. They happen every day, in every
-              company, across every department. The problem isn&apos;t that the data
-              doesn&apos;t exist — it&apos;s that no human can simultaneously watch
-              everything.
+              That&apos;s terrifying when you think about it. The person making the
+              biggest decisions has the most mediated, least reliable view of what&apos;s
+              actually going on.
             </p>
           </div>
         </FadeIn>
       </Section>
 
       {/* The Insight */}
-      <Section label="The insight" title="Every operational task starts with a situation.">
+      <Section label="The insight" title="What if you could see your own business directly?">
         <FadeIn>
           <div className="max-w-2xl space-y-4 text-[#b8c5ce]">
             <p>
-              Before anyone takes action in a business, something happens first: a situation
-              emerges that requires a decision. An invoice goes overdue. A customer shows
-              signs of churning. A contract approaches renewal.
+              Right now, the only way you know what&apos;s really happening in your
+              business is by asking the people who work in it. Every answer is filtered
+              through someone else&apos;s attention, priorities, and interpretation.
             </p>
             <p>
-              Today, these situations are detected by humans — if they&apos;re detected at all.
-              Someone notices. Someone remembers. Someone connects the dots across systems.
-              This is expensive, unreliable, and doesn&apos;t scale.
+              Qorpera gives you the full picture directly — not dashboards, not metrics,
+              but the actual situations developing across your CRM, payments, email, and
+              support, with the context to understand what matters and why.
             </p>
             <p>
-              What if AI could do the watching? Not as a chatbot you ask questions to, but as
-              an always-on intelligence layer that detects situations across all your systems,
-              reasons about what to do, and acts within boundaries you define?
+              It&apos;s the operational awareness you&apos;d have if you could personally
+              watch every tool and every account simultaneously. Not &ldquo;we help your
+              team work faster&rdquo; — you finally see your own business clearly.
             </p>
           </div>
         </FadeIn>
       </Section>
 
       {/* Competitive Positioning */}
-      <Section label="Positioning" title="Why nothing else does this.">
+      <Section label="Positioning" title="Why nothing else gives you this.">
         <FadeIn>
           <p className="max-w-2xl text-[#b8c5ce]">
-            The market has tools for automation, tools for AI chat, and tools for
-            domain-specific workflows. None of them combine continuous situation
-            detection with cross-system reasoning and governed action.
+            The market has dashboards, AI chatbots, automation tools, and your team&apos;s
+            updates. None of them give you an unmediated, real-time picture of what&apos;s
+            actually happening across your business.
           </p>
         </FadeIn>
         <div className="mt-10 space-y-6">
@@ -206,26 +205,27 @@ export function VisionClient() {
       </Section>
 
       {/* The Mission */}
-      <Section label="The mission" title="Intelligence that compounds.">
+      <Section label="The mission" title="Unmediated operational intelligence.">
         <FadeIn>
           <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-8">
             <GlowRing className="-left-16 -top-16 h-48 w-48" />
             <div className="relative max-w-2xl space-y-4 text-[#b8c5ce]">
               <p>
-                Qorpera&apos;s mission is to disrupt the cost structure of digital work
-                through the distribution of secure, situation-driven intelligence.
+                Qorpera&apos;s mission is to close the information gap at the top of
+                every growing company. The people steering the business should have
+                the clearest view of it — not the most mediated one.
               </p>
               <p>
-                Today, operational intelligence at scale is a luxury reserved for
-                companies that can afford $10M+ Palantir implementations and dedicated
-                engineering teams. We believe every growing company deserves the same
-                capability — at a fraction of the cost, deployed in minutes, not months.
+                Today, operational intelligence at this level is a luxury reserved for
+                companies that can afford $10M+ Palantir implementations. We believe
+                every leader deserves to see their own business clearly — at a fraction
+                of the cost, deployed in minutes, not months.
               </p>
               <p>
-                We&apos;re building the operating system that makes this possible:
-                AI that watches your business, earns your trust through accuracy,
-                and handles the operational load that currently requires an army of
-                coordinators, analysts, and managers.
+                This isn&apos;t a productivity tool. It&apos;s a strategic one. The
+                sell isn&apos;t &ldquo;we help your team work faster.&rdquo; It&apos;s
+                &ldquo;you finally see your own business clearly.&rdquo; That changes
+                how you make decisions, how fast you respond, and how confidently you lead.
               </p>
             </div>
           </div>

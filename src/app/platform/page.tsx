@@ -5,9 +5,9 @@ import { MarketingFooter } from "@/components/marketing-footer";
 import { PlatformClient } from "./client";
 
 export const metadata: Metadata = {
-  title: "Platform — The Five-Layer Architecture",
+  title: "Platform — How Leaders Get Unmediated Visibility",
   description:
-    "From raw events to intelligent action. How Qorpera's five-layer stack detects situations, reasons about them, and acts within governed boundaries.",
+    "Five layers turn raw events from your CRM, payments, email, and support into the operational awareness that dashboards and team updates can't provide.",
 };
 
 export default function PlatformPage() {
@@ -15,8 +15,8 @@ export default function PlatformPage() {
     <>
       <MarketingPageShell
         label="The platform"
-        title="Five layers. From events to intelligent action."
-        subtitle="Qorpera is an AI operating system built as a five-layer stack. Each layer transforms raw business data into governed, situation-driven intelligence."
+        title="How leaders get unmediated visibility."
+        subtitle="Five layers turn raw events from every connected system into the operational awareness that dashboards and team updates can't provide."
       >
         <PlatformClient />
         <MarketingCta />

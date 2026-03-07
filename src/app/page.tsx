@@ -3,9 +3,9 @@ import { LandingClient } from "./landing-client";
 import { MarketingFooter } from "@/components/marketing-footer";
 
 export const metadata: Metadata = {
-  title: { absolute: "Qorpera — The Operating System for AI-Driven Work" },
+  title: { absolute: "Qorpera — Operational Intelligence for the People Steering the Company" },
   description:
-    "AI that watches your business, detects situations that need attention, reasons about what to do, and acts within governed boundaries.",
+    "Right now, you only know what's happening in your business by asking the people who work in it. Qorpera gives you the full picture directly.",
 };
 
 export default function HomePage() {

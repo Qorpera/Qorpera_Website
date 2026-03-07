@@ -5,9 +5,9 @@ import { MarketingFooter } from "@/components/marketing-footer";
 import { VisionClient } from "./client";
 
 export const metadata: Metadata = {
-  title: "Vision — Disrupting the Cost Structure of Digital Work",
+  title: "Vision — The Information Gap at the Top",
   description:
-    "The problem isn't a lack of tools. It's that nobody is watching everything simultaneously. Qorpera is the operating system that changes that.",
+    "The person making the biggest decisions has the most mediated, least reliable view of what's actually going on. Qorpera exists to close that gap.",
 };
 
 export default function VisionPage() {
@@ -15,8 +15,8 @@ export default function VisionPage() {
     <>
       <MarketingPageShell
         label="Our vision"
-        title="Disrupting the cost structure of digital work."
-        subtitle="The world doesn't need more SaaS tools. It needs intelligence that watches, reasons, and acts — so humans can focus on what only humans can do."
+        title="The information gap at the top."
+        subtitle="The person making the biggest decisions has the most mediated, least reliable view of what's actually going on. Qorpera exists to close that gap."
       >
         <VisionClient />
         <MarketingCta />

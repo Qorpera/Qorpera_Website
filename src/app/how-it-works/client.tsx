@@ -15,7 +15,7 @@ const ONBOARDING_STEPS = [
   {
     time: "0 — 5 min",
     title: "Connect your tools",
-    desc: "OAuth into HubSpot, Google Workspace, Linear, Slack — or upload a CSV. No config files, no mapping tables. Just authenticate and go.",
+    desc: "OAuth into HubSpot, Google Workspace, Linear, Slack — or upload a CSV. These are the systems Qorpera will watch on your behalf.",
     details: [
       "One-click OAuth for major platforms",
       "CSV import for custom data",
@@ -25,19 +25,19 @@ const ONBOARDING_STEPS = [
   },
   {
     time: "5 — 10 min",
-    title: "AI presents its findings",
-    desc: "Qorpera scans your connected systems and builds a knowledge graph. It shows you the entities it found, the relationships it discovered, and a statistical overview of your operations.",
+    title: "See what's already there",
+    desc: "Qorpera scans your connected systems, resolves entities across them, and shows you a unified map of your operation — contacts, companies, deals, and the relationships between them. Most leaders have never seen this view of their own business.",
     details: [
       "Entities resolved across systems automatically",
-      "Relationship graph visualized",
-      "Statistical summary of your operational data",
+      "Cross-system relationships discovered",
+      "A unified picture you've never had before",
     ],
     color: "#06b6d4",
   },
   {
     time: "10 — 20 min",
-    title: "Teach it your pain points",
-    desc: "Describe the situations that matter to your business in plain language: \"When an invoice is 30 days overdue and the customer has an open support ticket, flag it.\" Qorpera translates these into detection rules.",
+    title: "Tell it what matters",
+    desc: "Describe the situations that matter to you in plain language: \"When a major account has rising support tickets and a renewal coming up, I need to know.\" Qorpera translates these into detection rules across all your connected systems.",
     details: [
       "Natural language situation descriptions",
       "AI suggests triggers and context automatically",
@@ -47,23 +47,23 @@ const ONBOARDING_STEPS = [
   },
   {
     time: "20 — 25 min",
-    title: "AI presents its plan",
-    desc: "Qorpera shows you the situation types it will monitor, the response strategies it proposes, and the governance rules it will follow. Review, adjust, and approve.",
+    title: "Review the plan",
+    desc: "Qorpera shows you the situation types it will monitor, the response strategies it proposes, and the governance rules it will follow. You approve what makes sense, adjust what doesn't.",
     details: [
-      "Situation types with proposed response strategies",
-      "Governance rules per situation type",
-      "Preview of what approval workflows will look like",
+      "Situation types with proposed responses",
+      "Governance rules you control",
+      "Preview of the approval workflow",
     ],
     color: "#f59e0b",
   },
   {
     time: "25+ min",
-    title: "Go live",
-    desc: "Situations start appearing as they're detected. You approve or reject each one. The system learns from your decisions and improves over time.",
+    title: "Start seeing clearly",
+    desc: "Situations begin surfacing as they develop across your business. For the first time, you're seeing what's actually happening — not what someone told you is happening.",
     details: [
       "Real situations from your live data",
-      "Approve/reject with full context",
-      "Accuracy tracking begins immediately",
+      "Full context and relationship awareness",
+      "The picture gets clearer every day",
     ],
     color: "#10b981",
   },
@@ -73,23 +73,23 @@ const TRUST_PHASES = [
   {
     phase: "Phase 1",
     title: "Full supervision",
-    desc: "Every detected situation is presented for your approval. AI proposes actions but never acts alone. You see exactly what it would do and why.",
+    desc: "Every detected situation is presented for your review. Qorpera proposes actions but never acts alone. You see exactly what it would do and why — and you decide.",
     duration: "First 1-2 weeks",
     pct: "0% autonomous",
     color: "#f43f5e",
   },
   {
     phase: "Phase 2",
-    title: "Accuracy tracking",
-    desc: "The system tracks your approval rate per situation type. Types where you consistently approve build a track record. You start to see which situations the AI handles reliably.",
+    title: "Building trust",
+    desc: "The system tracks how often you approve its proposals per situation type. You start to see which situations it handles reliably — and which need your judgment.",
     duration: "Weeks 2-4",
     pct: "~20% autonomous",
     color: "#f59e0b",
   },
   {
     phase: "Phase 3",
-    title: "Graduated autonomy",
-    desc: "High-accuracy situation types are flagged for graduation. You choose which ones to let the AI handle autonomously. Novel or complex situations still require approval.",
+    title: "Selective delegation",
+    desc: "High-accuracy situation types can be graduated to autonomous handling. You choose which ones. Novel or complex situations still surface for your decision.",
     duration: "Month 2+",
     pct: "50-70% autonomous",
     color: "#a855f7",
@@ -97,7 +97,7 @@ const TRUST_PHASES = [
   {
     phase: "Phase 4",
     title: "Steady state",
-    desc: "80-90% of routine situations are handled autonomously. You focus on exceptions, strategy, and new situation types. The system continues learning and improving.",
+    desc: "80-90% of routine situations are handled autonomously. You focus on the exceptions, the strategic calls, and the new situation types. The system continues learning.",
     duration: "Ongoing",
     pct: "80-90% autonomous",
     color: "#10b981",
@@ -161,18 +161,19 @@ export function HowItWorksClient() {
   return (
     <>
       {/* Onboarding Timeline */}
-      <Section label="Onboarding" title="Five steps. Twenty-five minutes. Fully operational.">
+      <Section label="Onboarding" title="Five steps. Twenty-five minutes. A completely different view.">
         <OnboardingTimeline />
       </Section>
 
       {/* Trust Gradient */}
-      <Section label="Trust gradient" title="AI earns autonomy. You stay in control.">
+      <Section label="Trust gradient" title="You decide how much to delegate.">
         <FadeIn>
           <div className="max-w-2xl space-y-4 text-[#b8c5ce]">
             <p>
-              Qorpera doesn&apos;t start with autonomy — it starts with full supervision.
-              As the AI proves its accuracy on each situation type, it earns the right
-              to act independently. You control the graduation criteria.
+              Qorpera starts fully supervised. It surfaces situations and proposes
+              responses — you approve or reject. As it proves accuracy on each
+              situation type, you choose what to let it handle autonomously.
+              You stay in control of the graduation criteria.
             </p>
           </div>
         </FadeIn>
@@ -211,20 +212,20 @@ export function HowItWorksClient() {
       </Section>
 
       {/* What happens after */}
-      <Section label="After go-live" title="The system gets better at your business every day.">
+      <Section label="After go-live" title="The picture gets clearer every day.">
         <FadeIn>
           <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-8">
             <div className="relative max-w-2xl space-y-4 text-[#b8c5ce]">
               <p>
-                Every approved action teaches the system what good looks like. Every rejected
-                action teaches it what to avoid. Over weeks and months, Qorpera becomes
-                increasingly accurate at handling the routine situations that consume
-                your team&apos;s time.
+                Every approved action teaches the system what matters to you. Every
+                rejected action teaches it what doesn&apos;t. Over weeks and months,
+                Qorpera becomes increasingly precise at surfacing the situations you
+                actually need to see.
               </p>
               <p>
                 You&apos;re not training a chatbot — you&apos;re building an operational
-                intelligence layer that compounds in value. New situation types can be added
-                anytime. The trust gradient applies to each one independently.
+                intelligence layer that compounds in value. The longer it runs, the
+                clearer your view of your own business becomes.
               </p>
             </div>
           </div>

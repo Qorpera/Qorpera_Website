@@ -9,83 +9,71 @@ import {
 
 /* -- Data --------------------------------------------------------- */
 
-const SITUATIONS = [
+const SCENARIOS = [
   {
-    dept: "Finance",
-    deptColor: "#3b82f6",
-    name: "Overdue Invoice Follow-Up",
-    trigger: "Invoice passes 30-day mark with no payment recorded",
-    context: "Customer's support ticket history, deal size, payment history, account health score",
-    action: "Draft follow-up email with context, escalate to account manager if high-value, flag in weekly review",
-    governance: "Requires approval",
+    question: "Revenue dropped 8% this month — why?",
+    color: "#3b82f6",
+    today: "You ask your finance team. They pull a report. Maybe they notice a few lost deals. Your sales lead mentions a churning account. It takes a week to piece together a partial picture.",
+    withQorpera: "Qorpera shows you the three accounts that churned, the two stalled enterprise deals, the support escalations that preceded the churn, and the invoice disputes that delayed payments — all connected, with timeline and context.",
+    insight: "You don't just see that revenue is down. You see the specific situations that caused it, when they started developing, and what's still in motion.",
   },
   {
-    dept: "Sales",
-    deptColor: "#a855f7",
-    name: "Stalled Deal Re-engagement",
-    trigger: "Deal has no activity for 14+ days and is in negotiation stage",
-    context: "Last touchpoint, competitor mentions, stakeholder map, proposal status",
-    action: "Draft re-engagement email, suggest next-best-action based on deal context, notify sales rep",
-    governance: "Requires approval",
+    question: "Is our biggest account about to churn?",
+    color: "#a855f7",
+    today: "Your account manager says everything is fine. But they haven't connected the three support tickets this week, the delayed contract renewal, and the competitor demo the champion just attended.",
+    withQorpera: "Qorpera surfaces the converging signals: rising support volume, engagement drop-off, renewal stall, and external signals — assembled into a single situation with urgency context and recommended actions.",
+    insight: "You see what your account manager can't — the cross-system pattern that only becomes visible when every signal is watched simultaneously.",
   },
   {
-    dept: "Support",
-    deptColor: "#f43f5e",
-    name: "Churn Risk Detection",
-    trigger: "Customer opens 3+ support tickets in 30 days with negative sentiment",
-    context: "Contract renewal date, lifetime value, escalation history, product usage trends",
-    action: "Alert customer success, prepare retention offer, schedule executive check-in",
-    governance: "Requires approval",
+    question: "Are we going to hit our number this quarter?",
+    color: "#f59e0b",
+    today: "Your sales lead gives you a forecast based on pipeline stages. But pipeline stages don't capture the stalled deals with no activity, the proposals waiting for legal, or the champions who changed jobs.",
+    withQorpera: "Qorpera shows you the actual state of every deal: which have real momentum, which are stalled and why, which have risk signals your team hasn't flagged, and which have context changes that shift their probability.",
+    insight: "Not a forecast — the actual developing situations across your pipeline, with the context to make your own judgment.",
   },
   {
-    dept: "Operations",
-    deptColor: "#f59e0b",
-    name: "Vendor Contract Expiry",
-    trigger: "Contract renewal date is within 60 days",
-    context: "Vendor performance history, spend data, alternative vendor options, internal satisfaction survey",
-    action: "Notify procurement lead, prepare renewal brief, flag budget allocation",
-    governance: "Autonomous (notification only)",
+    question: "What should I be worried about right now?",
+    color: "#f43f5e",
+    today: "You don't know what you don't know. Problems surface when they become crises — a key hire resigns, a vendor contract lapses, a compliance deadline passes.",
+    withQorpera: "Qorpera surfaces developing situations ranked by urgency: the contract expiring in 12 days that nobody has renewed, the vendor whose performance has degraded over three months, the support pattern that suggests a product issue.",
+    insight: "Instead of reacting to crises, you see situations developing while there's still time to act. The awareness gap between you and your business shrinks to near zero.",
   },
   {
-    dept: "HR",
-    deptColor: "#06b6d4",
-    name: "Onboarding Delay",
-    trigger: "New hire start date is within 7 days and onboarding checklist is less than 50% complete",
-    context: "Missing items, responsible parties, equipment order status, IT provisioning status",
-    action: "Escalate to HR manager, send reminders to responsible parties, prepare contingency plan",
-    governance: "Autonomous (escalation)",
+    question: "What's actually happening across our departments?",
+    color: "#06b6d4",
+    today: "You get weekly updates from each department head. Each one tells you their version — filtered through their priorities, their tools, and what they think you want to hear.",
+    withQorpera: "Qorpera gives you the cross-departmental picture: the sales deal that depends on a product fix that's blocked by an engineering bottleneck, the support trend that's actually a billing issue, the HR situation that explains the ops slowdown.",
+    insight: "The situations that matter most often span departments. No single person on your team can see them — but Qorpera can.",
   },
   {
-    dept: "Sales",
-    deptColor: "#10b981",
-    name: "Lead Qualification",
-    trigger: "New inbound lead matches ideal customer profile criteria",
-    context: "Company size, industry, tech stack, recent funding, existing tool overlap",
-    action: "Score and prioritize lead, enrich with public data, route to appropriate sales rep, draft intro email",
-    governance: "Autonomous (routing + draft)",
+    question: "Did we actually fix that problem — or just talk about it?",
+    color: "#10b981",
+    today: "You raised a concern in a leadership meeting two weeks ago. Someone was supposed to handle it. You're not sure if they did, and you don't want to micromanage by asking.",
+    withQorpera: "Qorpera tracks situation resolution. You can see whether the underlying signals have changed: did the support tickets stop? Did the account re-engage? Did the process bottleneck clear? The data tells you — no follow-up meeting required.",
+    insight: "You stop relying on people's reports about whether things improved. You see the actual state of the situation directly.",
   },
 ];
 
-const COMPANY_SIZES = [
+const BUYER_PROFILES = [
   {
-    range: "10 — 50 people",
-    title: "Growing teams",
-    desc: "You're wearing multiple hats. Situations slip through because nobody has time to watch everything. Qorpera becomes your operations co-pilot.",
-    examples: "Invoice follow-up, lead qualification, onboarding checklists",
+    role: "CEO / Founder",
+    title: "The full picture you've never had",
+    desc: "You're making the biggest decisions with the most mediated view. Qorpera gives you direct operational awareness — not filtered through your team's interpretations, but drawn straight from your systems.",
+    examples: "Revenue drivers, churn signals, cross-department situations, strategic risks",
     color: "#3b82f6",
   },
   {
-    range: "50 — 500 people",
-    title: "Scaling operations",
-    desc: "Processes exist but they depend on tribal knowledge. Qorpera codifies your best practices into situation detection and governed responses.",
-    examples: "Churn risk, deal management, vendor renewals, cross-team coordination",
+    role: "COO / VP Ops",
+    title: "Cross-system intelligence in real time",
+    desc: "You're responsible for operations that span dozens of tools and multiple teams. Qorpera shows you the situations developing across all of them — the ones that fall between the cracks of individual departments.",
+    examples: "Process bottlenecks, vendor issues, operational risks, cross-team dependencies",
     color: "#a855f7",
   },
   {
-    range: "500+ people",
-    title: "Enterprise complexity",
-    desc: "Multiple teams, systems, and workflows. Qorpera provides cross-system operational intelligence that no single tool can deliver.",
-    examples: "Multi-department situation detection, compliance workflows, executive reporting",
+    role: "CFO / VP Finance",
+    title: "The context behind the numbers",
+    desc: "Your dashboards tell you what happened. Qorpera tells you why — connecting financial metrics to the operational situations that drive them, in real time.",
+    examples: "Revenue variance analysis, cash flow risks, contract renewals, billing disputes",
     color: "#f59e0b",
   },
 ];
@@ -95,26 +83,34 @@ const COMPANY_SIZES = [
 export function UseCasesClient() {
   return (
     <>
-      {/* Situation Examples */}
-      <Section label="Situations" title="What Qorpera detects — and what it does about it.">
-        <StaggerGroup className="grid gap-6 sm:grid-cols-2" stagger={0.08}>
-          {SITUATIONS.map((s) => (
-            <StaggerItem key={s.name}>
+      {/* Leadership Scenarios */}
+      <Section label="Scenarios" title="The questions that keep leaders up at night.">
+        <StaggerGroup className="space-y-6" stagger={0.08}>
+          {SCENARIOS.map((s) => (
+            <StaggerItem key={s.question}>
               <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 transition hover:border-white/[0.1]">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-                    style={{ backgroundColor: `${s.deptColor}15`, color: s.deptColor }}
-                  >
-                    {s.dept}
-                  </span>
-                  <span className="text-[11px] text-white/20">{s.governance}</span>
+                <h3 className="text-[17px] font-semibold" style={{ color: s.color }}>
+                  &ldquo;{s.question}&rdquo;
+                </h3>
+                <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-white/25">
+                      How you find out today
+                    </p>
+                    <p className="text-[13px] leading-relaxed text-white/35">{s.today}</p>
+                  </div>
+                  <div>
+                    <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-white/25">
+                      With Qorpera
+                    </p>
+                    <p className="text-[13px] leading-relaxed text-white/55">{s.withQorpera}</p>
+                  </div>
                 </div>
-                <h3 className="mt-3 text-[15px] font-semibold text-white/85">{s.name}</h3>
-                <div className="mt-4 space-y-3">
-                  <DetailRow label="Trigger" value={s.trigger} />
-                  <DetailRow label="Context" value={s.context} />
-                  <DetailRow label="Action" value={s.action} />
+                <div className="mt-4 rounded-xl bg-white/[0.02] px-4 py-3">
+                  <p className="text-[12px] leading-relaxed text-white/40">
+                    <span className="font-medium text-white/50">The difference: </span>
+                    {s.insight}
+                  </p>
                 </div>
               </div>
             </StaggerItem>
@@ -123,21 +119,21 @@ export function UseCasesClient() {
       </Section>
 
       {/* Who it's for */}
-      <Section label="Who it's for" title="Operational intelligence at every stage.">
+      <Section label="Who it's for" title="Built for the people steering the company.">
         <StaggerGroup className="grid gap-6 md:grid-cols-3" stagger={0.1}>
-          {COMPANY_SIZES.map((size) => (
-            <StaggerItem key={size.range}>
+          {BUYER_PROFILES.map((profile) => (
+            <StaggerItem key={profile.role}>
               <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 transition hover:border-white/[0.1]">
                 <span
                   className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-                  style={{ backgroundColor: `${size.color}15`, color: size.color }}
+                  style={{ backgroundColor: `${profile.color}15`, color: profile.color }}
                 >
-                  {size.range}
+                  {profile.role}
                 </span>
-                <h3 className="mt-3 text-[16px] font-semibold text-white/85">{size.title}</h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-white/35">{size.desc}</p>
+                <h3 className="mt-3 text-[16px] font-semibold text-white/85">{profile.title}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-white/35">{profile.desc}</p>
                 <p className="mt-3 text-[12px] text-white/25">
-                  <span className="text-white/40">Examples:</span> {size.examples}
+                  <span className="text-white/40">Surfaces:</span> {profile.examples}
                 </p>
               </div>
             </StaggerItem>
@@ -145,16 +141,5 @@ export function UseCasesClient() {
         </StaggerGroup>
       </Section>
     </>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <span className="text-[11px] font-medium uppercase tracking-wider text-white/25">
-        {label}
-      </span>
-      <p className="mt-0.5 text-[13px] leading-relaxed text-white/40">{value}</p>
-    </div>
   );
 }

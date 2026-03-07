@@ -10,7 +10,7 @@ const FIVE_LAYERS = [
   {
     num: "01",
     title: "Event Stream",
-    desc: "Connected tools feed raw events into Qorpera — emails, CRM updates, support tickets, invoices, calendar changes. The AI's sensory input.",
+    desc: "Your CRM, payments, email, support, and calendar feed raw events into Qorpera continuously. Nothing is missed.",
     color: "#3b82f6",
   },
   {
@@ -22,29 +22,21 @@ const FIVE_LAYERS = [
   {
     num: "03",
     title: "Situation Engine",
-    desc: "Patterns in the event stream are detected and assembled into situations: what triggered it, what context surrounds it, and how urgent it is.",
+    desc: "Patterns are detected and assembled into situations: what triggered it, what context surrounds it, how urgent it is, and why it matters to your business.",
     color: "#a855f7",
   },
   {
     num: "04",
     title: "Reasoning + Action",
-    desc: "For each situation, the AI reasons about what to do, checks governance rules, and either acts autonomously or escalates for human approval.",
+    desc: "For each situation, the AI reasons about what to do, checks governance rules, and either acts autonomously or surfaces it for your decision.",
     color: "#f59e0b",
   },
   {
     num: "05",
     title: "Continuous Learning",
-    desc: "Every outcome is tracked. Accuracy per situation type improves over time. The system gets better at your business, not just at language.",
+    desc: "Every outcome is tracked. The system gets better at your business over time — not just at language, but at understanding what matters to you.",
     color: "#10b981",
   },
-];
-
-const TRUST_STEPS = [
-  { label: "Supervised", desc: "AI detects situations and proposes actions. You approve everything.", pct: "0%" },
-  { label: "Tracking accuracy", desc: "The system tracks approval rates per situation type. You see what it gets right.", pct: "25%" },
-  { label: "Graduation", desc: "Situation types with high accuracy are flagged for autonomous handling.", pct: "50%" },
-  { label: "Partial autonomy", desc: "Graduated situations run automatically. Novel situations still require approval.", pct: "75%" },
-  { label: "Steady state", desc: "80-90% of situations handled autonomously. You focus on exceptions and strategy.", pct: "90%" },
 ];
 
 /* -- Main --------------------------------------------------------- */
@@ -73,15 +65,15 @@ export function LandingClient() {
           <div className="flex flex-col items-center">
             <FadeIn delay={0.1}>
               <h1 className="text-center text-4xl font-medium leading-[1.1] tracking-[-0.03em] text-white sm:text-5xl lg:text-6xl">
-                AI integrated{" "}
+                See your own{" "}
                 <span className="bg-gradient-to-r from-purple-400 to-purple-200 bg-clip-text text-transparent">
-                  operations.
+                  business clearly.
                 </span>
               </h1>
             </FadeIn>
             <FadeIn delay={0.2}>
               <p className="mt-4 text-center text-sm font-medium uppercase tracking-wider text-white/35">
-                The operating system for AI-driven work
+                Operational intelligence for the people steering the company
               </p>
             </FadeIn>
           </div>
@@ -106,100 +98,59 @@ export function LandingClient() {
         </div>
       </div>
 
-      {/* ── Problem ── white section */}
+      {/* ── The Problem ── white section */}
       <section className="bg-white py-32">
         <div className="mx-auto max-w-3xl px-6 text-center">
           <FadeIn>
             <h2 className="text-3xl font-medium leading-tight tracking-[-0.03em] text-zinc-900 sm:text-4xl lg:text-5xl">
-              AI that does more
+              You&apos;re playing telephone
               <br />
-              <span className="text-zinc-300">than answer questions.</span>
+              <span className="text-zinc-300">with your own operations.</span>
             </h2>
           </FadeIn>
           <FadeIn delay={0.15}>
             <p className="mx-auto mt-8 max-w-xl text-[17px] leading-relaxed text-zinc-400">
-              Qorpera doesn&apos;t wait for you to ask. It watches your systems, detects
-              situations that need attention, and acts on them safely — governed, audited, and improving over time.
+              Revenue is down 8% this month — but why? You ask your team.
+              They give you a filtered, partial, delayed picture based on whatever
+              each person happens to have noticed. Your understanding of your own business
+              is a game of telephone played across six tools and four people&apos;s incomplete mental models.
             </p>
           </FadeIn>
         </div>
       </section>
 
-      {/* ── Trust Gradient ── white section */}
+      {/* ── The Shift ── white section */}
       <section className="border-t border-zinc-100 bg-white py-32">
         <div className="mx-auto max-w-3xl px-6 text-center">
           <FadeIn>
             <p className="text-xs font-medium uppercase tracking-widest text-purple-500/60">
-              Trust gradient
+              The shift
             </p>
             <h2 className="mt-3 text-3xl font-medium tracking-[-0.03em] text-zinc-900 sm:text-4xl">
-              AI earns autonomy.
+              Not dashboards. Not metrics.
               <br />
-              <span className="text-zinc-300">You stay in control.</span>
+              <span className="text-zinc-300">The actual picture.</span>
             </h2>
           </FadeIn>
-          {/* Progress bar visualization */}
-          <div className="mx-auto mt-16 max-w-2xl">
-            {/* Track */}
-            <div className="relative h-2 w-full rounded-full bg-zinc-100">
-              <motion.div
-                className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-purple-500 to-purple-400"
-                initial={{ width: "0%" }}
-                whileInView={{ width: "90%" }}
-                viewport={{ once: true }}
-                transition={{ duration: 2, ease: [0.21, 0.47, 0.32, 0.98] }}
-              />
-              {TRUST_STEPS.map((step, i) => {
-                const left = i === 0 ? 0 : i === 1 ? 25 : i === 2 ? 50 : i === 3 ? 75 : 90;
-                return (
-                  <div
-                    key={step.label}
-                    className="absolute top-1/2 -translate-y-1/2"
-                    style={{ left: `${left}%` }}
-                  >
-                    <motion.div
-                      className="h-4 w-4 -translate-x-1/2 rounded-full border-2 border-purple-500 bg-white"
-                      initial={{ scale: 0 }}
-                      whileInView={{ scale: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.4 + i * 0.2, duration: 0.3, ease: "backOut" }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-            <div className="relative mt-6 h-16">
-              {TRUST_STEPS.map((step, i) => {
-                const left = i === 0 ? 0 : i === 1 ? 25 : i === 2 ? 50 : i === 3 ? 75 : 90;
-                return (
-                  <motion.div
-                    key={step.label}
-                    className="absolute -translate-x-1/2 text-center"
-                    style={{ left: `${left}%`, maxWidth: "120px" }}
-                    initial={{ opacity: 0, y: 8 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.5 + i * 0.2, duration: 0.4 }}
-                  >
-                    <span className="block text-[12px] font-semibold text-zinc-700">{step.label}</span>
-                    <span className="mt-0.5 block text-[10px] text-zinc-400">{step.pct}</span>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-          <FadeIn delay={0.4}>
-            <div className="mx-auto mt-4 h-px max-w-2xl bg-gradient-to-r from-transparent via-zinc-200 to-transparent" />
-            <p className="mx-auto mt-8 max-w-lg text-[15px] leading-relaxed text-zinc-500">
-              Qorpera starts fully supervised. As it proves accuracy on each situation type,
-              it graduates to handle more on its own — until 80-90% runs autonomously.
+          <FadeIn delay={0.15}>
+            <p className="mx-auto mt-8 max-w-xl text-[17px] leading-relaxed text-zinc-400">
+              Qorpera gives you the full picture directly — not summary dashboards
+              or lagging metrics, but the actual situations developing across your CRM,
+              payments, email, and support, with the context to understand what matters
+              and why.
             </p>
-            <div className="mt-6">
+            <p className="mx-auto mt-4 max-w-xl text-[17px] leading-relaxed text-zinc-400">
+              It&apos;s the operational awareness you&apos;d have if you could
+              personally watch every tool and every account simultaneously.
+            </p>
+          </FadeIn>
+          <FadeIn delay={0.3}>
+            <div className="mt-8">
               <Link
-                href="/how-it-works"
+                href="/vision"
                 className="text-sm font-medium text-zinc-400 transition hover:text-zinc-900"
               >
-                See the full lifecycle &rarr;
+                Read our vision &rarr;
               </Link>
             </div>
           </FadeIn>
@@ -211,21 +162,21 @@ export function LandingClient() {
         <div className="mx-auto max-w-3xl px-6">
           <FadeIn>
             <h2 className="text-center text-3xl font-medium tracking-[-0.03em] text-zinc-900 sm:text-4xl">
-              Not a chatbot. Not a connector.
+              Not a productivity tool.
               <br />
-              <span className="text-zinc-300">An operating system.</span>
+              <span className="text-zinc-300">A strategic one.</span>
             </h2>
           </FadeIn>
           <div className="mt-16 grid gap-12 sm:grid-cols-2">
             <FadeIn delay={0.1}>
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Before Qorpera</p>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">How you see your business today</p>
                 <ul className="mt-4 space-y-3">
                   {[
-                    "You bring context to AI every time",
-                    "Automations break on edge cases",
-                    "Nobody monitors cross-system patterns",
-                    "Enterprise AI costs millions",
+                    "Your view is filtered through your team's incomplete mental models",
+                    "Dashboards show lagging metrics — you see that revenue is down, not why",
+                    "Problems surface when they become crises",
+                    "Six tools, four people, one game of telephone",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 text-[15px] text-zinc-400">
                       <span className="mt-1 text-zinc-300">&mdash;</span>
@@ -240,10 +191,10 @@ export function LandingClient() {
                 <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-900">With Qorpera</p>
                 <ul className="mt-4 space-y-3">
                   {[
-                    "AI watches your business continuously",
-                    "Situations detected and reasoned about",
-                    "Cross-system intelligence, governed action",
-                    "Live in 25 minutes, fraction of the cost",
+                    "Direct visibility into developing situations across your business",
+                    "Real context — not just what happened, but what it means and why it matters",
+                    "Developing situations surfaced before they become problems",
+                    "One intelligence layer across every connected system",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 text-[15px] text-zinc-900">
                       <span className="mt-1 text-purple-500">&mdash;</span>
@@ -262,10 +213,10 @@ export function LandingClient() {
         <div className="mx-auto max-w-3xl px-6">
           <FadeIn>
             <p className="text-xs font-medium uppercase tracking-widest text-zinc-400">
-              Five layers
+              Under the hood
             </p>
             <h2 className="mt-3 text-3xl font-medium tracking-[-0.03em] text-zinc-900 sm:text-4xl">
-              From raw events to intelligent action.
+              How Qorpera sees what others miss.
             </h2>
           </FadeIn>
           <div className="mt-16 space-y-12">
@@ -299,11 +250,12 @@ export function LandingClient() {
         <div className="mx-auto max-w-2xl px-6 text-center">
           <FadeIn>
             <h2 className="text-3xl font-medium tracking-[-0.03em] text-white sm:text-4xl">
-              See it working on your business.
+              See what&apos;s actually happening in your business.
             </h2>
             <p className="mt-4 text-[15px] text-white/35">
-              Book a demo. We&apos;ll connect your tools, show you the situations
-              Qorpera finds, and walk through the trust gradient — live.
+              Book a demo. We&apos;ll connect your tools and show you the situations
+              developing in your operations right now — the ones your dashboards
+              aren&apos;t showing you.
             </p>
           </FadeIn>
           <FadeIn delay={0.15}>

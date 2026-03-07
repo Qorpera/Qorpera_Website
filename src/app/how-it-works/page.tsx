@@ -5,9 +5,9 @@ import { MarketingFooter } from "@/components/marketing-footer";
 import { HowItWorksClient } from "./client";
 
 export const metadata: Metadata = {
-  title: "How It Works — Live in 25 Minutes",
+  title: "How It Works — From Blind Spots to Full Visibility in 25 Minutes",
   description:
-    "Connect your tools, see what Qorpera finds, teach it your pain points, and go live — all within 25 minutes. Then watch AI earn your trust over time.",
+    "Connect your tools, see the situations Qorpera finds in your operations, and go from mediated reports to direct operational awareness — all within 25 minutes.",
 };
 
 export default function HowItWorksPage() {
@@ -15,8 +15,8 @@ export default function HowItWorksPage() {
     <>
       <MarketingPageShell
         label="How it works"
-        title="From zero to AI-driven operations in 25 minutes."
-        subtitle="Connect your tools, describe your pain points, and watch Qorpera detect situations and propose actions — with full governance from day one."
+        title="From blind spots to full visibility in 25 minutes."
+        subtitle="Connect your tools and see the developing situations in your business that your dashboards and team updates aren't showing you."
       >
         <HowItWorksClient />
         <MarketingCta />

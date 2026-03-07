@@ -5,9 +5,9 @@ import { MarketingFooter } from "@/components/marketing-footer";
 import { UseCasesClient } from "./client";
 
 export const metadata: Metadata = {
-  title: "Use Cases — Situations Qorpera Detects",
+  title: "Use Cases — The Questions Your Dashboards Can't Answer",
   description:
-    "From overdue invoice follow-up to churn risk detection. See how Qorpera detects and acts on real business situations across every department.",
+    "Revenue dropped 8% — why? Is your biggest account about to churn? What's actually happening in your pipeline? Qorpera shows you the full picture.",
 };
 
 export default function UseCasesPage() {
@@ -15,8 +15,8 @@ export default function UseCasesPage() {
     <>
       <MarketingPageShell
         label="Use cases"
-        title="Real situations. Intelligent responses."
-        subtitle="Qorpera detects situations across your entire operation — finance, sales, support, HR, and operations. Here's what that looks like in practice."
+        title="The questions your dashboards can't answer."
+        subtitle="Leaders don't need more metrics. They need to understand what's actually happening in their business — the developing situations that explain the numbers."
       >
         <UseCasesClient />
         <MarketingCta />
