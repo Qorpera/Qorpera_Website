@@ -384,10 +384,10 @@ export function LandingClient() {
 
           <FadeUp>
             <p className="mt-10 max-w-[800px] text-[15px] leading-[1.6] text-white/40">
-              No other platform does this. Glean&apos;s agents either have
-              permission or they don&apos;t. Salesforce Agentforce has binary
-              on/off. Zapier automations just run. Qorpera is the only system
-              where AI earns autonomy through demonstrated competence.
+              Every other AI tool either has permission or it doesn&apos;t.
+              Automations just run. Copilots wait to be asked. Qorpera is the
+              only system where AI earns autonomy through demonstrated
+              competence — one task type at a time.
             </p>
           </FadeUp>
         </div>
@@ -450,7 +450,7 @@ export function LandingClient() {
       </section>
 
       {/* ═══════════════════════════════════════
-          PRICING
+          INVESTMENT
           ═══════════════════════════════════════ */}
       <section className="bg-[var(--surface-warm)] px-6 py-[120px] lg:px-10">
         <div className="mx-auto max-w-[1100px]">
@@ -463,46 +463,28 @@ export function LandingClient() {
             </h2>
           </FadeUp>
 
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-6 sm:grid-cols-3">
             {[
               {
-                phase: "Getting started",
-                price: "50,000 DKK",
-                unit: "implementation",
-                desc: "We map your business, connect your tools, and configure your first situation types together. This is a professional engagement, not a self-serve signup.",
+                title: "Professional implementation",
+                desc: "We map your business, connect your tools, and configure your first situation types together. This is a hands-on engagement, not a self-serve signup.",
               },
               {
-                phase: "Months 1–6",
-                price: "20,000 DKK",
-                unit: "/month",
-                desc: "The AI watches, proposes, and learns. You teach it by approving, correcting, and rejecting. Active tuning included.",
+                title: "Value-aligned pricing",
+                desc: "The investment scales with the value delivered. As the AI takes over more work and proves itself, the engagement deepens. You never pay for capability you're not using.",
               },
               {
-                phase: "Months 7–12",
-                price: "50,000 DKK",
-                unit: "/month",
-                desc: "Task types graduate to autonomous. The AI is doing real operational work. Price reflects real value delivered.",
+                title: "Replaces headcount, not software",
+                desc: "Qorpera isn't a tool your team uses — it's work your team no longer does. Pricing reflects the operational capacity it delivers, not seats or features.",
               },
-              {
-                phase: "Year 2+",
-                price: "100,000 DKK",
-                unit: "/month",
-                desc: "The AI is a functioning part of your operations team. Institutional knowledge captured. YoY increases of 7–10%.",
-              },
-            ].map((tier, i) => (
-              <FadeUp key={tier.phase} delay={i * 60}>
-                <div className="flex h-full flex-col rounded-[var(--radius)] border border-[var(--border)] bg-white p-6">
-                  <div className="mb-4 font-sans text-[11px] font-bold uppercase tracking-[1.5px] text-[var(--accent)]">
-                    {tier.phase}
-                  </div>
-                  <div className="mb-1 font-sans text-2xl font-bold text-[var(--ink)]">
-                    {tier.price}
-                  </div>
-                  <div className="mb-4 font-sans text-sm text-[var(--ink-muted)]">
-                    {tier.unit}
-                  </div>
-                  <p className="mt-auto text-[13px] leading-relaxed text-[var(--ink-soft)]">
-                    {tier.desc}
+            ].map((card) => (
+              <FadeUp key={card.title}>
+                <div className="rounded-[var(--radius)] border border-[var(--border)] bg-white p-6">
+                  <h3 className="font-sans text-base font-semibold text-[var(--ink)]">
+                    {card.title}
+                  </h3>
+                  <p className="mt-2 text-[14px] leading-relaxed text-[var(--ink-soft)]">
+                    {card.desc}
                   </p>
                 </div>
               </FadeUp>
@@ -511,169 +493,9 @@ export function LandingClient() {
 
           <FadeUp>
             <p className="mt-10 max-w-[720px] text-[15px] leading-[1.6] text-[var(--ink-muted)]">
-              At full operations, Qorpera costs less than a third of the
-              operational headcount it replaces — and the knowledge it captures
-              never walks out the door.
-            </p>
-          </FadeUp>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════
-          COMPARISON TABLE
-          ═══════════════════════════════════════ */}
-      <section id="compare" className="bg-white px-6 py-[120px] lg:px-10">
-        <div className="mx-auto max-w-[1100px]">
-          <FadeUp>
-            <div className="mb-4 font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
-              Why not just use...
-            </div>
-            <h2 className="font-sans text-[clamp(28px,3.5vw,40px)] font-bold leading-[1.15] tracking-[-0.5px]">
-              How Qorpera compares to what you already have.
-            </h2>
-          </FadeUp>
-
-          <FadeUp delay={100}>
-            <div className="mt-12 overflow-x-auto">
-              <table className="compare-table">
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>Dashboards &amp; BI</th>
-                    <th>Zapier / Make</th>
-                    <th>AI Copilots</th>
-                    <th>SF Agentforce</th>
-                    <th>Qorpera</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Sees across all your tools</td>
-                    <td>Partially</td>
-                    <td>Yes</td>
-                    <td>No</td>
-                    <td>CRM only</td>
-                    <td className="highlight-cell">Yes</td>
-                  </tr>
-                  <tr>
-                    <td>Understands your business context</td>
-                    <td>No</td>
-                    <td>No</td>
-                    <td>No</td>
-                    <td>No</td>
-                    <td className="highlight-cell">Yes</td>
-                  </tr>
-                  <tr>
-                    <td>Watches proactively</td>
-                    <td>No</td>
-                    <td>Rules only</td>
-                    <td>No</td>
-                    <td>Limited</td>
-                    <td className="highlight-cell">Continuously</td>
-                  </tr>
-                  <tr>
-                    <td>Reasons about situations</td>
-                    <td>No</td>
-                    <td>No</td>
-                    <td>When asked</td>
-                    <td>Limited</td>
-                    <td className="highlight-cell">Every situation</td>
-                  </tr>
-                  <tr>
-                    <td>Takes action with judgment</td>
-                    <td>No</td>
-                    <td>Fixed rules</td>
-                    <td>No</td>
-                    <td>Within CRM</td>
-                    <td className="highlight-cell">Across all tools</td>
-                  </tr>
-                  <tr>
-                    <td>Learns from outcomes</td>
-                    <td>No</td>
-                    <td>No</td>
-                    <td>No</td>
-                    <td>No</td>
-                    <td className="highlight-cell">Every cycle</td>
-                  </tr>
-                  <tr>
-                    <td>Earns trust over time</td>
-                    <td>N/A</td>
-                    <td>N/A</td>
-                    <td>N/A</td>
-                    <td>N/A</td>
-                    <td className="highlight-cell">Graduated autonomy</td>
-                  </tr>
-                  <tr>
-                    <td>Works for 30-person companies</td>
-                    <td>Yes</td>
-                    <td>Yes</td>
-                    <td>Yes</td>
-                    <td>No</td>
-                    <td className="highlight-cell">Yes</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </FadeUp>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════
-          MARKET VALIDATION — dark
-          ═══════════════════════════════════════ */}
-      <section className="bg-[var(--ink)] px-6 py-[120px] text-white lg:px-10">
-        <div className="mx-auto max-w-[1100px]">
-          <FadeUp>
-            <div className="mb-4 font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-white/40">
-              The market
-            </div>
-            <h2 className="max-w-[820px] font-sans text-[clamp(28px,3.5vw,40px)] font-bold leading-[1.15] tracking-[-0.5px]">
-              Enterprises are already paying billions for AI that does real work.
-              <br className="hidden sm:block" />
-              We bring that capability to companies they&apos;ll never serve.
-            </h2>
-          </FadeUp>
-
-          <div className="mt-12 grid gap-6 sm:grid-cols-3">
-            {[
-              {
-                stat: "$7.2B",
-                company: "Glean",
-                desc: "Glean's valuation for enterprise AI search. Requires 100+ seats. Doesn't serve companies your size.",
-              },
-              {
-                stat: "$360B",
-                company: "Palantir",
-                desc: "Palantir's market cap for AI-powered operations. Requires months of professional services and on-site engineers.",
-              },
-              {
-                stat: "$150M+",
-                company: "Sierra",
-                desc: "Sierra's ARR from AI agents that do real customer service work. Proves enterprises pay for AI that delivers outcomes.",
-              },
-            ].map((m) => (
-              <FadeUp key={m.company}>
-                <div className="rounded-[var(--radius)] border border-white/10 bg-white/5 p-6">
-                  <div className="font-sans text-[36px] font-bold leading-none tracking-[-1px] text-[var(--accent)]">
-                    {m.stat}
-                  </div>
-                  <div className="mt-1 font-sans text-sm font-semibold text-white/60">
-                    {m.company}
-                  </div>
-                  <p className="mt-3 text-[14px] leading-relaxed text-white/40">
-                    {m.desc}
-                  </p>
-                </div>
-              </FadeUp>
-            ))}
-          </div>
-
-          <FadeUp>
-            <p className="mt-10 max-w-[720px] text-[15px] leading-[1.6] text-white/40">
-              The AI capability is here. The enterprise infrastructure exists.
-              What&apos;s missing is the version built for growing businesses —
-              accessible in a single session, not a six-month deployment.
-              That&apos;s Qorpera.
+              Every engagement is scoped to your business. Book a walkthrough
+              and we&apos;ll give you a clear picture of what Qorpera would
+              look like in your operations — and what it would cost.
             </p>
           </FadeUp>
         </div>
