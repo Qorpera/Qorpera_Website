@@ -26,7 +26,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
               href="/contact"
               className="rounded-lg bg-[var(--ink)] px-5 py-2 font-sans text-sm font-semibold text-white no-underline transition hover:bg-[var(--ink-soft)]"
             >
-              Request early access
+              Book a walkthrough
             </Link>
           </nav>
         </div>
