@@ -59,7 +59,7 @@ export function LandingClient() {
       {/* ═══════════════════════════════════════
           HERO — dark
           ═══════════════════════════════════════ */}
-      <section className="bg-[var(--ink)] px-6 pb-[100px] pt-[116px] text-center lg:px-10">
+      <section className="px-6 pb-[100px] pt-[116px] text-center lg:px-10">
         <FadeUp>
           <div className="mb-6 inline-flex items-center gap-2 font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
             <span className="inline-block h-px w-6 bg-[var(--accent)]" />
@@ -68,7 +68,7 @@ export function LandingClient() {
         </FadeUp>
 
         <FadeUp delay={100}>
-          <h1 className="mx-auto max-w-[820px] font-sans text-[clamp(40px,5.5vw,64px)] font-bold leading-[1.1] tracking-[-1.5px] text-white">
+          <h1 className="mx-auto max-w-[820px] font-sans text-[clamp(40px,5.5vw,64px)] font-bold leading-[1.1] tracking-[-1.5px] text-[var(--ink)]">
             AI can run your operations.
             <br />
             <span className="text-[var(--accent)]">
@@ -78,7 +78,7 @@ export function LandingClient() {
         </FadeUp>
 
         <FadeUp delay={250}>
-          <p className="mx-auto mt-7 max-w-[620px] font-serif text-[20px] leading-[1.6] text-white/60">
+          <p className="mx-auto mt-7 max-w-[620px] font-serif text-[20px] leading-[1.6] text-[var(--ink-soft)]">
             Qorpera teaches AI how your company works — your departments, your
             customers, your tools, your policies — then gradually lets it take
             over the operational tasks your team shouldn&apos;t be doing manually.
@@ -95,7 +95,7 @@ export function LandingClient() {
             </a>
             <a
               href="#how"
-              className="rounded-[10px] border-[1.5px] border-white/20 bg-transparent px-8 py-3.5 font-sans text-base font-semibold text-white/60 no-underline transition hover:border-white/40 hover:text-white/90"
+              className="rounded-[10px] border-[1.5px] border-[var(--border)] bg-transparent px-8 py-3.5 font-sans text-base font-semibold text-[var(--ink)] no-underline transition hover:border-[var(--ink-muted)] hover:bg-white"
             >
               See how it works
             </a>
@@ -106,7 +106,7 @@ export function LandingClient() {
       {/* ═══════════════════════════════════════
           THE GAP — dark
           ═══════════════════════════════════════ */}
-      <section className="bg-[var(--ink)] border-t border-white/10 px-6 py-[100px] text-white lg:px-10">
+      <section className="bg-[var(--ink)] px-6 py-[100px] text-white lg:px-10">
         <div className="mx-auto max-w-[1100px] text-center">
           <div className="mb-10 font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-white/40">
             The integration gap
