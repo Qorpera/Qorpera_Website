@@ -59,7 +59,7 @@ export function LandingClient() {
       {/* ═══════════════════════════════════════
           HERO
           ═══════════════════════════════════════ */}
-      <section className="px-6 pb-[100px] pt-[180px] text-center lg:px-10">
+      <section className="px-6 pb-[100px] pt-[116px] text-center lg:px-10">
         <FadeUp>
           <div className="mb-6 inline-flex items-center gap-2 font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
             <span className="inline-block h-px w-6 bg-[var(--accent)]" />

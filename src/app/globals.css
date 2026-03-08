@@ -26,46 +26,44 @@
   --font-serif: var(--font-newsreader), "Newsreader", Georgia, serif;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+@layer base {
+  html { scroll-behavior: smooth; }
 
-html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-body);
+    color: var(--ink);
+    background: var(--surface);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
 
-/* Body uses Newsreader (serif) by default — the editorial feel.
-   Headings/labels/nav/buttons use font-sans (DM Sans) via utility class.
-   No !important here so font-sans utility can override on child elements. */
-body {
-  font-family: var(--font-body);
-  color: var(--ink);
-  background: var(--surface);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  line-height: 1.6;
-}
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: var(--ink);
+    -webkit-box-shadow: 0 0 0 1000px white inset;
+    transition: background-color 9999s ease-in-out 0s;
+  }
 
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-textarea:-webkit-autofill,
-select:-webkit-autofill {
-  -webkit-text-fill-color: var(--ink);
-  -webkit-box-shadow: 0 0 0 1000px white inset;
-  transition: background-color 9999s ease-in-out 0s;
-}
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+  }
 
-button,
-a,
-input,
-select,
-textarea {
-  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
-}
-
-::selection {
-  background: rgba(37, 99, 235, 0.15);
+  ::selection {
+    background: rgba(37, 99, 235, 0.15);
+  }
 }
 
 /* ── COMPARISON TABLE ── */
+@layer components {
 .compare-table {
   width: 100%;
   border-collapse: collapse;
@@ -113,6 +111,7 @@ textarea {
   .compare-table { font-size: 12px; }
   .compare-table th,
   .compare-table td { padding: 12px 14px; }
+}
 }
 
 /* ── ANIMATIONS ── */
