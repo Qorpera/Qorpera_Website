@@ -28,8 +28,11 @@
 
 html { scroll-behavior: smooth; }
 
+/* Body uses Newsreader (serif) by default — the editorial feel.
+   Headings/labels/nav/buttons use font-sans (DM Sans) via utility class.
+   No !important here so font-sans utility can override on child elements. */
 body {
-  font-family: var(--font-body) !important;
+  font-family: var(--font-body);
   color: var(--ink);
   background: var(--surface);
   -webkit-font-smoothing: antialiased;
