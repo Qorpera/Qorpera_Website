@@ -17,17 +17,17 @@ export function MarketingPageShell({
     <div className="mx-auto max-w-5xl px-4 sm:px-6">
       <header className="pb-16 pt-12 sm:pt-20">
         <FadeIn>
-          <p className="text-xs font-medium uppercase tracking-wider text-white/30">
+          <p className="font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
             {label}
           </p>
         </FadeIn>
         <FadeIn delay={0.1}>
-          <h1 className="mt-3 text-3xl font-medium tracking-[-0.03em] text-white sm:text-4xl lg:text-5xl">
+          <h1 className="mt-3 font-sans text-3xl font-bold tracking-[-0.5px] text-[var(--ink)] sm:text-4xl lg:text-5xl">
             {title}
           </h1>
         </FadeIn>
         <FadeIn delay={0.2}>
-          <p className="mt-4 max-w-2xl text-lg text-[#b8c5ce]">{subtitle}</p>
+          <p className="mt-4 max-w-2xl text-lg text-[var(--ink-soft)]">{subtitle}</p>
         </FadeIn>
       </header>
       {children}
@@ -49,10 +49,10 @@ export function Section({
       <AnimatedLine />
       <div className="pt-12">
         <FadeIn>
-          <p className="text-xs font-medium uppercase tracking-wider text-white/30">
+          <p className="font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
             {label}
           </p>
-          <h2 className="mt-3 text-2xl font-medium tracking-[-0.03em] text-white sm:text-3xl">
+          <h2 className="mt-3 font-sans text-2xl font-bold tracking-[-0.5px] text-[var(--ink)] sm:text-3xl">
             {title}
           </h2>
         </FadeIn>

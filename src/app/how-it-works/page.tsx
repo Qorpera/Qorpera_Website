@@ -19,8 +19,8 @@ export default function HowItWorksPage() {
         subtitle="Connect your tools and see the situations developing in your business — the ones your dashboards and team updates aren't showing you."
       >
         <HowItWorksClient />
-        <MarketingCta />
       </MarketingPageShell>
+      <MarketingCta />
       <MarketingFooter />
     </>
   );

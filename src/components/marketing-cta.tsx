@@ -1,43 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { FadeIn, GlowRing } from "@/components/motion-primitives";
 
 export function MarketingCta() {
   return (
-    <section className="border-t border-white/[0.06] py-24">
-      <div className="relative mx-auto max-w-2xl text-center">
-        <GlowRing className="-top-20 left-1/2 h-64 w-64 -translate-x-1/2" />
-        <div className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-slate-500/[0.04] blur-3xl" />
-        <FadeIn>
-          <p className="text-xs font-medium uppercase tracking-wider text-white/30">
-            Get started
-          </p>
-          <h2 className="mt-3 text-3xl font-medium tracking-[-0.03em] text-white sm:text-4xl">
-            See your business clearly.
-          </h2>
-          <p className="mt-4 text-[#b8c5ce]">
-            We&apos;ll connect your tools, show you the situations Qorpera finds in
-            your data, and walk through what you&apos;ve been missing — live, on your
-            business.
-          </p>
-        </FadeIn>
-        <FadeIn delay={0.15}>
-          <div className="mt-8 flex items-center justify-center gap-4">
-            <Link
-              href="/contact"
-              className="rounded-lg bg-white px-7 py-3 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-200"
-            >
-              Request Early Access
-            </Link>
-            <Link
-              href="/how-it-works"
-              className="rounded-lg border border-white/[0.10] px-7 py-3 text-sm font-medium text-white/60 transition-colors hover:border-white/[0.15] hover:text-white/80"
-            >
-              See How It Works
-            </Link>
-          </div>
-        </FadeIn>
+    <section className="bg-[var(--ink)] px-6 py-[100px] text-center text-white lg:px-10">
+      <div className="mx-auto max-w-[520px]">
+        <h2 className="font-sans text-[clamp(28px,3.5vw,44px)] font-bold tracking-[-0.5px]">
+          Ready to close the gap?
+        </h2>
+        <p className="mt-4 text-lg leading-[1.6] text-white/60">
+          Qorpera is in early access for companies running on HubSpot,
+          Stripe, and Gmail. Ten minutes to set up. First results on day one.
+        </p>
+        <div className="mt-10 flex items-center justify-center gap-4">
+          <Link
+            href="/contact"
+            className="rounded-[10px] bg-white px-8 py-3.5 font-sans text-base font-semibold text-[var(--ink)] no-underline transition hover:-translate-y-px hover:bg-[#f0f0f0]"
+          >
+            Request early access
+          </Link>
+          <Link
+            href="/how-it-works"
+            className="rounded-[10px] border-[1.5px] border-white/20 px-8 py-3.5 font-sans text-base font-semibold text-white/60 no-underline transition hover:border-white/40 hover:text-white/90"
+          >
+            See how it works
+          </Link>
+        </div>
       </div>
     </section>
   );

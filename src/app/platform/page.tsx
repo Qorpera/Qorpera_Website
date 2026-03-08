@@ -19,8 +19,8 @@ export default function PlatformPage() {
         subtitle="Five layers turn raw events from every connected system into the situational awareness that dashboards, reports, and team updates can't provide."
       >
         <PlatformClient />
-        <MarketingCta />
       </MarketingPageShell>
+      <MarketingCta />
       <MarketingFooter />
     </>
   );

@@ -36,14 +36,14 @@ export function ContactForm() {
 
   if (state === "success") {
     return (
-      <div className="mt-8 rounded-xl border border-purple-500/15 bg-purple-500/[0.04] p-8 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-purple-500/15">
-          <svg className="h-6 w-6 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <div className="mt-8 rounded-xl border border-[var(--accent)]/15 bg-[var(--accent-glow)] p-8 text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-glow)]">
+          <svg className="h-6 w-6 text-[var(--accent)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold text-white">Thank you!</h3>
-        <p className="mt-2 text-[14px] text-white/40">
+        <h3 className="font-sans text-lg font-semibold text-[var(--ink)]">Thank you!</h3>
+        <p className="mt-2 text-sm text-[var(--ink-soft)]">
           We&apos;ve received your message and will be in touch within one business day.
         </p>
       </div>
@@ -62,25 +62,25 @@ export function ContactForm() {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-[12px] font-medium text-white/50">
+        <label className="mb-1.5 block font-sans text-xs font-medium text-[var(--ink-muted)]">
           What are you interested in?
         </label>
         <select
           name="interest"
-          className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-[13px] text-white/70 outline-none transition focus:border-purple-500/30 focus:ring-1 focus:ring-purple-500/20"
+          className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2.5 font-sans text-[13px] text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20"
           defaultValue=""
         >
-          <option value="" disabled className="bg-[rgb(14,18,22)]">Select an option</option>
-          <option value="demo" className="bg-[rgb(14,18,22)]">Request a demo</option>
-          <option value="pilot" className="bg-[rgb(14,18,22)]">Start a pilot engagement</option>
-          <option value="enterprise" className="bg-[rgb(14,18,22)]">Enterprise implementation</option>
-          <option value="partnership" className="bg-[rgb(14,18,22)]">Partnership inquiry</option>
-          <option value="other" className="bg-[rgb(14,18,22)]">Something else</option>
+          <option value="" disabled>Select an option</option>
+          <option value="demo">Request a demo</option>
+          <option value="pilot">Start a pilot engagement</option>
+          <option value="enterprise">Enterprise implementation</option>
+          <option value="partnership">Partnership inquiry</option>
+          <option value="other">Something else</option>
         </select>
       </div>
 
       <div>
-        <label className="mb-1.5 block text-[12px] font-medium text-white/50">
+        <label className="mb-1.5 block font-sans text-xs font-medium text-[var(--ink-muted)]">
           Message
         </label>
         <textarea
@@ -88,18 +88,18 @@ export function ContactForm() {
           rows={4}
           required
           placeholder="Tell us about your operations and what you're looking to improve..."
-          className="w-full resize-none rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-[13px] text-white/70 placeholder:text-white/20 outline-none transition focus:border-purple-500/30 focus:ring-1 focus:ring-purple-500/20"
+          className="w-full resize-none rounded-lg border border-[var(--border)] bg-white px-3 py-2.5 font-sans text-[13px] text-[var(--ink)] placeholder:text-[var(--ink-muted)] outline-none transition focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20"
         />
       </div>
 
       {state === "error" && (
-        <p className="text-[13px] text-red-400">Something went wrong. Please try again or email us directly.</p>
+        <p className="text-[13px] text-[var(--red-soft)]">Something went wrong. Please try again or email us directly.</p>
       )}
 
       <button
         type="submit"
         disabled={state === "submitting"}
-        className="w-full rounded-xl bg-purple-500 py-3 text-[14px] font-semibold text-white shadow-lg shadow-purple-500/20 transition hover:bg-purple-400 disabled:opacity-50"
+        className="w-full rounded-[10px] bg-[var(--accent)] py-3 font-sans text-sm font-semibold text-white shadow-[0_2px_8px_rgba(37,99,235,0.25)] transition hover:bg-[var(--accent-dim)] disabled:opacity-50"
       >
         {state === "submitting" ? "Sending..." : "Send Message"}
       </button>
@@ -122,15 +122,15 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[12px] font-medium text-white/50">
-        {label} {required && <span className="text-purple-400/50">*</span>}
+      <label className="mb-1.5 block font-sans text-xs font-medium text-[var(--ink-muted)]">
+        {label} {required && <span className="text-[var(--accent)]/50">*</span>}
       </label>
       <input
         name={name}
         type={type}
         required={required}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-[13px] text-white/70 placeholder:text-white/20 outline-none transition focus:border-purple-500/30 focus:ring-1 focus:ring-purple-500/20"
+        className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2.5 font-sans text-[13px] text-[var(--ink)] placeholder:text-[var(--ink-muted)] outline-none transition focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20"
       />
     </div>
   );

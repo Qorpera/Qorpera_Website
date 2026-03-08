@@ -19,8 +19,8 @@ export default function VisionPage() {
         subtitle="The people making the biggest decisions have the most mediated view of what's actually happening. Qorpera exists to close that gap."
       >
         <VisionClient />
-        <MarketingCta />
       </MarketingPageShell>
+      <MarketingCta />
       <MarketingFooter />
     </>
   );

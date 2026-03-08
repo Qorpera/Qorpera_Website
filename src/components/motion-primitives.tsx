@@ -19,8 +19,8 @@ export function FadeIn({
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }}
+      initial={{ opacity: 0, y: 24 }}
+      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
       transition={{ duration: 0.6, delay, ease: [0.21, 0.47, 0.32, 0.98] }}
       className={className}
     >
@@ -110,72 +110,10 @@ export function CountUp({
         animate={inView ? { opacity: 1 } : {}}
         transition={{ duration: 0.4 }}
       >
-        {inView ? (
-          <AnimatedNumber value={value} />
-        ) : (
-          "0"
-        )}
+        {inView ? value : "0"}
       </motion.span>
       {suffix}
     </motion.span>
-  );
-}
-
-function AnimatedNumber({ value }: { value: number }) {
-  return (
-    <motion.span
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      {value}
-    </motion.span>
-  );
-}
-
-/* ── Glow pulse ring (decorative) ──────────────────────────────── */
-export function GlowRing({ className }: { className?: string }) {
-  return (
-    <motion.div
-      className={`pointer-events-none absolute rounded-full border border-white/[0.06] ${className ?? ""}`}
-      animate={{
-        scale: [1, 1.15, 1],
-        opacity: [0.3, 0.08, 0.3],
-      }}
-      transition={{
-        duration: 4,
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
-    />
-  );
-}
-
-/* ── Floating particle dots ────────────────────────────────────── */
-export function FloatingDots({ count = 12 }: { count?: number }) {
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {Array.from({ length: count }).map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute h-1 w-1 rounded-full bg-white/[0.08]"
-          style={{
-            left: `${(i * 37 + 13) % 100}%`,
-            top: `${(i * 53 + 7) % 100}%`,
-          }}
-          animate={{
-            y: [0, -20 - (i % 3) * 10, 0],
-            opacity: [0.08, 0.2, 0.08],
-          }}
-          transition={{
-            duration: 3 + (i % 4),
-            repeat: Infinity,
-            delay: (i * 0.4) % 3,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
-    </div>
   );
 }
 
@@ -187,100 +125,10 @@ export function AnimatedLine() {
   return (
     <div ref={ref} className="h-px w-full overflow-hidden">
       <motion.div
-        className="h-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
+        className="h-full bg-gradient-to-r from-transparent via-[var(--border)] to-transparent"
         initial={{ x: "-100%" }}
         animate={inView ? { x: "100%" } : { x: "-100%" }}
         transition={{ duration: 1.5, ease: "easeInOut" }}
-      />
-    </div>
-  );
-}
-
-/* ── Rich section divider (landing page) ─────────────────────── */
-export function SectionDivider() {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-20px" });
-
-  return (
-    <div ref={ref} className="relative flex items-center justify-center py-1">
-      {/* Persistent base line that fades in */}
-      <motion.div
-        className="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent"
-        initial={{ opacity: 0 }}
-        animate={inView ? { opacity: 1 } : { opacity: 0 }}
-        transition={{ duration: 0.8, delay: 0.6 }}
-      />
-
-      {/* Sweep flash */}
-      <div className="absolute inset-x-0 h-px overflow-hidden">
-        <motion.div
-          className="h-full w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent"
-          initial={{ x: "-100%" }}
-          animate={inView ? { x: "400%" } : { x: "-100%" }}
-          transition={{ duration: 1.2, ease: [0.21, 0.47, 0.32, 0.98] }}
-        />
-      </div>
-
-      {/* Center diamond dot */}
-      <motion.div
-        className="relative z-10 flex h-5 w-5 items-center justify-center"
-        initial={{ opacity: 0, scale: 0 }}
-        animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
-        transition={{ duration: 0.4, delay: 0.5, ease: "backOut" }}
-      >
-        <motion.div
-          className="h-1.5 w-1.5 rotate-45 rounded-[1px] bg-white/20"
-          animate={{ opacity: [0.2, 0.5, 0.2] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        />
-        {/* Glow behind the dot */}
-        <motion.div
-          className="absolute h-6 w-6 rounded-full bg-purple-400/[0.06]"
-          animate={{
-            scale: [1, 1.8, 1],
-            opacity: [0.06, 0, 0.06],
-          }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </motion.div>
-
-      {/* Spark particles that fire outward on reveal */}
-      {inView && (
-        <>
-          {[-1, 1].map((dir) => (
-            <motion.div
-              key={dir}
-              className="absolute h-px bg-gradient-to-r from-white/20 to-transparent"
-              style={{ width: 40 }}
-              initial={{ x: 0, opacity: 0.6 }}
-              animate={{ x: dir * 120, opacity: 0 }}
-              transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
-            />
-          ))}
-          {[-1, 1].map((dir) => (
-            <motion.div
-              key={`dot-${dir}`}
-              className="absolute h-0.5 w-0.5 rounded-full bg-white/30"
-              initial={{ x: 0, opacity: 0.8 }}
-              animate={{ x: dir * 80, opacity: 0 }}
-              transition={{ duration: 0.6, delay: 0.55, ease: "easeOut" }}
-            />
-          ))}
-        </>
-      )}
-    </div>
-  );
-}
-
-/* ── Step connector (vertical animated pulse) ──────────────────── */
-export function StepConnector() {
-  return (
-    <div className="relative mx-auto h-12 w-px">
-      <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent" />
-      <motion.div
-        className="absolute left-0 h-4 w-px bg-white/30"
-        animate={{ top: ["0%", "100%", "0%"] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
       />
     </div>
   );

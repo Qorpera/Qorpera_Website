@@ -19,8 +19,8 @@ export default function UseCasesPage() {
         subtitle="These situations are developing in businesses like yours right now. The signals exist across your tools — but nobody is watching all of them simultaneously."
       >
         <UseCasesClient />
-        <MarketingCta />
       </MarketingPageShell>
+      <MarketingCta />
       <MarketingFooter />
     </>
   );

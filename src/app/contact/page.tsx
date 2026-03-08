@@ -4,30 +4,23 @@ import { MarketingFooter } from "@/components/marketing-footer";
 
 export const metadata: Metadata = {
   title: "Contact — Qorpera",
-  description: "See what's actually happening in your business. We'll connect your tools and show you the situations Qorpera finds — live, on your data.",
+  description: "Request early access to Qorpera. We'll connect your tools and show you the situations Qorpera finds — live, on your data.",
 };
 
 export default function ContactPage() {
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Background effects */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/3 top-0 h-[500px] w-[500px] rounded-full bg-purple-500/[0.05] blur-[120px]" />
-      </div>
-
-      <div className="relative mx-auto max-w-5xl px-6 pt-20 pb-16">
+    <div className="min-h-screen">
+      <div className="mx-auto max-w-5xl px-6 pb-16 pt-20">
         <div className="grid gap-16 lg:grid-cols-[1fr_1.1fr]">
           {/* Left — Info */}
           <div className="pt-4">
-            <h1 className="text-4xl font-medium tracking-[-0.03em] text-white">
+            <h1 className="font-sans text-4xl font-bold tracking-[-0.5px] text-[var(--ink)]">
               See your own
               <br />
-              <span className="bg-gradient-to-r from-purple-400 to-purple-200 bg-clip-text text-transparent">
-                business clearly.
-              </span>
+              <span className="text-[var(--accent)]">business clearly.</span>
             </h1>
 
-            <p className="mt-5 text-[15px] leading-relaxed text-white/45">
+            <p className="mt-5 text-[15px] leading-relaxed text-[var(--ink-soft)]">
               We&apos;ll connect your tools, show you the situations Qorpera finds
               in your data, and walk through what you&apos;ve been missing — live,
               on your business.
@@ -67,9 +60,9 @@ export default function ContactPage() {
           </div>
 
           {/* Right — Form */}
-          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8">
-            <h2 className="text-lg font-semibold text-white">Request Early Access</h2>
-            <p className="mt-1 text-[13px] text-white/35">
+          <div className="rounded-2xl border border-[var(--border)] bg-white p-8">
+            <h2 className="font-sans text-lg font-semibold text-[var(--ink)]">Request Early Access</h2>
+            <p className="mt-1 text-[13px] text-[var(--ink-muted)]">
               Fill out the form and our team will get back to you within one business day.
             </p>
             <ContactForm />
@@ -77,7 +70,6 @@ export default function ContactPage() {
         </div>
       </div>
 
-      {/* Footer */}
       <MarketingFooter />
     </div>
   );
@@ -94,12 +86,12 @@ function InfoRow({
 }) {
   return (
     <div className="flex gap-4">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-glow)] text-[var(--accent)]">
         {icon}
       </div>
       <div>
-        <h3 className="text-[14px] font-medium text-white/80">{title}</h3>
-        <p className="mt-0.5 text-[13px] text-white/35">{description}</p>
+        <h3 className="font-sans text-sm font-medium text-[var(--ink)]">{title}</h3>
+        <p className="mt-0.5 text-[13px] text-[var(--ink-muted)]">{description}</p>
       </div>
     </div>
   );

@@ -5,85 +5,50 @@ import {
   FadeIn,
   StaggerGroup,
   StaggerItem,
-  FloatingDots,
-  GlowRing,
 } from "@/components/motion-primitives";
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
-
-/* -- Orbit animation (decorative) --------------------------------- */
-function OrbitRing() {
-  return (
-    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-      <motion.div
-        className="absolute h-48 w-48 rounded-full border border-white/[0.04]"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-      >
-        <div className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-white/20" />
-      </motion.div>
-      <motion.div
-        className="absolute h-72 w-72 rounded-full border border-white/[0.03]"
-        animate={{ rotate: -360 }}
-        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-      >
-        <div className="absolute -right-1 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-white/15" />
-      </motion.div>
-    </div>
-  );
-}
 
 /* -- Comparison --------------------------------------------------- */
 function ComparisonBlock() {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true });
-
   return (
-    <div ref={ref} className="grid gap-4 sm:grid-cols-2">
-      <motion.div
-        className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6"
-        initial={{ opacity: 0, x: -20 }}
-        animate={inView ? { opacity: 1, x: 0 } : {}}
-        transition={{ duration: 0.5 }}
-      >
-        <p className="text-xs font-medium uppercase tracking-wider text-white/30">
-          Dashboards & team updates
-        </p>
-        <div className="mt-4 space-y-2">
-          {[
-            "Lagging metrics — you see what already happened",
-            "Filtered through your team's interpretation and priorities",
-            "No cross-system context or relationship awareness",
-          ].map((item) => (
-            <div key={item} className="flex items-start gap-2 text-sm text-white/40">
-              <span className="mt-0.5 text-rose-400/60 shrink-0">&#x2717;</span>
-              {item}
-            </div>
-          ))}
+    <div className="grid gap-4 sm:grid-cols-2">
+      <FadeIn>
+        <div className="rounded-[var(--radius)] border border-[var(--border)] bg-white p-6">
+          <p className="font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--ink-muted)]">
+            Dashboards & team updates
+          </p>
+          <div className="mt-4 space-y-2">
+            {[
+              "Lagging metrics — you see what already happened",
+              "Filtered through your team's interpretation and priorities",
+              "No cross-system context or relationship awareness",
+            ].map((item) => (
+              <div key={item} className="flex items-start gap-2 text-sm text-[var(--ink-soft)]">
+                <span className="mt-0.5 shrink-0 text-[var(--red-soft)]">&#x2717;</span>
+                {item}
+              </div>
+            ))}
+          </div>
         </div>
-      </motion.div>
-      <motion.div
-        className="rounded-2xl border border-white/[0.10] bg-white/[0.035] p-6"
-        initial={{ opacity: 0, x: 20 }}
-        animate={inView ? { opacity: 1, x: 0 } : {}}
-        transition={{ duration: 0.5, delay: 0.15 }}
-      >
-        <p className="text-xs font-medium uppercase tracking-wider text-white/30">
-          Qorpera
-        </p>
-        <div className="mt-4 space-y-2">
-          {[
-            "Developing situations — you see what's happening now",
-            "Drawn directly from your systems, unmediated",
-            "Full cross-system intelligence with relationship context",
-          ].map((item) => (
-            <div key={item} className="flex items-start gap-2 text-sm text-white/60">
-              <span className="mt-0.5 text-emerald-400/70 shrink-0">&#x2713;</span>
-              {item}
-            </div>
-          ))}
+      </FadeIn>
+      <FadeIn delay={0.15}>
+        <div className="rounded-[var(--radius)] border border-[var(--accent)]/20 bg-[var(--accent-glow)] p-6">
+          <p className="font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--ink-muted)]">
+            Qorpera
+          </p>
+          <div className="mt-4 space-y-2">
+            {[
+              "Developing situations — you see what's happening now",
+              "Drawn directly from your systems, unmediated",
+              "Full cross-system intelligence with relationship context",
+            ].map((item) => (
+              <div key={item} className="flex items-start gap-2 text-sm text-[var(--ink)]">
+                <span className="mt-0.5 shrink-0 text-[var(--green-soft)]">&#x2713;</span>
+                {item}
+              </div>
+            ))}
+          </div>
         </div>
-      </motion.div>
+      </FadeIn>
     </div>
   );
 }
@@ -108,24 +73,24 @@ function LayerSection({
     <Section label={`Layer ${num}`} title={title}>
       <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
         <FadeIn>
-          <div className="space-y-4 text-[#b8c5ce]">
+          <div className="space-y-4 text-[var(--ink-soft)]">
             <p>{description}</p>
           </div>
         </FadeIn>
         <FadeIn delay={0.15}>
-          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6">
+          <div className="rounded-[var(--radius)] border border-[var(--border)] bg-white p-6">
             <p
-              className="mb-3 text-xs font-medium uppercase tracking-wider"
-              style={{ color: `${color}99` }}
+              className="mb-3 font-sans text-[13px] font-semibold uppercase tracking-[1.5px]"
+              style={{ color }}
             >
               {label}
             </p>
             <StaggerGroup className="space-y-3" stagger={0.08}>
               {details.map((item, i) => (
                 <StaggerItem key={i}>
-                  <div className="flex gap-3 text-sm text-[#b8c5ce]">
+                  <div className="flex gap-3 text-sm text-[var(--ink-soft)]">
                     <span
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-sans text-[10px] font-bold"
                       style={{ backgroundColor: `${color}15`, color }}
                     >
                       {i + 1}
@@ -151,7 +116,7 @@ export function PlatformClient() {
       <Section label="The shift" title="From mediated reports to direct awareness.">
         <div className="space-y-8">
           <FadeIn>
-            <div className="max-w-2xl space-y-4 text-[#b8c5ce]">
+            <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
               <p>
                 Today, the people steering a company learn what&apos;s happening through
                 dashboards, reports, and team updates. Every layer of mediation strips
@@ -182,7 +147,7 @@ export function PlatformClient() {
           "CSV and API import for custom data sources",
           "Event normalization across different tool formats",
         ]}
-        color="#3b82f6"
+        color="#2563eb"
       />
 
       {/* Layer 02 */}
@@ -197,7 +162,7 @@ export function PlatformClient() {
           "Your team structure — who manages what, who should know",
           "Queryable graph with multi-hop traversal",
         ]}
-        color="#06b6d4"
+        color="#0891b2"
       />
 
       {/* Layer 03 */}
@@ -212,7 +177,7 @@ export function PlatformClient() {
           "Context assembly from the knowledge graph",
           "Urgency scoring based on business rules",
         ]}
-        color="#a855f7"
+        color="#7c3aed"
       />
 
       {/* Layer 04 */}
@@ -227,7 +192,7 @@ export function PlatformClient() {
           "Human-in-the-loop for anything with consequences",
           "Actions flow through your existing tools — email, CRM, invoicing",
         ]}
-        color="#f59e0b"
+        color="#d97706"
       />
 
       {/* Layer 05 */}
@@ -242,16 +207,14 @@ export function PlatformClient() {
           "Rejection pattern analysis for self-improvement",
           "Graduated autonomy — high-accuracy types run without approval",
         ]}
-        color="#10b981"
+        color="#059669"
       />
 
       {/* Governance */}
       <Section label="Governance" title="You decide how much to delegate.">
         <FadeIn>
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-8">
-            <FloatingDots count={8} />
-            <OrbitRing />
-            <div className="relative max-w-2xl space-y-4 text-[#b8c5ce]">
+          <div className="rounded-[var(--radius)] border border-[var(--border)] bg-white p-8">
+            <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
               <p>
                 Every action with consequences requires your approval until you say
                 otherwise. Qorpera starts fully supervised — it surfaces situations
@@ -272,20 +235,19 @@ export function PlatformClient() {
       {/* Mission */}
       <Section label="Mission" title="See your business clearly.">
         <FadeIn>
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6">
-            <GlowRing className="-left-16 -top-16 h-48 w-48" />
-            <div className="relative grid gap-8 sm:grid-cols-2">
+          <div className="rounded-[var(--radius)] border border-[var(--border)] bg-white p-6">
+            <div className="grid gap-8 sm:grid-cols-2">
               <div>
-                <h3 className="text-base font-semibold text-white">The mission</h3>
-                <p className="mt-2 text-sm text-[#b8c5ce]">
+                <h3 className="font-sans text-base font-semibold text-[var(--ink)]">The mission</h3>
+                <p className="mt-2 text-sm text-[var(--ink-soft)]">
                   Give every leader unmediated operational intelligence — the
                   cross-system situational awareness that today requires a $10M+
                   Palantir deployment, at a fraction of the cost, live in 25 minutes.
                 </p>
               </div>
               <div>
-                <h3 className="text-base font-semibold text-white">The promise</h3>
-                <p className="mt-2 text-sm text-[#b8c5ce]">
+                <h3 className="font-sans text-base font-semibold text-[var(--ink)]">The promise</h3>
+                <p className="mt-2 text-sm text-[var(--ink-soft)]">
                   You finally see your own business clearly. Not through dashboards,
                   not through your team&apos;s filtered reports — but the actual
                   situations developing across your operations, with full context

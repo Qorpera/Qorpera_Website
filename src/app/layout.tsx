@@ -1,36 +1,37 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, EB_Garamond } from "next/font/google";
+import { DM_Sans, Newsreader } from "next/font/google";
 import "./globals.css";
 import { MarketingShell } from "@/components/operator-shell";
 
-const inter = Inter({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
-  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-dm-sans",
   display: "swap",
 });
 
-const ebGaramond = EB_Garamond({
+const newsreader = Newsreader({
   subsets: ["latin"],
-  weight: ["600"],
-  variable: "--font-heading",
+  weight: ["400", "500"],
+  style: ["normal", "italic"],
+  variable: "--font-newsreader",
   display: "swap",
 });
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#080c10",
+  themeColor: "#fafafa",
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://qorpera.com"),
   title: {
-    default: "Qorpera — The Operating System for AI-Driven Work",
+    default: "Qorpera — AI that actually works inside your business",
     template: "%s | Qorpera",
   },
   description:
-    "AI that watches your business, detects situations that need attention, reasons about what to do, and acts within governed boundaries. The operating system for AI-driven work.",
+    "AI can do 85% of business operations tasks. It's doing 20%. The gap isn't intelligence — it's integration. Qorpera closes that gap.",
   openGraph: {
     type: "website",
     siteName: "Qorpera",
@@ -48,8 +49,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${ebGaramond.variable}`}>
-      <body className="bg-[rgb(8,12,16)] text-zinc-100">
+    <html lang="en" className={`${dmSans.variable} ${newsreader.variable}`}>
+      <body>
         <MarketingShell>{children}</MarketingShell>
       </body>
     </html>

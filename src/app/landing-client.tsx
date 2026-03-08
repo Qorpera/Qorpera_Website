@@ -1,258 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-
-/* ────────────────────────────────────────────
-   Scenario carousel — signals converge into
-   cross-system situation cards, auto-rotating
-   ──────────────────────────────────────────── */
-
-interface Scenario {
-  signals: { tool: string; event: string; color: string }[];
-  title: string;
-  badge: string;
-  badgeColor: string;
-  description: string;
-  response: string;
-}
-
-const SCENARIOS: Scenario[] = [
-  {
-    signals: [
-      { tool: "Stripe", event: "Invoice #4071 \u2014 16 days overdue", color: "#635BFF" },
-      { tool: "HubSpot", event: "Email response time \u2191 3.2\u00d7", color: "#FF7A59" },
-      { tool: "Gmail", event: "Contract end date inquiry received", color: "#4285F4" },
-      { tool: "HubSpot", event: "Support ticket \u2014 negative sentiment", color: "#FF7A59" },
-    ],
-    title: "Churn Risk \u2014 Meridian Corp",
-    badge: "High \u00b7 $45K ARR",
-    badgeColor: "#ef4444",
-    description:
-      "This isn\u2019t a late payment. Email response time has tripled, they asked about their contract end date, and their last support ticket was negative. The $8,400 invoice is a symptom \u2014 the real risk is $45K in annual revenue.",
-    response:
-      "Alert Sarah (account owner) with full context. She saved a similar account 3 months ago by scheduling a face-to-face.",
-  },
-  {
-    signals: [
-      { tool: "Stripe", event: "Widget Pro orders \u2191 340% in 6 weeks", color: "#635BFF" },
-      { tool: "HubSpot", event: "14 new enterprise inquiries this month", color: "#FF7A59" },
-      { tool: "Gmail", event: "Shenzhen Micro \u2014 lead time now 12 weeks", color: "#4285F4" },
-      { tool: "Research", event: "Component shortage across 3 competing markets", color: "#8B5CF6" },
-    ],
-    title: "Supply Bottleneck \u2014 Widget Pro",
-    badge: "Urgent \u00b7 $280K pipeline",
-    badgeColor: "#f59e0b",
-    description:
-      "Demand is accelerating faster than your supply chain can support. Your primary supplier is seeing industry-wide spikes and has extended lead times to 12 weeks. At current growth, you\u2019ll hit allocation limits within 45 days \u2014 while $280K in pipeline depends on normal fulfillment.",
-    response:
-      "Open conversation with Shenzhen Micro about reserved allocation. Identify backup supplier. Consider temporary order caps for new accounts.",
-  },
-  {
-    signals: [
-      { tool: "Stripe", event: "Apex Industries = 34% of monthly revenue", color: "#635BFF" },
-      { tool: "HubSpot", event: "Apex champion (VP Eng) changed roles", color: "#FF7A59" },
-      { tool: "LinkedIn", event: "New VP Eng at Apex \u2014 no prior relationship", color: "#0A66C2" },
-      { tool: "Gmail", event: "Renewal discussion pushed back 3 weeks", color: "#4285F4" },
-    ],
-    title: "Concentration Risk \u2014 Apex Industries",
-    badge: "High \u00b7 $180K ARR",
-    badgeColor: "#ef4444",
-    description:
-      "Your largest account is 34% of revenue. Their VP of Engineering \u2014 your primary champion \u2014 just changed roles. The incoming VP has no relationship with your team, and the renewal conversation has stalled. Not a renewal risk yet, but a concentration risk that needs immediate attention.",
-    response:
-      "Schedule intro with new VP through existing contacts. Prepare business review showing ROI. Brief CEO for potential executive-to-executive outreach.",
-  },
-  {
-    signals: [
-      { tool: "HubSpot", event: "Orion Healthcare requested feature comparison", color: "#FF7A59" },
-      { tool: "Gmail", event: "Orion contact forwarded competitor pricing", color: "#4285F4" },
-      { tool: "HubSpot", event: "Deal stage: Negotiation \u2192 Evaluation", color: "#FF7A59" },
-      { tool: "Research", event: "Competitor launched healthcare module last week", color: "#8B5CF6" },
-    ],
-    title: "Competitive Threat \u2014 Orion Healthcare",
-    badge: "High \u00b7 $62K deal",
-    badgeColor: "#ef4444",
-    description:
-      "Orion is re-evaluating. They requested a feature comparison, forwarded a competitor\u2019s pricing internally, and regressed from Negotiation to Evaluation \u2014 all within 5 days of a competitor announcing a healthcare-specific module. This deal needs intervention before the evaluation window closes.",
-    response:
-      "Schedule technical deep-dive on integration advantages. Prepare healthcare-specific ROI case. Escalate to VP Sales for strategic pricing discussion.",
-  },
-  {
-    signals: [
-      { tool: "Analytics", event: "Brightpath usage at 94% of plan limit", color: "#F9AB00" },
-      { tool: "HubSpot", event: "Contract renewal in 38 days", color: "#FF7A59" },
-      { tool: "Stripe", event: "18 months \u2014 never missed a payment", color: "#635BFF" },
-      { tool: "Gmail", event: "CEO mentioned expansion plans in last email", color: "#4285F4" },
-    ],
-    title: "Expansion \u2014 Brightpath Education",
-    badge: "$24K \u2192 $48K potential",
-    badgeColor: "#10b981",
-    description:
-      "Brightpath is hitting their plan ceiling at exactly the right moment. They\u2019re 38 days from renewal, their CEO just mentioned expansion plans, and they\u2019ve been a perfect-payment customer for 18 months. This is an upgrade conversation, not a renewal conversation.",
-    response:
-      "Prepare upgrade proposal with usage data. Lead with their growth trajectory, not pricing. Time the outreach for 2\u20133 weeks before renewal.",
-  },
-  {
-    signals: [
-      { tool: "Stripe", event: "3 largest invoices ($45K, $38K, $27K) due same week", color: "#635BFF" },
-      { tool: "Xero", event: "Payroll + vendor payments = $92K due same period", color: "#13B5EA" },
-      { tool: "Gmail", event: "Apex Industries historically 15\u201320 days late in Q2", color: "#4285F4" },
-      { tool: "Calendar", event: "Board meeting in 3 weeks \u2014 cash position on agenda", color: "#4285F4" },
-    ],
-    title: "Cash Flow Pinch \u2014 Q2 Week 3",
-    badge: "Moderate \u00b7 $202K exposure",
-    badgeColor: "#f59e0b",
-    description:
-      "Three major receivables and your largest outgoing obligations converge in the same 10-day window. Based on history, Apex will likely be 15\u201320 days late \u2014 creating a $45K gap right when your board meeting requires a clean cash position.",
-    response:
-      "Send Apex a friendly early-payment reminder with incentive. Shift one vendor payment by 5 days (within terms). Brief CFO on the timing overlap.",
-  },
-];
-
-function SignalCarousel() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [started, setStarted] = useState(false);
-  const [active, setActive] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const ADVANCE_DELAY = 15000;
-
-  // Start on scroll into view
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setStarted(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.2 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
-  // Auto-advance (pauses on hover/touch)
-  useEffect(() => {
-    if (!started || paused) return;
-    timerRef.current = setTimeout(() => {
-      setActive((prev) => (prev + 1) % SCENARIOS.length);
-    }, ADVANCE_DELAY);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [started, active, paused]);
-
-  const goTo = (idx: number) => {
-    if (idx !== active) setActive(idx);
-  };
-
-  const scenario = SCENARIOS[active];
-
-  return (
-    <div
-      ref={ref}
-      className="mx-auto mt-12 max-w-md"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onTouchStart={() => setPaused(true)}
-      onTouchEnd={() => setPaused(false)}
-    >
-      {/* Signals — compact, no stagger animation */}
-      <div className="space-y-1">
-        {scenario.signals.map((s, i) => (
-          <div
-            key={`${active}-${i}`}
-            className="flex items-center gap-2.5 rounded-md border border-white/[0.06] bg-white/[0.02] px-3 py-1.5"
-          >
-            <div
-              className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ background: s.color, boxShadow: `0 0 8px ${s.color}44` }}
-            />
-            <span className="w-14 shrink-0 font-mono text-[10px] text-white/25">
-              {s.tool}
-            </span>
-            <span className="font-mono text-[11px] text-white/55">{s.event}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Convergence line */}
-      <div className="my-2 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-
-      {/* Situation card */}
-      <div className="rounded-xl border border-white/[0.08] bg-gradient-to-br from-white/[0.05] to-white/[0.01] p-5 backdrop-blur-xl">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <div
-              className="h-2 w-2 shrink-0 rounded-full"
-              style={{
-                backgroundColor: scenario.badgeColor,
-                boxShadow: `0 0 10px ${scenario.badgeColor}80`,
-              }}
-            />
-            <span className="truncate font-heading text-[14px] font-medium text-white">
-              {scenario.title}
-            </span>
-          </div>
-          <span
-            className="shrink-0 rounded-full px-2 py-0.5 font-mono text-[9px]"
-            style={{
-              backgroundColor: `${scenario.badgeColor}18`,
-              color: scenario.badgeColor,
-            }}
-          >
-            {scenario.badge}
-          </span>
-        </div>
-        <p className="mt-2 text-[12px] leading-relaxed text-white/45">
-          {scenario.description}
-        </p>
-        <div className="mt-3 rounded-md border border-white/[0.05] bg-white/[0.02] px-3 py-2">
-          <span className="text-[9px] font-medium uppercase tracking-[1.5px] text-white/20">
-            Recommended response
-          </span>
-          <p className="mt-1 text-[11px] leading-relaxed text-white/35">
-            {scenario.response}
-          </p>
-        </div>
-      </div>
-
-      {/* Navigation dots + arrows */}
-      <div className="mt-4 flex items-center justify-center gap-3">
-        <button
-          onClick={() => goTo((active - 1 + SCENARIOS.length) % SCENARIOS.length)}
-          aria-label="Previous scenario"
-          className="text-white/20 transition hover:text-white/50"
-        >
-          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        <div className="flex items-center gap-1.5">
-          {SCENARIOS.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goTo(i)}
-              aria-label={`Scenario ${i + 1}`}
-              className="h-1.5 rounded-full transition-all duration-300"
-              style={{
-                width: i === active ? 16 : 6,
-                backgroundColor: i === active ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.12)",
-              }}
-            />
-          ))}
-        </div>
-        <button
-          onClick={() => goTo((active + 1) % SCENARIOS.length)}
-          aria-label="Next scenario"
-          className="text-white/20 transition hover:text-white/50"
-        >
-          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
-      </div>
-    </div>
-  );
-}
 
 /* ────────────────────────────────────────────
    Scroll-triggered fade-up animation helper
@@ -292,7 +40,7 @@ function FadeUp({
       className={className}
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(32px)",
+        transform: visible ? "translateY(0)" : "translateY(24px)",
         transition: `opacity 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
       }}
     >
@@ -307,415 +55,402 @@ function FadeUp({
 
 export function LandingClient() {
   return (
-    <div className="relative overflow-hidden">
+    <div>
       {/* ═══════════════════════════════════════
-          HERO — dark, full viewport
+          HERO
           ═══════════════════════════════════════ */}
-      <section className="relative pb-16 pt-16 text-center">
-        {/* Background video (reuses existing hero-bg.mp4) */}
-        <div className="pointer-events-none absolute inset-0 -top-20 overflow-hidden">
-          <video
-            className="h-full w-full object-cover opacity-40 object-[60%_center]"
-            autoPlay
-            loop
-            muted
-            playsInline
-          >
-            <source src="/hero-bg.mp4" type="video/mp4" />
-          </video>
-          <div className="absolute inset-0 bg-gradient-to-b from-[rgb(8,12,16)]/60 via-transparent to-[rgb(8,12,16)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgb(8,12,16)_0%,_transparent_70%)] opacity-70" />
-        </div>
+      <section className="px-6 pb-[100px] pt-[180px] text-center lg:px-10">
+        <FadeUp>
+          <div className="mb-6 inline-flex items-center gap-2 font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
+            <span className="inline-block h-px w-6 bg-[var(--accent)]" />
+            The AI integration layer
+          </div>
+        </FadeUp>
 
-        <div className="relative mx-auto flex min-h-[90vh] max-w-4xl flex-col items-center justify-center px-6">
-          <FadeUp>
-            <p className="text-sm font-medium uppercase tracking-wider text-white/25">
-              Operational intelligence for leadership
-            </p>
-          </FadeUp>
+        <FadeUp delay={100}>
+          <h1 className="mx-auto max-w-[820px] font-sans text-[clamp(40px,5.5vw,64px)] font-bold leading-[1.1] tracking-[-1.5px] text-[var(--ink)]">
+            AI can run your operations.
+            <br />
+            <span className="text-[var(--accent)]">
+              It just doesn&apos;t know your business yet.
+            </span>
+          </h1>
+        </FadeUp>
 
-          <FadeUp delay={150}>
-            <h1 className="mt-6 text-center text-4xl font-medium leading-[1.08] tracking-[-0.03em] text-white sm:text-5xl lg:text-6xl">
-              The{" "}
-              <span className="bg-gradient-to-r from-purple-400 to-purple-200 bg-clip-text text-transparent">
-                full picture
-              </span>
-              {" "}of your business.
-            </h1>
-          </FadeUp>
+        <FadeUp delay={250}>
+          <p className="mx-auto mt-7 max-w-[580px] text-[20px] leading-[1.6] text-[var(--ink-soft)]">
+            Qorpera teaches AI how your company works, connects it to your tools,
+            and gradually lets it take over the tasks your team shouldn&apos;t be
+            doing manually.
+          </p>
+        </FadeUp>
 
-          <FadeUp delay={300}>
-            <p className="mx-auto mt-6 max-w-xl text-[17px] leading-relaxed text-white/40">
-              Qorpera connects to your tools and continuously surfaces the situations
-              that matter — churn risks, stalled deals, overdue invoices, developing
-              problems — with full cross-system context and the reasoning to
-              understand why they matter.
-            </p>
-          </FadeUp>
+        <FadeUp delay={400}>
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-4">
+            <a
+              href="/contact"
+              className="rounded-[10px] bg-[var(--accent)] px-8 py-3.5 font-sans text-base font-semibold text-white no-underline shadow-[0_2px_8px_rgba(37,99,235,0.25)] transition hover:-translate-y-px hover:bg-[var(--accent-dim)] hover:shadow-[0_4px_16px_rgba(37,99,235,0.3)]"
+            >
+              Request early access
+            </a>
+            <a
+              href="#how"
+              className="rounded-[10px] border-[1.5px] border-[var(--border)] bg-transparent px-8 py-3.5 font-sans text-base font-semibold text-[var(--ink)] no-underline transition hover:border-[var(--ink-muted)] hover:bg-white"
+            >
+              See how it works
+            </a>
+          </div>
+        </FadeUp>
+      </section>
 
-          <FadeUp delay={450}>
-            <div className="mt-10 flex items-center justify-center gap-4">
-              <Link
-                className="rounded-xl bg-white px-8 py-3.5 text-[15px] font-semibold text-zinc-900 transition hover:bg-zinc-200"
-                href="/contact"
-              >
-                Request Early Access
-              </Link>
-              <Link
-                className="rounded-xl border border-white/[0.10] px-8 py-3.5 text-[15px] font-medium text-white/50 transition hover:border-white/[0.15] hover:text-white/80"
-                href="/how-it-works"
-              >
-                How It Works
-              </Link>
+      {/* ═══════════════════════════════════════
+          GAP VISUAL — dark section
+          ═══════════════════════════════════════ */}
+      <section className="bg-[var(--ink)] px-6 py-[100px] text-white lg:px-10">
+        <div className="mx-auto max-w-[1100px] text-center">
+          <div className="mb-10 font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-white/40">
+            The integration gap
+          </div>
+
+          <div className="mb-12 flex flex-wrap items-end justify-center gap-16">
+            <div className="text-center">
+              <div className="font-sans text-[88px] font-bold leading-none tracking-[-3px] max-sm:text-[56px]">
+                85%
+              </div>
+              <div className="mt-2 font-sans text-sm font-medium text-white/50">
+                of business operations tasks
+                <br />
+                AI can already perform
+              </div>
             </div>
-          </FadeUp>
-
-          {/* Live demo: signals → situation carousel */}
-          <SignalCarousel />
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════
-          THE PROBLEM — white section
-          ═══════════════════════════════════════ */}
-      <section className="bg-white py-32">
-        <div className="mx-auto max-w-3xl px-6">
-          <FadeUp>
-            <h2 className="text-3xl font-medium leading-tight tracking-[-0.03em] text-zinc-900 sm:text-4xl lg:text-5xl">
-              Every tool sees one slice.
-              <br />
-              <span className="text-zinc-300">Nobody sees the whole picture.</span>
-            </h2>
-          </FadeUp>
-
-          <FadeUp delay={100}>
-            <p className="mx-auto mt-8 max-w-xl text-[17px] leading-relaxed text-zinc-400">
-              Your CRM knows about deals. Your invoicing system knows about
-              payments. Your email knows about conversations. But the churn risk
-              that combines a late payment, declining email sentiment, and an angry
-              support ticket? That lives in the gap between tools — visible only to
-              whoever happens to check all three at the right moment.
-            </p>
-          </FadeUp>
-
-          <FadeUp delay={200}>
-            <p className="mx-auto mt-6 max-w-xl text-[17px] leading-relaxed text-zinc-500">
-              The person steering the company gets the most filtered view. You
-              sit through status meetings where everyone shares their fragment.
-              You piece together a picture from six dashboards and four people&apos;s
-              incomplete recollections. And you still leave wondering what you
-              didn&apos;t hear about.
-            </p>
-          </FadeUp>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════
-          WHAT QORPERA DOES — white, bordered
-          ═══════════════════════════════════════ */}
-      <section className="border-t border-zinc-100 bg-white py-32">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <FadeUp>
-            <p className="text-xs font-medium uppercase tracking-widest text-purple-500/60">
-              What changes
-            </p>
-            <h2 className="mt-3 text-3xl font-medium tracking-[-0.03em] text-zinc-900 sm:text-4xl">
-              Skip the debrief.
-              <br />
-              <span className="text-zinc-300">You already know.</span>
-            </h2>
-          </FadeUp>
-
-          <FadeUp delay={100}>
-            <p className="mx-auto mt-8 max-w-lg text-[15px] leading-relaxed text-zinc-500">
-              Qorpera connects to your existing tools and watches everything that
-              happens. When signals across systems converge into a situation that
-              matters — a churn risk, a stalled deal, an overdue invoice with
-              context — you see it immediately. Walk into any meeting already
-              knowing what&apos;s happening, what&apos;s at risk, and what needs a decision.
-              Or cancel the meeting entirely — you already have the picture.
-            </p>
-          </FadeUp>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════
-          BEFORE / AFTER — white, bordered
-          ═══════════════════════════════════════ */}
-      <section className="border-t border-zinc-100 bg-white py-32">
-        <div className="mx-auto max-w-3xl px-6">
-          <FadeUp>
-            <h2 className="text-center text-3xl font-medium tracking-[-0.03em] text-zinc-900 sm:text-4xl">
-              Not another dashboard.
-              <br />
-              <span className="text-zinc-300">Operational awareness.</span>
-            </h2>
-          </FadeUp>
-
-          <div className="mt-16 grid gap-12 sm:grid-cols-2">
-            <FadeUp delay={100}>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
-                  How you know today
-                </p>
-                <ul className="mt-4 space-y-3">
-                  <li className="flex items-start gap-2.5 text-[15px] text-zinc-400">
-                    <span className="mt-1 text-zinc-300">&mdash;</span>Weekly status
-                    meetings where everyone shares their fragment
-                  </li>
-                  <li className="flex items-start gap-2.5 text-[15px] text-zinc-400">
-                    <span className="mt-1 text-zinc-300">&mdash;</span>Checking six tools
-                    manually to piece together the picture
-                  </li>
-                  <li className="flex items-start gap-2.5 text-[15px] text-zinc-400">
-                    <span className="mt-1 text-zinc-300">&mdash;</span>Relying on the
-                    person who &ldquo;just knows&rdquo; — until they&apos;re unavailable
-                  </li>
-                  <li className="flex items-start gap-2.5 text-[15px] text-zinc-400">
-                    <span className="mt-1 text-zinc-300">&mdash;</span>Finding out about
-                    problems after they&apos;ve already escalated
-                  </li>
-                </ul>
+            <div className="mb-9 text-[40px] text-[var(--accent)] max-sm:hidden">
+              &rarr;
+            </div>
+            <div className="text-center">
+              <div className="font-sans text-[88px] font-bold leading-none tracking-[-3px] text-white/25 max-sm:text-[56px]">
+                20%
               </div>
-            </FadeUp>
-
-            <FadeUp delay={200}>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-900">
-                  With Qorpera
-                </p>
-                <ul className="mt-4 space-y-3">
-                  <li className="flex items-start gap-2.5 text-[15px] text-zinc-900">
-                    <span className="mt-1 text-purple-500">&mdash;</span>Walk into any
-                    meeting already knowing what matters
-                  </li>
-                  <li className="flex items-start gap-2.5 text-[15px] text-zinc-900">
-                    <span className="mt-1 text-purple-500">&mdash;</span>Cross-system
-                    situations surfaced with full context, automatically
-                  </li>
-                  <li className="flex items-start gap-2.5 text-[15px] text-zinc-900">
-                    <span className="mt-1 text-purple-500">&mdash;</span>Cancel the status
-                    sync — you already have the picture
-                  </li>
-                  <li className="flex items-start gap-2.5 text-[15px] text-zinc-900">
-                    <span className="mt-1 text-purple-500">&mdash;</span>Issues caught when
-                    they develop, not after they&apos;ve become fires
-                  </li>
-                </ul>
+              <div className="mt-2 font-sans text-sm font-medium text-white/50">
+                of those tasks businesses
+                <br />
+                are actually using AI for
               </div>
-            </FadeUp>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════
-          TRUST GRADIENT — white, bordered
-          Reframed: Observe → Propose → Act
-          ═══════════════════════════════════════ */}
-      <section className="border-t border-zinc-100 bg-white py-32">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <FadeUp>
-            <p className="text-xs font-medium uppercase tracking-widest text-purple-500/60">
-              Trust gradient
-            </p>
-            <h2 className="mt-3 text-3xl font-medium tracking-[-0.03em] text-zinc-900 sm:text-4xl">
-              Valuable from day one.
-              <br />
-              <span className="text-zinc-300">More capable over time.</span>
-            </h2>
-          </FadeUp>
-
-          <div className="mx-auto mt-16 max-w-2xl space-y-10">
-            <FadeUp delay={100}>
-              <div className="text-left">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-500/10 text-[12px] font-semibold text-purple-500">
-                    1
-                  </span>
-                  <h3 className="text-[17px] font-medium text-zinc-900">
-                    Observe
-                  </h3>
-                </div>
-                <p className="mt-2 pl-10 text-[15px] leading-relaxed text-zinc-500">
-                  Connect your tools. The AI watches, detects cross-system
-                  situations, and shows you what it sees — with full context. You
-                  tell it whether it&apos;s seeing the right things. This alone is
-                  transformative: you&apos;ve never had this view before.
-                </p>
-              </div>
-            </FadeUp>
-
-            <FadeUp delay={200}>
-              <div className="text-left">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-500/10 text-[12px] font-semibold text-purple-500">
-                    2
-                  </span>
-                  <h3 className="text-[17px] font-medium text-zinc-900">
-                    Propose
-                  </h3>
-                </div>
-                <p className="mt-2 pl-10 text-[15px] leading-relaxed text-zinc-500">
-                  Once the AI demonstrates it sees the right things, it starts
-                  recommending actions. &ldquo;Send a reminder to Meridian — here&apos;s why,
-                  here&apos;s the email, here&apos;s what worked last time.&rdquo; You approve,
-                  edit, or reject. Every response teaches it.
-                </p>
-              </div>
-            </FadeUp>
-
-            <FadeUp delay={300}>
-              <div className="text-left">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-500/10 text-[12px] font-semibold text-purple-500">
-                    3
-                  </span>
-                  <h3 className="text-[17px] font-medium text-zinc-900">Act</h3>
-                </div>
-                <p className="mt-2 pl-10 text-[15px] leading-relaxed text-zinc-500">
-                  After proving consistent judgment — typically 10-15 correct
-                  proposals — the AI suggests handling that situation type on its
-                  own. You control exactly how much autonomy it earns. And you can
-                  revoke it at any time.
-                </p>
-              </div>
-            </FadeUp>
+            </div>
           </div>
 
-          <FadeUp delay={400}>
-            <div className="mx-auto mt-8 h-px max-w-2xl bg-gradient-to-r from-transparent via-zinc-200 to-transparent" />
-            <p className="mx-auto mt-8 max-w-lg text-[15px] leading-relaxed text-zinc-500">
-              Most customers find the &ldquo;Observe&rdquo; phase alone is worth the
-              investment — they see situations they would have missed entirely.
-              Action authority is a bonus, not a requirement.
-            </p>
-          </FadeUp>
+          <p className="mx-auto mb-3 max-w-[640px] text-[22px] leading-[1.5] text-white/70">
+            The gap isn&apos;t intelligence. AI is smart enough.{" "}
+            <strong className="text-white">
+              The gap is that AI doesn&apos;t know your business
+            </strong>{" "}
+            — your customers, your team, your processes, your tools. Without that
+            context, it can&apos;t do real work.
+          </p>
+          <p className="font-sans text-xs text-white/30">
+            Source:{" "}
+            <a
+              href="https://www.anthropic.com/research/labor-market-impacts"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/40 no-underline"
+            >
+              Anthropic Labor Market Research, March 2026
+            </a>
+          </p>
         </div>
       </section>
 
       {/* ═══════════════════════════════════════
-          FIVE LAYERS — white, bordered
+          THE PROBLEM
           ═══════════════════════════════════════ */}
-      <section className="border-t border-zinc-100 bg-white py-32">
-        <div className="mx-auto max-w-3xl px-6">
+      <section className="bg-[var(--surface-warm)] px-6 py-[120px] lg:px-10">
+        <div className="mx-auto max-w-[1100px]">
           <FadeUp>
-            <p className="text-xs font-medium uppercase tracking-widest text-zinc-400">
-              Under the hood
-            </p>
-            <h2 className="mt-3 text-3xl font-medium tracking-[-0.03em] text-zinc-900 sm:text-4xl">
-              From fragmented signals to clear understanding.
+            <div className="mb-4 font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
+              The problem
+            </div>
+            <h2 className="font-sans text-[clamp(28px,3.5vw,40px)] font-bold leading-[1.15] tracking-[-0.5px]">
+              Your business runs on people connecting dots
+              <br className="hidden sm:block" />
+              across tools that don&apos;t talk to each other.
             </h2>
+            <p className="mt-5 max-w-[600px] text-lg leading-[1.6] text-[var(--ink-soft)]">
+              The knowledge of how your business actually operates lives in
+              people&apos;s heads — not in any system. When those people are busy,
+              on vacation, or leave, things fall through the cracks.
+            </p>
           </FadeUp>
 
-          <div className="mt-16 space-y-12">
+          <div className="mt-12 grid gap-8 sm:grid-cols-3">
             {[
               {
-                n: "01",
-                title: "Event Stream",
-                desc: "Everything that happens across your connected tools flows in as events. Emails, CRM updates, invoices, support tickets. The AI\u2019s eyes and ears on your business.",
+                icon: "🔀",
+                title: "Fragmented tools",
+                desc: "Your CRM, invoicing, email, and spreadsheets each see one slice. Nobody — and nothing — sees the full picture across all of them.",
               },
               {
-                n: "02",
-                title: "Knowledge Graph",
-                desc: "The AI builds a unified model of your business \u2014 entities, relationships, and your team structure. A contact in HubSpot and a customer in Stripe become one person with full context.",
+                icon: "🧠",
+                title: "Knowledge trapped in people",
+                desc: "Your best ops person \"just knows\" which customers need attention. That institutional knowledge doesn't transfer, doesn't scale, and walks out the door when they leave.",
               },
               {
-                n: "03",
-                title: "Situation Engine",
-                desc: "Cross-system patterns are continuously detected and assembled into situations: what triggered it, what context surrounds it, and why it matters now. This is Qorpera\u2019s core.",
+                icon: "🤖",
+                title: "AI that can't do real work",
+                desc: "AI chatbots can write emails and answer questions. But they don't know your customers, your team structure, or your policies — so they can't actually operate inside your business.",
+              },
+            ].map((card) => (
+              <FadeUp key={card.title}>
+                <div className="rounded-[var(--radius)] border border-[var(--border)] bg-white p-8">
+                  <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-[10px] bg-[var(--accent-glow)] text-[20px]">
+                    {card.icon}
+                  </div>
+                  <h3 className="mb-2.5 font-sans text-[17px] font-bold text-[var(--ink)]">
+                    {card.title}
+                  </h3>
+                  <p className="text-[15px] leading-[1.6] text-[var(--ink-soft)]">
+                    {card.desc}
+                  </p>
+                </div>
+              </FadeUp>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════
+          HOW IT WORKS
+          ═══════════════════════════════════════ */}
+      <section id="how" className="bg-white px-6 py-[120px] lg:px-10">
+        <div className="mx-auto max-w-[1100px]">
+          <FadeUp>
+            <div className="mb-4 font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
+              How Qorpera works
+            </div>
+            <h2 className="font-sans text-[clamp(28px,3.5vw,40px)] font-bold leading-[1.15] tracking-[-0.5px]">
+              Onboard AI like you&apos;d onboard an employee.
+            </h2>
+            <p className="mt-5 max-w-[600px] text-lg leading-[1.6] text-[var(--ink-soft)]">
+              You don&apos;t throw a new hire into the deep end. You show them how
+              the company works, introduce them to the team, and let them prove
+              themselves before giving them responsibility. Qorpera works the same
+              way.
+            </p>
+          </FadeUp>
+
+          <div className="mt-16 space-y-14">
+            {[
+              {
+                num: "01",
+                time: "2 minutes",
+                title: "Show it your organization",
+                desc: "Build a simple map of your departments and team — who does what, who's responsible for what. This gives the AI the structural context no other tool provides.",
               },
               {
-                n: "04",
-                title: "Reasoning + Action",
-                desc: "For each situation, the AI reasons about what it means and what to do. It checks governance rules and either presents its assessment or \u2014 once trusted \u2014 acts directly through your existing tools.",
+                num: "02",
+                time: "5 minutes",
+                title: "Connect your tools",
+                desc: "One-click OAuth to HubSpot, Stripe, Gmail, Google Sheets. The AI starts ingesting your data and mapping it to your organizational structure — customers to departments, invoices to teams.",
               },
               {
-                n: "05",
-                title: "Learning",
-                desc: "Every situation \u2192 assessment \u2192 outcome cycle is recorded. The AI gets better at your business specifically, not just at language generally. Accuracy improves with every decision.",
+                num: "03",
+                time: "10 minutes",
+                title: "Teach it what matters",
+                desc: 'Tell the AI what keeps you up at night, in plain language. "We lose track of overdue invoices." "Deals stall without anyone noticing." It learns your operational priorities and starts watching for them.',
               },
-            ].map((layer, i) => (
-              <FadeUp key={layer.n} delay={i * 80}>
-                <div className="flex items-start gap-6">
-                  <span className="mt-1 text-[13px] font-semibold text-zinc-300">
-                    {layer.n}
-                  </span>
+              {
+                num: "04",
+                time: "Ongoing",
+                title: "Let it earn your trust",
+                desc: "The AI starts by showing you what it sees and recommending actions. You approve, correct, or reject. As it proves it gets things right, you let it handle more. One task type at a time. Fully reversible.",
+              },
+            ].map((step, i) => (
+              <FadeUp key={step.num} delay={i * 80}>
+                <div
+                  className={`grid items-start gap-8 ${
+                    i < 3 ? "border-b border-[var(--border)] pb-14" : ""
+                  }`}
+                  style={{ gridTemplateColumns: "80px 1fr" }}
+                >
+                  <div className="font-sans text-5xl font-bold leading-none text-[var(--border)] max-sm:text-4xl">
+                    {step.num}
+                  </div>
                   <div>
-                    <h3 className="text-[17px] font-medium text-zinc-900">
-                      {layer.title}
+                    <div className="mb-3 font-sans text-[13px] font-semibold text-[var(--accent)]">
+                      {step.time}
+                    </div>
+                    <h3 className="mb-2 font-sans text-[22px] font-bold text-[var(--ink)]">
+                      {step.title}
                     </h3>
-                    <p className="mt-1 text-[15px] leading-relaxed text-zinc-500">
-                      {layer.desc}
+                    <p className="max-w-[560px] text-base leading-[1.65] text-[var(--ink-soft)]">
+                      {step.desc}
                     </p>
                   </div>
                 </div>
               </FadeUp>
             ))}
           </div>
-
-          <FadeUp delay={400}>
-            <div className="mt-12 text-center">
-              <Link
-                className="text-sm font-medium text-zinc-400 transition hover:text-zinc-900"
-                href="/platform"
-              >
-                Deep-dive on the architecture &rarr;
-              </Link>
-            </div>
-          </FadeUp>
         </div>
       </section>
 
       {/* ═══════════════════════════════════════
-          WHO IT'S FOR — white, bordered
+          TRUST GRADIENT
           ═══════════════════════════════════════ */}
-      <section className="border-t border-zinc-100 bg-white py-32">
-        <div className="mx-auto max-w-3xl px-6 text-center">
+      <section className="bg-[var(--surface-warm)] px-6 py-[120px] lg:px-10">
+        <div className="mx-auto max-w-[1100px]">
           <FadeUp>
-            <p className="text-xs font-medium uppercase tracking-widest text-zinc-400">
-              Built for
+            <div className="mb-4 font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
+              The trust gradient
+            </div>
+            <h2 className="font-sans text-[clamp(28px,3.5vw,40px)] font-bold leading-[1.15] tracking-[-0.5px]">
+              AI autonomy isn&apos;t a switch. It&apos;s something earned.
+            </h2>
+          </FadeUp>
+
+          <div className="mt-12 grid gap-6 sm:grid-cols-3">
+            {[
+              {
+                tag: "Week 1",
+                title: "Observe",
+                desc: "The AI watches your operations across all connected tools. It surfaces situations that need attention — with the full cross-system context to understand them.",
+                example:
+                  '"Invoice #4071 is 14 days overdue. This customer\'s email tone has shifted negative and their contract renews in 60 days."',
+              },
+              {
+                tag: "Weeks 2–4",
+                title: "Propose",
+                desc: "The AI starts recommending specific actions. You see exactly what it wants to do and why. Approve, edit, or reject — every response teaches it.",
+                example:
+                  '"I recommend sending a personal check-in to this customer before the payment reminder. Here\'s a draft based on their history."',
+              },
+              {
+                tag: "Month 2+",
+                title: "Act",
+                desc: "After 10–15 correct calls in a row, the AI suggests handling that task type on its own. You stay in control — full visibility, governance policies, instant revoke.",
+                example:
+                  '"You\'ve approved all 12 of my overdue invoice follow-ups without changes. Want me to handle these automatically?"',
+              },
+            ].map((phase) => (
+              <FadeUp key={phase.title}>
+                <div className="rounded-[var(--radius)] border-[1.5px] border-[var(--border)] bg-white p-7 transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
+                  <div className="mb-4 font-sans text-[11px] font-bold uppercase tracking-[1.5px] text-[var(--accent)]">
+                    {phase.tag}
+                  </div>
+                  <h3 className="mb-3 font-sans text-[20px] font-bold text-[var(--ink)]">
+                    {phase.title}
+                  </h3>
+                  <p className="text-[15px] leading-[1.6] text-[var(--ink-soft)]">
+                    {phase.desc}
+                  </p>
+                  <div className="mt-4 rounded-lg bg-[var(--surface-warm)] p-4 font-sans text-[13px] italic leading-[1.5] text-[var(--ink-soft)]">
+                    {phase.example}
+                  </div>
+                </div>
+              </FadeUp>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════
+          WHAT IT CAN DO — tasks grid
+          ═══════════════════════════════════════ */}
+      <section id="tasks" className="bg-white px-6 py-[120px] lg:px-10">
+        <div className="mx-auto max-w-[1100px]">
+          <FadeUp>
+            <div className="mb-4 font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
+              What Qorpera handles
+            </div>
+            <h2 className="font-sans text-[clamp(28px,3.5vw,40px)] font-bold leading-[1.15] tracking-[-0.5px]">
+              The operational work your team does manually
+              <br className="hidden sm:block" />
+              across four different tools.
+            </h2>
+            <p className="mt-5 max-w-[600px] text-lg leading-[1.6] text-[var(--ink-soft)]">
+              These aren&apos;t hypothetical. These are the tasks that eat hours
+              every week — and the AI is already capable of handling them.
             </p>
-            <h2 className="mt-3 text-3xl font-medium tracking-[-0.03em] text-zinc-900 sm:text-4xl">
-              The people steering the company.
+          </FadeUp>
+
+          <div className="mt-12 grid gap-4 sm:grid-cols-2">
+            {[
+              "Follow up on overdue invoices with context-aware emails — not generic templates",
+              "Prepare pre-meeting briefings by pulling data from CRM, email, and payment history",
+              "Flag stalled deals in your pipeline before they quietly die",
+              "Route and prioritize support tickets based on customer value and history",
+              "Update CRM records from email conversations without manual data entry",
+              "Detect early churn signals by combining payment, email, and support patterns",
+              "Draft and send follow-up emails that reference the customer's full context",
+              "Generate weekly operational summaries — no one assembling reports manually",
+            ].map((task) => (
+              <FadeUp key={task}>
+                <div className="flex items-start gap-3.5 rounded-[10px] border border-[var(--border)] px-6 py-5 transition hover:border-[var(--accent)] hover:bg-[var(--accent-glow)]">
+                  <div className="mt-0.5 flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-[#dcfce7] text-xs text-[var(--green-soft)]">
+                    ✓
+                  </div>
+                  <span className="font-sans text-[15px] font-medium leading-[1.45] text-[var(--ink-soft)]">
+                    {task}
+                  </span>
+                </div>
+              </FadeUp>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════
+          COMPARISON TABLE
+          ═══════════════════════════════════════ */}
+      <section id="compare" className="bg-[var(--surface-warm)] px-6 py-[120px] lg:px-10">
+        <div className="mx-auto max-w-[1100px]">
+          <FadeUp>
+            <div className="mb-4 font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
+              Why not just use...
+            </div>
+            <h2 className="font-sans text-[clamp(28px,3.5vw,40px)] font-bold leading-[1.15] tracking-[-0.5px]">
+              Qorpera vs. the tools you already have.
             </h2>
           </FadeUp>
 
           <FadeUp delay={100}>
-            <p className="mx-auto mt-8 max-w-lg text-[15px] leading-relaxed text-zinc-500">
-              CEOs, COOs, Heads of Revenue, VP of Operations — anyone who needs to
-              understand what&apos;s actually happening across the business and currently
-              relies on fragmented, mediated information to make decisions.
-            </p>
-          </FadeUp>
-
-          <FadeUp delay={200}>
-            <div className="mx-auto mt-12 grid max-w-xl gap-8 text-left sm:grid-cols-3">
-              <div>
-                <p className="text-[28px] font-medium tracking-tight text-zinc-900">
-                  10&ndash;50
-                </p>
-                <p className="mt-1 text-[13px] text-zinc-400">
-                  person companies where one or two people hold the full picture in
-                  their heads
-                </p>
-              </div>
-              <div>
-                <p className="text-[28px] font-medium tracking-tight text-zinc-900">
-                  25 min
-                </p>
-                <p className="mt-1 text-[13px] text-zinc-400">
-                  from signup to first situation detected across your connected tools
-                </p>
-              </div>
-              <div>
-                <p className="text-[28px] font-medium tracking-tight text-zinc-900">
-                  4 tools
-                </p>
-                <p className="mt-1 text-[13px] text-zinc-400">
-                  HubSpot, Stripe, Gmail, Google Sheets — the stack small companies
-                  actually run on
-                </p>
-              </div>
+            <div className="mt-12 overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-white">
+              <table className="w-full border-collapse font-sans text-sm">
+                <thead>
+                  <tr className="bg-[var(--ink)] text-left text-[13px] font-semibold tracking-[0.5px] text-white">
+                    <th className="px-6 py-4.5"></th>
+                    <th className="px-6 py-4.5">Dashboards & BI</th>
+                    <th className="px-6 py-4.5">Zapier / Make</th>
+                    <th className="px-6 py-4.5">AI Copilots</th>
+                    <th className="px-6 py-4.5">Qorpera</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ["Sees across all your tools", "Partially", "Yes", "No", "Yes"],
+                    ["Understands your business context", "No", "No", "No", "Yes"],
+                    ["Reasons about situations", "No", "No", "When asked", "Continuously"],
+                    ["Takes action", "No", "Fixed rules only", "No", "With judgment"],
+                    ["Learns from outcomes", "No", "No", "No", "Every cycle"],
+                    ["Earns trust over time", "N/A", "N/A", "N/A", "Graduated autonomy"],
+                  ].map((row, i) => (
+                    <tr
+                      key={row[0]}
+                      className={`border-b border-[var(--border)] last:border-b-0 ${
+                        i % 2 === 1 ? "bg-[var(--surface)]" : ""
+                      }`}
+                    >
+                      <td className="px-6 py-4.5 font-semibold text-[var(--ink)]">
+                        {row[0]}
+                      </td>
+                      <td className="px-6 py-4.5 text-[var(--ink-soft)]">{row[1]}</td>
+                      <td className="px-6 py-4.5 text-[var(--ink-soft)]">{row[2]}</td>
+                      <td className="px-6 py-4.5 text-[var(--ink-soft)]">{row[3]}</td>
+                      <td className="px-6 py-4.5 font-semibold text-[var(--accent)]">
+                        {row[4]}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </FadeUp>
         </div>
@@ -724,33 +459,25 @@ export function LandingClient() {
       {/* ═══════════════════════════════════════
           CTA — dark
           ═══════════════════════════════════════ */}
-      <section className="bg-[rgb(8,12,16)] py-32">
-        <div className="mx-auto max-w-2xl px-6 text-center">
+      <section id="cta" className="bg-[var(--ink)] px-6 py-[100px] text-center text-white lg:px-10">
+        <div className="mx-auto max-w-[1100px]">
           <FadeUp>
-            <h2 className="text-3xl font-medium tracking-[-0.03em] text-white sm:text-4xl">
-              See your business clearly.
+            <h2 className="font-sans text-[clamp(28px,3.5vw,44px)] font-bold tracking-[-0.5px]">
+              Ready to close the gap?
             </h2>
-            <p className="mt-4 text-[15px] text-white/35">
-              We&apos;ll connect your tools, show you the situations Qorpera finds in
-              your data, and walk through what you&apos;ve been missing — live, on your
-              business.
+            <p className="mx-auto mt-4 max-w-[520px] text-lg leading-[1.6] text-white/60">
+              Qorpera is in early access for companies running on HubSpot,
+              Stripe, and Gmail. Ten minutes to set up. First results on day one.
             </p>
           </FadeUp>
-
           <FadeUp delay={100}>
-            <div className="mt-10 flex items-center justify-center gap-4">
-              <Link
-                className="rounded-xl bg-white px-8 py-3.5 text-[15px] font-semibold text-zinc-900 transition hover:bg-zinc-200"
+            <div className="mt-10">
+              <a
                 href="/contact"
+                className="inline-block rounded-[10px] bg-white px-9 py-4 font-sans text-base font-semibold text-[var(--ink)] no-underline transition hover:-translate-y-px hover:bg-[#f0f0f0]"
               >
-                Request Early Access
-              </Link>
-              <Link
-                className="rounded-xl border border-white/[0.10] px-8 py-3.5 text-[15px] font-medium text-white/50 transition hover:border-white/[0.15] hover:text-white/80"
-                href="/how-it-works"
-              >
-                How It Works
-              </Link>
+                Request early access
+              </a>
             </div>
           </FadeUp>
         </div>

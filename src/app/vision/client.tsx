@@ -1,10 +1,7 @@
 "use client";
 
 import { Section } from "@/components/marketing-page-shell";
-import {
-  FadeIn,
-  GlowRing,
-} from "@/components/motion-primitives";
+import { FadeIn } from "@/components/motion-primitives";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 
@@ -13,7 +10,7 @@ import { useRef } from "react";
 const COMPARISONS = [
   {
     name: "Palantir / Foundry",
-    color: "#3b82f6",
+    color: "#2563eb",
     them: [
       "Requires humans to map the ontology, build the logic, design the workflows",
       "Months of professional services before you see anything",
@@ -29,7 +26,7 @@ const COMPARISONS = [
   },
   {
     name: "Dashboards & BI Tools",
-    color: "#a855f7",
+    color: "#7c3aed",
     them: [
       "Show you metrics — accounts receivable is $127K",
       "Answer the questions you think to ask",
@@ -45,7 +42,7 @@ const COMPARISONS = [
   },
   {
     name: "Workflow Tools (Zapier, Make, n8n)",
-    color: "#f59e0b",
+    color: "#d97706",
     them: [
       "Automate decisions humans have already made",
       "\"When invoice is overdue, send this template\"",
@@ -61,7 +58,7 @@ const COMPARISONS = [
   },
   {
     name: "Your Team's Updates",
-    color: "#10b981",
+    color: "#059669",
     them: [
       "Filtered through individual perspectives and priorities",
       "Delayed by communication cycles",
@@ -95,36 +92,36 @@ function ComparisonCard({
   return (
     <motion.div
       ref={ref}
-      className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6"
+      className="rounded-[var(--radius)] border border-[var(--border)] bg-white p-6"
       initial={{ opacity: 0, y: 20 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5 }}
     >
-      <h3 className="text-[15px] font-semibold" style={{ color }}>
+      <h3 className="font-sans text-[15px] font-semibold" style={{ color }}>
         vs {name}
       </h3>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <div>
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-white/25">
+          <p className="mb-2 font-sans text-[11px] font-semibold uppercase tracking-[1.5px] text-[var(--ink-muted)]">
             What they give you
           </p>
           <div className="space-y-2">
             {them.map((t) => (
-              <div key={t} className="flex items-start gap-2 text-[13px] text-white/35">
-                <span className="mt-0.5 text-rose-400/60 shrink-0">&#x2717;</span>
+              <div key={t} className="flex items-start gap-2 text-[13px] text-[var(--ink-muted)]">
+                <span className="mt-0.5 shrink-0 text-[var(--red-soft)]">&#x2717;</span>
                 <span>{t}</span>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-white/25">
+          <p className="mb-2 font-sans text-[11px] font-semibold uppercase tracking-[1.5px] text-[var(--ink-muted)]">
             What Qorpera gives you
           </p>
           <div className="space-y-2">
             {us.map((u) => (
-              <div key={u} className="flex items-start gap-2 text-[13px] text-white/55">
-                <span className="mt-0.5 text-emerald-400/70 shrink-0">&#x2713;</span>
+              <div key={u} className="flex items-start gap-2 text-[13px] text-[var(--ink)]">
+                <span className="mt-0.5 shrink-0 text-[var(--green-soft)]">&#x2713;</span>
                 <span>{u}</span>
               </div>
             ))}
@@ -143,7 +140,7 @@ export function VisionClient() {
       {/* The Problem */}
       <Section label="The problem" title="The most mediated view in the company.">
         <FadeIn>
-          <div className="max-w-2xl space-y-4 text-[#b8c5ce]">
+          <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
             <p>
               Every company runs on dozens of tools. CRMs, invoicing systems, support
               desks, email, Slack, spreadsheets, project managers. Each tool sees one
@@ -163,7 +160,7 @@ export function VisionClient() {
               deal #4071 has been stalled too long — that person is one vacation, one
               sick day, one resignation away from organizational blindness.
             </p>
-            <p className="font-medium text-white/90">
+            <p className="font-medium text-[var(--ink)]">
               The problem isn&apos;t that operational work is hard to do. It&apos;s that
               the people who need to understand their business have no direct way to see it.
             </p>
@@ -174,7 +171,7 @@ export function VisionClient() {
       {/* The Insight */}
       <Section label="The insight" title="The fundamental unit of operational reality is a situation.">
         <FadeIn>
-          <div className="max-w-2xl space-y-4 text-[#b8c5ce]">
+          <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
             <p>
               An overdue invoice is a data point. An overdue invoice <em>from a customer
               whose email sentiment has dropped, who just asked about their contract end
@@ -189,7 +186,7 @@ export function VisionClient() {
               the right moment — people who built their operational intuition over years
               of watching patterns.
             </p>
-            <p className="font-medium text-white/90">
+            <p className="font-medium text-[var(--ink)]">
               What if the people running the company could see every situation developing
               across every tool, in real time, with the full context to understand what
               it means and why it matters?
@@ -201,7 +198,7 @@ export function VisionClient() {
       {/* Competitive Positioning */}
       <Section label="Positioning" title="Why nothing else gives you this.">
         <FadeIn>
-          <p className="max-w-2xl text-[#b8c5ce]">
+          <p className="max-w-2xl text-[var(--ink-soft)]">
             Dashboards show metrics. Workflow tools automate decisions. AI copilots
             answer when asked. Your team reports what they happen to notice. None of
             them give you unmediated, real-time operational awareness across your
@@ -218,9 +215,8 @@ export function VisionClient() {
       {/* The North Star */}
       <Section label="The north star" title="Perfect operational awareness.">
         <FadeIn>
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025] p-8">
-            <GlowRing className="-left-16 -top-16 h-48 w-48" />
-            <div className="relative max-w-2xl space-y-4 text-[#b8c5ce]">
+          <div className="rounded-[var(--radius)] border border-[var(--border)] bg-white p-8">
+            <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
               <p>
                 The end state is a world where the people running a business have
                 perfect operational awareness. Not through more dashboards, more
@@ -233,7 +229,7 @@ export function VisionClient() {
                 genuinely novel situations. The AI becomes the tireless observer that
                 never forgets, never overlooks, and never stops learning.
               </p>
-              <p className="font-medium text-white/90">
+              <p className="font-medium text-[var(--ink)]">
                 Connect your tools. See your business clearly. Let the AI handle the rest.
               </p>
             </div>

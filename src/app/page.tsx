@@ -3,21 +3,21 @@ import { LandingClient } from "./landing-client";
 import { MarketingFooter } from "@/components/marketing-footer";
 
 export const metadata: Metadata = {
-  title: { absolute: "Qorpera — See Your Business Clearly" },
+  title: { absolute: "Qorpera — AI that actually works inside your business" },
   description:
-    "Every leader's view of their business is assembled from dashboards, meetings, and team updates — each one partial, each one delayed. Qorpera shows you the actual situations developing across every tool, directly.",
+    "AI can do 85% of business operations tasks. It's doing 20%. The gap isn't intelligence — it's integration. Qorpera closes that gap.",
   openGraph: {
-    title: "Qorpera — See Your Business Clearly",
+    title: "Qorpera — AI that actually works inside your business",
     description:
-      "Walk into any meeting already knowing what matters. Or cancel it entirely — you already have the picture.",
+      "Qorpera teaches AI how your company works, connects it to your tools, and gradually lets it take over the tasks your team shouldn't be doing manually.",
     siteName: "Qorpera",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Qorpera — See Your Business Clearly",
+    title: "Qorpera — AI that actually works inside your business",
     description:
-      "Walk into any meeting already knowing what matters. Or cancel it entirely — you already have the picture.",
+      "Qorpera teaches AI how your company works, connects it to your tools, and gradually lets it take over the tasks your team shouldn't be doing manually.",
   },
 };
 
