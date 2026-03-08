@@ -5,9 +5,9 @@ import { MarketingFooter } from "@/components/marketing-footer";
 import { UseCasesClient } from "./client";
 
 export const metadata: Metadata = {
-  title: "Use Cases — Situations You're Currently Missing",
+  title: "Use Cases — Work Your Team Shouldn't Be Doing Manually",
   description:
-    "Revenue dropped 8% — why? Is your biggest account about to churn? What's actually happening in your pipeline? These are the situations Qorpera surfaces.",
+    "Invoice follow-ups, pipeline monitoring, CRM updates, meeting prep — Qorpera takes over the routine digital work across your tools, and gives you full operational awareness as a byproduct.",
 };
 
 export default function UseCasesPage() {
@@ -15,8 +15,8 @@ export default function UseCasesPage() {
     <>
       <MarketingPageShell
         label="Use cases"
-        title="Situations you're currently missing."
-        subtitle="These situations are developing in businesses like yours right now. The signals exist across your tools — but nobody is watching all of them simultaneously."
+        title="Work your team shouldn't be doing manually."
+        subtitle="Qorpera takes over the routine digital operations that eat your team's time — follow-ups, monitoring, updates, reporting. Full operational awareness isn't the goal. It's what happens when AI is actually doing the work."
       >
         <UseCasesClient />
       </MarketingPageShell>
