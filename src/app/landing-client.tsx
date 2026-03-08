@@ -78,7 +78,7 @@ export function LandingClient() {
         </FadeUp>
 
         <FadeUp delay={250}>
-          <p className="mx-auto mt-7 max-w-[580px] text-[20px] leading-[1.6] text-[var(--ink-soft)]">
+          <p className="mx-auto mt-7 max-w-[580px] font-serif text-[20px] leading-[1.6] text-[var(--ink-soft)]">
             Qorpera teaches AI how your company works, connects it to your tools,
             and gradually lets it take over the tasks your team shouldn&apos;t be
             doing manually.
@@ -138,7 +138,7 @@ export function LandingClient() {
             </div>
           </div>
 
-          <p className="mx-auto mb-3 max-w-[640px] text-[22px] leading-[1.5] text-white/70">
+          <p className="mx-auto mb-3 max-w-[640px] font-serif text-[22px] leading-[1.5] text-white/70">
             The gap isn&apos;t intelligence. AI is smart enough.{" "}
             <strong className="text-white">
               The gap is that AI doesn&apos;t know your business
@@ -412,43 +412,60 @@ export function LandingClient() {
           </FadeUp>
 
           <FadeUp delay={100}>
-            <div className="mt-12 overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-white">
-              <table className="w-full border-collapse font-sans text-sm">
+            <div className="mt-12">
+              <table className="compare-table">
                 <thead>
-                  <tr className="bg-[var(--ink)] text-left text-[13px] font-semibold tracking-[0.5px] text-white">
-                    <th className="px-6 py-4.5"></th>
-                    <th className="px-6 py-4.5">Dashboards & BI</th>
-                    <th className="px-6 py-4.5">Zapier / Make</th>
-                    <th className="px-6 py-4.5">AI Copilots</th>
-                    <th className="px-6 py-4.5">Qorpera</th>
+                  <tr>
+                    <th></th>
+                    <th>Dashboards &amp; BI</th>
+                    <th>Zapier / Make</th>
+                    <th>AI Copilots</th>
+                    <th>Qorpera</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {[
-                    ["Sees across all your tools", "Partially", "Yes", "No", "Yes"],
-                    ["Understands your business context", "No", "No", "No", "Yes"],
-                    ["Reasons about situations", "No", "No", "When asked", "Continuously"],
-                    ["Takes action", "No", "Fixed rules only", "No", "With judgment"],
-                    ["Learns from outcomes", "No", "No", "No", "Every cycle"],
-                    ["Earns trust over time", "N/A", "N/A", "N/A", "Graduated autonomy"],
-                  ].map((row, i) => (
-                    <tr
-                      key={row[0]}
-                      className={`border-b border-[var(--border)] last:border-b-0 ${
-                        i % 2 === 1 ? "bg-[var(--surface)]" : ""
-                      }`}
-                    >
-                      <td className="px-6 py-4.5 font-semibold text-[var(--ink)]">
-                        {row[0]}
-                      </td>
-                      <td className="px-6 py-4.5 text-[var(--ink-soft)]">{row[1]}</td>
-                      <td className="px-6 py-4.5 text-[var(--ink-soft)]">{row[2]}</td>
-                      <td className="px-6 py-4.5 text-[var(--ink-soft)]">{row[3]}</td>
-                      <td className="px-6 py-4.5 font-semibold text-[var(--accent)]">
-                        {row[4]}
-                      </td>
-                    </tr>
-                  ))}
+                  <tr>
+                    <td>Sees across all your tools</td>
+                    <td>Partially</td>
+                    <td>Yes</td>
+                    <td>No</td>
+                    <td className="highlight-cell">Yes</td>
+                  </tr>
+                  <tr>
+                    <td>Understands your business context</td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td className="highlight-cell">Yes</td>
+                  </tr>
+                  <tr>
+                    <td>Reasons about situations</td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>When asked</td>
+                    <td className="highlight-cell">Continuously</td>
+                  </tr>
+                  <tr>
+                    <td>Takes action</td>
+                    <td>No</td>
+                    <td>Fixed rules only</td>
+                    <td>No</td>
+                    <td className="highlight-cell">With judgment</td>
+                  </tr>
+                  <tr>
+                    <td>Learns from outcomes</td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td className="highlight-cell">Every cycle</td>
+                  </tr>
+                  <tr>
+                    <td>Earns trust over time</td>
+                    <td>N/A</td>
+                    <td>N/A</td>
+                    <td>N/A</td>
+                    <td className="highlight-cell">Graduated autonomy</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
