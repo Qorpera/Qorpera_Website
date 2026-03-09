@@ -13,6 +13,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
               { href: "/how-it-works", label: "How it works" },
               { href: "/use-cases", label: "Use cases" },
               { href: "/platform", label: "Platform" },
+              { href: "/documents", label: "Documents" },
             ].map((link) => (
               <Link
                 key={link.href}
