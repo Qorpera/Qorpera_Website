@@ -81,7 +81,7 @@ export function LandingClient() {
           <p className="mx-auto mt-7 max-w-[620px] font-serif text-[20px] leading-[1.6] text-[var(--ink-soft)]">
             Qorpera teaches AI how your company works — your departments, your
             customers, your tools, your policies — then gradually lets it take
-            over the operational tasks your team shouldn&apos;t be doing manually.
+            over the tasks your team shouldn&apos;t be doing manually.
           </p>
         </FadeUp>
 

@@ -7,12 +7,11 @@ export function MarketingCta() {
     <section className="bg-[var(--ink)] px-6 py-[100px] text-center text-white lg:px-10">
       <div className="mx-auto max-w-[520px]">
         <h2 className="font-sans text-[clamp(28px,3.5vw,44px)] font-bold tracking-[-0.5px]">
-          The company that has this in two years has an AI that understands
-          their entire business.
+          With Qorpera, getting in front of the curve is permanent.
         </h2>
         <p className="mt-4 text-lg leading-[1.6] text-white/40">
-          The company that doesn&apos;t is still copy-pasting between HubSpot
-          and Gmail.
+          The future of work is data driven. When our system collects and learns
+          from your data, late adopters won&apos;t be able to catch up.
         </p>
         <div className="mt-10">
           <Link
