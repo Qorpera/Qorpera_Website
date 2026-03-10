@@ -10,6 +10,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
           </Link>
           <nav className="flex items-center gap-8">
             {[
+              { href: "/about", label: "About" },
               { href: "/how-it-works", label: "How it works" },
               { href: "/use-cases", label: "Use cases" },
               { href: "/platform", label: "Platform" },
@@ -27,7 +28,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
               href="/contact"
               className="rounded-lg bg-[var(--ink)] px-5 py-2 font-sans text-sm font-semibold text-white no-underline transition hover:bg-[var(--ink-soft)]"
             >
-              Book a walkthrough
+              Get in contact
             </Link>
           </nav>
         </div>

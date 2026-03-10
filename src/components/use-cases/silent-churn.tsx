@@ -29,7 +29,7 @@ const Fade = ({ show, delay = 0, duration = 600, direction = "up", distance = 24
   const [v, setV] = useState(false);
   useEffect(() => { if (show) { const t = setTimeout(() => setV(true), delay); return () => clearTimeout(t); } setV(false); }, [show, delay]);
   const d = { up:[0,distance], down:[0,-distance], left:[distance,0], right:[-distance,0], none:[0,0] }[direction]||[0,0];
-  return <div style={{ opacity:v?1:0, transform:v?"translate(0,0)":`translate(${d[0]}px,${d[1]}px)`, transition:`all ${duration}ms cubic-bezier(.22,1,.36,1)`, ...style }}>{children}</div>;
+  return <div style={{ opacity:v?1:0, transform:v?"translate(0,0)":`translate(${d[0]}px,${d[1]}px)`, transition:`all ${duration * .5}ms cubic-bezier(.22,1,.36,1)`, ...style }}>{children}</div>;
 };
 
 interface TimelineEvent {

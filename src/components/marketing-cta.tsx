@@ -18,13 +18,9 @@ export function MarketingCta() {
             href="/contact"
             className="inline-block rounded-[10px] bg-white px-8 py-3.5 font-sans text-base font-semibold text-[var(--ink)] no-underline transition hover:-translate-y-px hover:bg-[#f0f0f0]"
           >
-            Book a walkthrough
+            Get in contact
           </Link>
         </div>
-        <p className="mx-auto mt-6 max-w-[480px] text-sm leading-relaxed text-white/30">
-          We personally walk every new customer through setup. First session
-          takes 60–90 minutes. First situations appear the same day.
-        </p>
       </div>
     </section>
   );

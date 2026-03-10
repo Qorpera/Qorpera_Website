@@ -31,9 +31,9 @@ interface FadeProps {
 
 const Fade = ({ show, delay = 0, duration = 600, direction = "up", distance = 24, children, style = {} }: FadeProps) => {
   const [vis, setVis] = useState(false);
-  useEffect(() => { if (show) { const t = setTimeout(() => setVis(true), delay); return () => clearTimeout(t); } setVis(false); }, [show, delay]);
+  useEffect(() => { if (show) { const t = setTimeout(() => setVis(true), delay * .5); return () => clearTimeout(t); } setVis(false); }, [show, delay]);
   const d = { up:[0,distance], down:[0,-distance], left:[distance,0], right:[-distance,0], none:[0,0] }[direction]||[0,0];
-  return <div style={{ opacity:vis?1:0, transform:vis?"translate(0,0)":`translate(${d[0]}px,${d[1]}px)`, transition:`opacity ${duration}ms cubic-bezier(.22,1,.36,1), transform ${duration}ms cubic-bezier(.22,1,.36,1)`, ...style }}>{children}</div>;
+  return <div style={{ opacity:vis?1:0, transform:vis?"translate(0,0)":`translate(${d[0]}px,${d[1]}px)`, transition:`opacity ${duration * .5}ms cubic-bezier(.22,1,.36,1), transform ${duration * .5}ms cubic-bezier(.22,1,.36,1)`, ...style }}>{children}</div>;
 };
 
 interface ToolBadgeProps {
@@ -263,7 +263,7 @@ export default function BudgetBlindspot() {
 
         {show("detection") && (
           <div style={{ textAlign: "center", width: "100%", padding: "0 50px" }}>
-            <Fade show delay={200} duration={600}><div style={{ fontSize: 18, fontWeight: 600, letterSpacing: 3, color: "#a855f7", textTransform: "uppercase", marginBottom: 16, fontFamily: "'JetBrains Mono'" }}>Qorpera alerts Finance</div></Fade>
+            <Fade show delay={200} duration={600}><div style={{ fontSize: 18, fontWeight: 600, letterSpacing: 3, color: "#a855f7", textTransform: "uppercase", marginBottom: 16, fontFamily: "'JetBrains Mono'" }}>Qorpera sees the exposure</div></Fade>
             <Fade show delay={600} duration={800}><div style={{ fontSize: 46, fontWeight: 700, color: "#f1f5f9", fontFamily: "'Space Grotesk'", marginBottom: 28, lineHeight: 1.3 }}>€260K in unbudgeted commitments<br/><span style={{ color: "#f59e0b" }}>Finance doesn&apos;t know about</span></div></Fade>
             <Fade show delay={1400} duration={800}>
               <div style={{ maxWidth: 620, margin: "0 auto", padding: "20px 28px", background: "#f59e0b08", border: "1px solid #f59e0b20", borderRadius: 14, textAlign: "left", marginBottom: 20 }}>

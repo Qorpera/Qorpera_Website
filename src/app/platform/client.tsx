@@ -1,260 +1,290 @@
 "use client";
 
 import { Section } from "@/components/marketing-page-shell";
-import {
-  FadeIn,
-  StaggerGroup,
-  StaggerItem,
-} from "@/components/motion-primitives";
-
-/* -- Comparison --------------------------------------------------- */
-function ComparisonBlock() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <FadeIn>
-        <div className="rounded-[var(--radius)] border border-[var(--border)] bg-white p-6">
-          <p className="font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--ink-muted)]">
-            Dashboards & team updates
-          </p>
-          <div className="mt-4 space-y-2">
-            {[
-              "Lagging metrics — you see what already happened",
-              "Filtered through your team's interpretation and priorities",
-              "No cross-system context or relationship awareness",
-            ].map((item) => (
-              <div key={item} className="flex items-start gap-2 text-sm text-[var(--ink-soft)]">
-                <span className="mt-0.5 shrink-0 text-[var(--red-soft)]">&#x2717;</span>
-                {item}
-              </div>
-            ))}
-          </div>
-        </div>
-      </FadeIn>
-      <FadeIn delay={0.15}>
-        <div className="rounded-[var(--radius)] border border-[var(--accent)]/20 bg-[var(--accent-glow)] p-6">
-          <p className="font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--ink-muted)]">
-            Qorpera
-          </p>
-          <div className="mt-4 space-y-2">
-            {[
-              "Developing situations — you see what's happening now",
-              "Drawn directly from your systems, unmediated",
-              "Full cross-system intelligence with relationship context",
-            ].map((item) => (
-              <div key={item} className="flex items-start gap-2 text-sm text-[var(--ink)]">
-                <span className="mt-0.5 shrink-0 text-[var(--green-soft)]">&#x2713;</span>
-                {item}
-              </div>
-            ))}
-          </div>
-        </div>
-      </FadeIn>
-    </div>
-  );
-}
-
-/* -- Layer card --------------------------------------------------- */
-function LayerSection({
-  num,
-  label,
-  title,
-  description,
-  details,
-  color,
-}: {
-  num: string;
-  label: string;
-  title: string;
-  description: string;
-  details: string[];
-  color: string;
-}) {
-  return (
-    <Section label={`Layer ${num}`} title={title}>
-      <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
-        <FadeIn>
-          <div className="space-y-4 text-[var(--ink-soft)]">
-            <p>{description}</p>
-          </div>
-        </FadeIn>
-        <FadeIn delay={0.15}>
-          <div className="rounded-[var(--radius)] border border-[var(--border)] bg-white p-6">
-            <p
-              className="mb-3 font-sans text-[13px] font-semibold uppercase tracking-[1.5px]"
-              style={{ color }}
-            >
-              {label}
-            </p>
-            <StaggerGroup className="space-y-3" stagger={0.08}>
-              {details.map((item, i) => (
-                <StaggerItem key={i}>
-                  <div className="flex gap-3 text-sm text-[var(--ink-soft)]">
-                    <span
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-sans text-[10px] font-bold"
-                      style={{ backgroundColor: `${color}15`, color }}
-                    >
-                      {i + 1}
-                    </span>
-                    {item}
-                  </div>
-                </StaggerItem>
-              ))}
-            </StaggerGroup>
-          </div>
-        </FadeIn>
-      </div>
-    </Section>
-  );
-}
-
-/* -- Page content ------------------------------------------------- */
+import { FadeIn } from "@/components/motion-primitives";
 
 export function PlatformClient() {
   return (
     <>
-      {/* Why it's different */}
-      <Section label="The shift" title="From mediated reports to direct awareness.">
-        <div className="space-y-8">
-          <FadeIn>
-            <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
-              <p>
-                Today, the people steering a company learn what&apos;s happening through
-                dashboards, reports, and team updates. Every layer of mediation strips
-                context, adds delay, and introduces bias. The result: leaders making
-                strategic decisions on a partial, lagging picture of their own business.
-              </p>
-              <p>
-                Qorpera inverts this. Instead of relying on your team to watch tools and
-                report back, AI watches every connected system directly — detecting the
-                situations developing across your business and surfacing them with the
-                full context needed to understand what they mean and why they matter.
-              </p>
-            </div>
-          </FadeIn>
-          <ComparisonBlock />
-        </div>
-      </Section>
-
-      {/* Layer 01 */}
-      <LayerSection
-        num="01"
-        label="The AI's eyes and ears"
-        title="Event Stream — everything that happens, in real time."
-        description="Every connected tool feeds raw events into Qorpera: CRM updates, support tickets, emails, calendar changes, invoice statuses, project updates. This is how the system sees your business — not through someone's summary, but through the actual data as it happens."
-        details={[
-          "OAuth connectors for HubSpot, Stripe, Gmail, Google Sheets, and more",
-          "Real-time event ingestion — changes appear in seconds",
-          "CSV and API import for custom data sources",
-          "Event normalization across different tool formats",
-        ]}
-        color="#2563eb"
-      />
-
-      {/* Layer 02 */}
-      <LayerSection
-        num="02"
-        label="How entities are resolved"
-        title="Knowledge Graph — a unified model of your business."
-        description="The AI automatically builds a structured model of your business from events and your description of your organization. A contact in HubSpot and a customer in Stripe become one person with full context. This cross-system entity resolution is what gives Qorpera the awareness that no single tool — and no single person on your team — can match."
-        details={[
-          "Cross-system entity resolution (email, domain, name matching)",
-          "Automatic relationship discovery between entities",
-          "Your team structure — who manages what, who should know",
-          "Queryable graph with multi-hop traversal",
-        ]}
-        color="#0891b2"
-      />
-
-      {/* Layer 03 */}
-      <LayerSection
-        num="03"
-        label="Qorpera's core"
-        title="Situation Engine — cross-system pattern detection."
-        description="The situation engine continuously monitors the event stream and knowledge graph for patterns that require attention. Each situation combines a trigger, cross-system context, and organizational context. It doesn't just detect anomalies — it assembles the full picture needed to make a good decision."
-        details={[
-          "Configurable situation types — describe in plain language",
-          "Trigger detection across multiple event sources",
-          "Context assembly from the knowledge graph",
-          "Urgency scoring based on business rules",
-        ]}
-        color="#7c3aed"
-      />
-
-      {/* Layer 04 */}
-      <LayerSection
-        num="04"
-        label="How decisions are made"
-        title="Reasoning + Action — governed decision-making."
-        description="For each detected situation, the AI reasons about what it means and what to do. It considers the available actions, the governance constraints, and the outcomes of similar past situations. It then presents its assessment — or, once it has earned trust, acts directly through your existing tools."
-        details={[
-          "Full-context reasoning grounded in your knowledge graph",
-          "Policy checks before every action (ALLOW / DENY / REQUIRE_APPROVAL)",
-          "Human-in-the-loop for anything with consequences",
-          "Actions flow through your existing tools — email, CRM, invoicing",
-        ]}
-        color="#d97706"
-      />
-
-      {/* Layer 05 */}
-      <LayerSection
-        num="05"
-        label="How the system improves"
-        title="Learning — accuracy that compounds with every decision."
-        description="Every situation, assessment, action, and outcome cycle is recorded. Did the reminder email result in payment? Did the churn intervention save the customer? This feedback loop is what makes Qorpera fundamentally different from a monitoring tool. Dashboards are static. Qorpera gets better at your business with every decision."
-        details={[
-          "Outcome tracking per situation type",
-          "Approval rate metrics drive the trust gradient",
-          "Rejection pattern analysis for self-improvement",
-          "Graduated autonomy — high-accuracy types run without approval",
-        ]}
-        color="#059669"
-      />
-
-      {/* Governance */}
-      <Section label="Governance" title="You decide how much to delegate.">
+      {/* ── The Advisor ──────────────────────────────────────── */}
+      <Section label="Advisor" title="Your main interface to the system.">
         <FadeIn>
-          <div className="rounded-[var(--radius)] border border-[var(--border)] bg-white p-8">
-            <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
-              <p>
-                Every action with consequences requires your approval until you say
-                otherwise. Qorpera starts fully supervised — it surfaces situations
-                and presents its assessment. As it proves accuracy on each situation type,
-                you choose what to let it handle autonomously. And you can revoke that
-                autonomy at any time.
-              </p>
-              <p>
-                Every action is logged: what data was used, which entities were
-                touched, what rule allowed it, whether human approval was
-                required. Complete traceability from situation to outcome.
-              </p>
-            </div>
+          <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
+            <p>
+              The advisor is a conversational interface that sits on top of
+              everything Qorpera knows about your business. You can ask it
+              questions, give it instructions, or just let it brief you on
+              what&apos;s happening.
+            </p>
+            <p>
+              It has access to the full business graph, every connected tool,
+              the situation history, and all your uploaded documents. When you
+              ask &ldquo;what&apos;s the full picture on Acme Corp?&rdquo; it
+              pulls CRM data, email threads, support tickets, invoice status,
+              and meeting patterns into a single answer.
+            </p>
+            <p>
+              When a task falls outside the advisor&apos;s own domain, it
+              delegates to the appropriate specialized agent — the finance
+              analyst for invoice questions, the sales rep for pipeline work,
+              and so on. You stay in one conversation while the system
+              coordinates behind the scenes.
+            </p>
+            <p>
+              The sidebar shows pending approvals in real time. When an agent
+              wants to take an action that requires your sign-off, it appears
+              there. You can approve or cancel without leaving the conversation.
+            </p>
           </div>
         </FadeIn>
       </Section>
 
-      {/* Mission */}
-      <Section label="Mission" title="See your business clearly.">
+      {/* ── The Map ──────────────────────────────────────────── */}
+      <Section label="Map" title="A visual model of your company.">
         <FadeIn>
-          <div className="rounded-[var(--radius)] border border-[var(--border)] bg-white p-6">
-            <div className="grid gap-8 sm:grid-cols-2">
-              <div>
-                <h3 className="font-sans text-base font-semibold text-[var(--ink)]">The mission</h3>
-                <p className="mt-2 text-sm text-[var(--ink-soft)]">
-                  Give every leader unmediated operational intelligence — the
-                  cross-system situational awareness that today requires a $10M+
-                  Palantir deployment, at a fraction of the cost, live in 25 minutes.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-sans text-base font-semibold text-[var(--ink)]">The promise</h3>
-                <p className="mt-2 text-sm text-[var(--ink-soft)]">
-                  You finally see your own business clearly. Not through dashboards,
-                  not through your team&apos;s filtered reports — but the actual
-                  situations developing across your operations, with full context
-                  to understand what they mean and why they matter.
-                </p>
-              </div>
-            </div>
+          <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
+            <p>
+              The map is where you build the structure of your organization.
+              You add departments, give each one a short description of what it
+              does, and place people in them. It&apos;s a simple 2D layout you
+              can rearrange by dragging — a sketch, not a formal org chart.
+            </p>
+            <p>
+              This is the foundation the AI uses to understand your business.
+              Departments define scope — which situations get routed where, who
+              should see what, and which documents are relevant to which
+              decisions. People define accountability — who owns what, who to
+              notify, and how access control flows through the system.
+            </p>
+            <p>
+              As data flows in from your connected tools, the map fills with
+              operational data. Entities from HubSpot, Stripe, Slack, and other
+              integrations are automatically resolved and placed in context.
+              A HubSpot contact and a Stripe customer become one person with the
+              full picture attached.
+            </p>
+            <p>
+              You can also upload documents to departments — process guides,
+              playbooks, policies, budgets. These become searchable knowledge
+              that the AI references when reasoning about situations in that
+              department.
+            </p>
+          </div>
+        </FadeIn>
+      </Section>
+
+      {/* ── Situations ───────────────────────────────────────── */}
+      <Section label="Situations" title="Cross-system patterns that need attention.">
+        <FadeIn>
+          <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
+            <p>
+              The situations page shows everything the AI has detected across
+              your connected tools. A situation isn&apos;t a single alert — it&apos;s
+              a multi-signal pattern assembled from different systems. An overdue
+              invoice from a customer whose email sentiment has dropped, with a
+              renewal coming up and open support tickets — that&apos;s a situation.
+            </p>
+            <p>
+              Each situation is scored on urgency and impact, classified by
+              domain — revenue, operations, team health, compliance — and routed
+              to the appropriate agent. You see the full evidence: which signals
+              triggered the detection, what context was assembled from the
+              business graph, and what the AI recommends doing about it.
+            </p>
+            <p>
+              You can dismiss situations that aren&apos;t relevant, and that
+              feedback teaches the AI to calibrate its detection. Over time, the
+              situations that surface become more useful and less noisy.
+            </p>
+          </div>
+        </FadeIn>
+      </Section>
+
+      {/* ── Proposals ────────────────────────────────────────── */}
+      <Section label="Proposals" title="Actions the AI wants to take, waiting for your approval.">
+        <FadeIn>
+          <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
+            <p>
+              When an agent detects a situation and determines an action should
+              be taken, it creates a proposal. The proposals page is a queue of
+              pending actions — each one showing the triggering situation, the
+              agent&apos;s reasoning, the specific action it wants to execute,
+              and the evidence for and against.
+            </p>
+            <p>
+              You approve, reject, or edit each proposal. Approved actions are
+              executed through your connected tools — sending an email via
+              Gmail, updating a deal in HubSpot, posting a message in Slack.
+              Rejections feed back into the learning loop, teaching the agent
+              what you consider appropriate.
+            </p>
+            <p>
+              As an agent accumulates a track record of accurate proposals on a
+              specific task type, you can choose to let it handle that type
+              autonomously. The proposals page is where trust is built before
+              that handoff happens.
+            </p>
+          </div>
+        </FadeIn>
+      </Section>
+
+      {/* ── Agents ───────────────────────────────────────────── */}
+      <Section label="Agents" title="Specialized AI agents you activate based on what your business needs.">
+        <FadeIn>
+          <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
+            <p>
+              The agents page shows every available AI agent — spanning
+              operations, sales, finance, customer success, HR, marketing,
+              research, engineering, and executive support. The catalog grows
+              as the platform evolves.
+            </p>
+            <p>
+              Each agent has a defined domain and a set of tools it can use.
+              You activate the ones relevant to your business, up to the cap
+              set by your plan tier. Each agent card shows its current trust
+              level — observe, propose, or act — and you can adjust that per
+              agent and per action type.
+            </p>
+            <p>
+              Some agents require API keys for external services they interact
+              with. The agents page handles that inline — you enter credentials
+              per agent, and they&apos;re encrypted and stored securely. Status
+              badges show whether each agent is fully configured and ready to
+              operate.
+            </p>
+          </div>
+        </FadeIn>
+      </Section>
+
+      {/* ── Integrations ─────────────────────────────────────── */}
+      <Section label="Integrations" title="Connect the tools your business runs on.">
+        <FadeIn>
+          <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
+            <p>
+              The integrations page is where you connect your external tools.
+              Currently supported: HubSpot, Slack, Google Workspace (Calendar,
+              Gmail, Drive), and Linear. Each integration connects with a single
+              OAuth click — no API keys or manual configuration.
+            </p>
+            <p>
+              Once connected, data flows in continuously. HubSpot syncs
+              contacts, companies, deals, and pipeline events. Slack enables
+              bidirectional messaging and approval delivery. Google Workspace
+              brings in calendar events, email patterns, and document activity.
+              Linear syncs issues, projects, and sprint health.
+            </p>
+            <p>
+              For tools not covered by native connectors, you can import data
+              via CSV with column mapping and a dry-run preview, or register
+              webhooks and push events through the REST API.
+            </p>
+          </div>
+        </FadeIn>
+      </Section>
+
+      {/* ── Metrics ──────────────────────────────────────────── */}
+      <Section label="Metrics" title="How the system is performing.">
+        <FadeIn>
+          <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
+            <p>
+              The metrics page tracks the AI&apos;s usage and performance. It
+              shows token consumption broken down by month, with a comparison of
+              what the same workload would cost on external cloud providers —
+              GPT-4o, Claude Sonnet, Claude Opus, Gemini Flash.
+            </p>
+            <p>
+              Over time, this page will expand to include situation detection
+              accuracy, approval rates per agent, outcome tracking per situation
+              type, and the trust gradient progression across your team.
+            </p>
+          </div>
+        </FadeIn>
+      </Section>
+
+      {/* ── Schedules ────────────────────────────────────────── */}
+      <Section label="Schedules" title="Recurring tasks that run on their own.">
+        <FadeIn>
+          <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
+            <p>
+              The schedules page lets you set up recurring operations —
+              hourly, daily, weekly, or monthly. Each schedule has a name,
+              description, frequency, execution time, and timezone. You can
+              enable or disable individual schedules at any time.
+            </p>
+            <p>
+              Schedules run independently of each other. If one fails, the rest
+              continue — the failure is logged and the system moves on. Use
+              cases include automated situation scans, periodic report
+              generation, recurring data syncs, and scheduled outreach.
+            </p>
+          </div>
+        </FadeIn>
+      </Section>
+
+      {/* ── Data Apps ────────────────────────────────────────── */}
+      <Section label="Data apps" title="Visualizations generated on demand.">
+        <FadeIn>
+          <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
+            <p>
+              When you ask the advisor or an agent for a visual representation
+              of data, it generates a data app. These are structured
+              visualizations — KPI grids with trend cards, sortable and
+              groupable tables, or infrastructure rack maps with interactive
+              details.
+            </p>
+            <p>
+              Generated data apps are stored and accessible from the data apps
+              page. You can revisit them, and delete the ones you no longer
+              need. Each one records which agent created it and when.
+            </p>
+          </div>
+        </FadeIn>
+      </Section>
+
+      {/* ── Audit Trail ──────────────────────────────────────── */}
+      <Section label="Audit trail" title="Everything the system has done, in full detail.">
+        <FadeIn>
+          <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
+            <p>
+              The audit page is an immutable log of every action taken inside
+              the system — tool executions, entity changes, policy evaluations,
+              approvals, situation detections, trust gradient changes,
+              integration events, and scheduled task runs.
+            </p>
+            <p>
+              Each entry records the timestamp, the actor (which agent or user),
+              the action, the target entities, the input parameters, the result,
+              the policy verdict that allowed or required it, and the triggering
+              situation if applicable. You can filter by actor, action type,
+              entity, date range, or verdict.
+            </p>
+          </div>
+        </FadeIn>
+      </Section>
+
+      {/* ── Settings ─────────────────────────────────────────── */}
+      <Section label="Settings" title="Configure your business context, notifications, and policies.">
+        <FadeIn>
+          <div className="max-w-2xl space-y-4 text-[var(--ink-soft)]">
+            <p>
+              The settings area has several sections. The company soul page is
+              where you describe your business in structured detail — what you
+              do, who your customers are, what matters most. This context is
+              used by every agent in every interaction, so keeping it accurate
+              makes the AI more useful.
+            </p>
+            <p>
+              The notifications page lets you toggle email alerts for four event
+              types: approval needed, submission ready, task completed, and task
+              failed. All are on by default.
+            </p>
+            <p>
+              The integrations settings page manages your OAuth connections —
+              connect, disconnect, and see the status of each provider. The
+              trust gradient and policy settings let you configure per-agent
+              autonomy levels and define rules for which actions are allowed,
+              denied, or require approval.
+            </p>
           </div>
         </FadeIn>
       </Section>

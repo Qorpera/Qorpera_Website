@@ -300,9 +300,10 @@ const StackLayer = ({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: active ? color + "18" : "#12122a",
-        border: `1px solid ${active ? color + "50" : "#2a2a4a"}`,
-        transition: "all 0.6s ease",
+        background: active ? "#3b82f618" : "#12122a",
+        border: active ? "2px solid #3b82f6" : "2px solid #2a2a4a",
+        boxShadow: active ? "0 0 24px #3b82f640, inset 0 0 16px #3b82f610" : "none",
+        transition: "all 0.3s ease",
         marginBottom: 8,
       }}
     >
@@ -314,6 +315,7 @@ const StackLayer = ({
           letterSpacing: 1.5,
           fontFamily: "'JetBrains Mono', monospace",
           textTransform: "uppercase",
+          transition: "color 0.3s ease",
         }}
       >
         {label}
@@ -335,20 +337,20 @@ function ArchitectureExplainer() {
     setElapsed(fromElapsed);
     setPlaying(true);
     startRef.current = Date.now() - fromElapsed;
+    const tick = () => {
+      if (!startRef.current) return;
+      const now = Date.now() - startRef.current;
+      setElapsed(now);
+      if (now < TOTAL) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        setPlaying(false);
+        startRef.current = null;
+        loopTimerRef.current = setTimeout(() => startPlayback(), 3000);
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
   }, []);
-
-  const tick = useCallback(() => {
-    if (!startRef.current) return;
-    const now = Date.now() - startRef.current;
-    setElapsed(now);
-    if (now < TOTAL) rafRef.current = requestAnimationFrame(tick);
-    else {
-      setPlaying(false);
-      startRef.current = null;
-      // Loop after 3 seconds
-      loopTimerRef.current = setTimeout(() => startPlayback(), 3000);
-    }
-  }, [startPlayback]);
 
   // Autoplay on mount
   useEffect(() => {
@@ -358,16 +360,6 @@ function ArchitectureExplainer() {
       if (loopTimerRef.current) clearTimeout(loopTimerRef.current);
     };
   }, [startPlayback]);
-
-  // Drive animation frame loop when playing
-  useEffect(() => {
-    if (playing) {
-      rafRef.current = requestAnimationFrame(tick);
-    }
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, [playing, tick]);
 
   let acc = 0,
     currentScene = SCENES[SCENES.length - 1].id,
@@ -394,15 +386,16 @@ function ArchitectureExplainer() {
     0,
   );
   const fullStackLocal = elapsed - fullStackStart;
-  const activeLayer = show("fullstack")
-    ? Math.floor(fullStackLocal / 1000) % 5
-    : -1;
+  const activeLayer =
+    show("fullstack") && fullStackLocal > 1200
+      ? Math.floor((fullStackLocal - 1200) / 720) % 5
+      : -1;
 
   return (
     <div
       style={{
         width: "100%",
-        minHeight: "100vh",
+        minHeight: "85vh",
         background: "#0a0a1a",
         overflow: "hidden",
         fontFamily: "'DM Sans', sans-serif",

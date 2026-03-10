@@ -28,9 +28,9 @@ interface FadeProps {
 
 const Fade = ({ show, delay = 0, duration = 600, direction = "up", distance = 24, children, style = {} }: FadeProps) => {
   const [vis, setVis] = useState(false);
-  useEffect(() => { if (show) { const t = setTimeout(() => setVis(true), delay); return () => clearTimeout(t); } setVis(false); }, [show, delay]);
+  useEffect(() => { if (show) { const t = setTimeout(() => setVis(true), delay * .5); return () => clearTimeout(t); } setVis(false); }, [show, delay]);
   const d = { up: [0, distance], down: [0, -distance], left: [distance, 0], right: [-distance, 0], none: [0, 0] }[direction] || [0, 0];
-  return <div style={{ opacity: vis ? 1 : 0, transform: vis ? "translate(0,0)" : `translate(${d[0]}px,${d[1]}px)`, transition: `opacity ${duration}ms cubic-bezier(.22,1,.36,1), transform ${duration}ms cubic-bezier(.22,1,.36,1)`, ...style }}>{children}</div>;
+  return <div style={{ opacity: vis ? 1 : 0, transform: vis ? "translate(0,0)" : `translate(${d[0]}px,${d[1]}px)`, transition: `opacity ${duration * .5}ms cubic-bezier(.22,1,.36,1), transform ${duration * .5}ms cubic-bezier(.22,1,.36,1)`, ...style }}>{children}</div>;
 };
 
 interface OldWayCardProps {
@@ -156,7 +156,7 @@ export default function HandoffWorks() {
 
         {show("old-way") && (
           <div style={{ textAlign: "center", width: "100%", padding: "0 60px" }}>
-            <Fade show delay={200} duration={700}><div style={{ fontSize: 42, fontWeight: 700, color: "#f1f5f9", fontFamily: "'Space Grotesk'", marginBottom: 20, lineHeight: 1.3 }}>The typical handoff loses <span style={{ color: "#ef4444" }}>60% of context</span></div></Fade>
+            <Fade show delay={200} duration={700}><div style={{ fontSize: 42, fontWeight: 700, color: "#f1f5f9", fontFamily: "'Space Grotesk'", marginBottom: 20, lineHeight: 1.3 }}>Every handoff loses <span style={{ color: "#ef4444" }}>most of its context</span></div></Fade>
             <div style={{ display: "flex", gap: 16, justifyContent: "center", marginBottom: 24 }}>
               <OldWayCard icon="🗣️" label="2-hour verbal handoff" problem="Relies on memory" color="#ef4444" show delay={600} />
               <OldWayCard icon="📄" label="Sparse handoff doc" problem="Missing decisions + rationale" color="#ef4444" show delay={1100} />

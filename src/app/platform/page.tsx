@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { MarketingPageShell } from "@/components/marketing-page-shell";
-import { MarketingCta } from "@/components/marketing-cta";
 import { MarketingFooter } from "@/components/marketing-footer";
 import { PlatformClient } from "./client";
 
 export const metadata: Metadata = {
-  title: "Platform — From Fragmented Signals to Operational Awareness",
+  title: "Platform — What You Get Inside Qorpera",
   description:
-    "Five layers turn raw events from your CRM, payments, email, and support into the cross-system situational awareness that dashboards and team updates can't provide.",
+    "A walkthrough of every page in the Qorpera application — the advisor, the map, situations, proposals, agents, integrations, and more.",
 };
 
 export default function PlatformPage() {
@@ -15,12 +14,11 @@ export default function PlatformPage() {
     <>
       <MarketingPageShell
         label="The platform"
-        title="From fragmented signals to operational awareness."
-        subtitle="Five layers turn raw events from every connected system into the situational awareness that dashboards, reports, and team updates can't provide."
+        title="What you get inside Qorpera."
+        subtitle="A walkthrough of the application — every page, what it does, and how you use it."
       >
         <PlatformClient />
       </MarketingPageShell>
-      <MarketingCta />
       <MarketingFooter />
     </>
   );

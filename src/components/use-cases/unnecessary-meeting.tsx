@@ -29,9 +29,9 @@ interface FadeProps {
 
 const Fade = ({ show, delay = 0, duration = 600, direction = "up", distance = 24, children, style = {} }: FadeProps) => {
   const [vis, setVis] = useState(false);
-  useEffect(() => { if (show) { const t = setTimeout(() => setVis(true), delay); return () => clearTimeout(t); } setVis(false); }, [show, delay]);
+  useEffect(() => { if (show) { const t = setTimeout(() => setVis(true), delay * .5); return () => clearTimeout(t); } setVis(false); }, [show, delay]);
   const d = { up:[0,distance], down:[0,-distance], left:[distance,0], right:[-distance,0], none:[0,0] }[direction]||[0,0];
-  return <div style={{ opacity:vis?1:0, transform:vis?"translate(0,0)":`translate(${d[0]}px,${d[1]}px)`, transition:`opacity ${duration}ms cubic-bezier(.22,1,.36,1), transform ${duration}ms cubic-bezier(.22,1,.36,1)`, ...style }}>{children}</div>;
+  return <div style={{ opacity:vis?1:0, transform:vis?"translate(0,0)":`translate(${d[0]}px,${d[1]}px)`, transition:`opacity ${duration * .5}ms cubic-bezier(.22,1,.36,1), transform ${duration * .5}ms cubic-bezier(.22,1,.36,1)`, ...style }}>{children}</div>;
 };
 
 export default function UnnecessaryMeeting() {
@@ -161,9 +161,9 @@ export default function UnnecessaryMeeting() {
             <Fade show delay={200} duration={700}><div style={{ fontSize: 45, fontWeight: 700, color: "#f1f5f9", fontFamily: "'Space Grotesk'", marginBottom: 24, lineHeight: 1.3 }}>This happens <span style={{ color: "#ef4444" }}>every week</span><br/>in every company</div></Fade>
             <div style={{ display: "flex", gap: 32, justifyContent: "center", marginBottom: 32 }}>
               {[
-                { n: "30%", l: "of meetings could be emails", c: "#f59e0b" },
-                { n: "6hrs", l: "average person-hours per unnecessary meeting", c: "#ef4444" },
-                { n: "~15", l: "redundant meetings per month (30-person company)", c: "#a855f7" },
+                { n: "$399B", l: "annual cost of unnecessary meetings (U.S.)", c: "#ef4444" },
+                { n: "2hrs", l: "wasted per week per worker in pointless meetings", c: "#f59e0b" },
+                { n: "13 days", l: "per employee per year lost to bad meetings", c: "#a855f7" },
               ].map((s, i) => (
                 <Fade key={i} show delay={600 + i * 400} duration={500}>
                   <div style={{ textAlign: "center" }}>
@@ -174,12 +174,13 @@ export default function UnnecessaryMeeting() {
               ))}
             </div>
             <Fade show delay={2200} duration={600}><div style={{ fontSize: 23, color: "#64748b" }}>The problem isn&apos;t that people schedule bad meetings.<br/>It&apos;s that they don&apos;t have the context to know the meeting is unnecessary.</div></Fade>
+            <Fade show delay={2800} duration={400}><div style={{ fontSize: 14, color: "#3a3a5a", fontFamily: "'JetBrains Mono'", marginTop: 12 }}>Source: Doodle State of Meetings Report, 2019 (19M meetings, 6,500+ professionals)</div></Fade>
           </div>
         )}
 
         {show("intervention") && (
           <div style={{ textAlign: "center", width: "100%", padding: "0 60px" }}>
-            <Fade show delay={200} duration={600}><div style={{ fontSize: 18, fontWeight: 600, letterSpacing: 3, color: "#a855f7", textTransform: "uppercase", marginBottom: 16, fontFamily: "'JetBrains Mono'" }}>Qorpera intervenes</div></Fade>
+            <Fade show delay={200} duration={600}><div style={{ fontSize: 18, fontWeight: 600, letterSpacing: 3, color: "#a855f7", textTransform: "uppercase", marginBottom: 16, fontFamily: "'JetBrains Mono'" }}>Qorpera has the context</div></Fade>
             <Fade show delay={600} duration={800}>
               <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 28px", background: "#22c55e08", border: "1px solid #22c55e20", borderRadius: 14, textAlign: "left", marginBottom: 20 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -190,18 +191,18 @@ export default function UnnecessaryMeeting() {
                   The pricing model was discussed and decided in #pricing-discussion on Tuesday. All invited attendees participated. The spec was updated Wednesday. This meeting can be replaced with a thread summary.
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <div style={{ padding: "6px 16px", borderRadius: 8, background: "linear-gradient(135deg,#22c55e,#16a34a)", fontSize: 18, color: "#fff", fontWeight: 600 }}>Cancel &amp; Share Thread</div>
+                  <div style={{ padding: "6px 16px", borderRadius: 8, background: "linear-gradient(135deg,#22c55e,#16a34a)", fontSize: 18, color: "#fff", fontWeight: 600 }}>View Thread Summary</div>
                   <div style={{ padding: "6px 16px", borderRadius: 8, background: "#1a1a2e", border: "1px solid #2a2a4a", fontSize: 18, color: "#94a3b8" }}>Keep Meeting</div>
                 </div>
               </div>
             </Fade>
-            <Fade show delay={2400} duration={600}><div style={{ fontSize: 21, color: "#94a3b8" }}>6 person-hours saved. Decision already made.<br/><span style={{ color: "#22c55e", fontWeight: 600 }}>Cancel the sync — you already have the picture.</span></div></Fade>
+            <Fade show delay={2400} duration={600}><div style={{ fontSize: 21, color: "#94a3b8" }}>6 person-hours saved. Decision already made.<br/><span style={{ color: "#22c55e", fontWeight: 600 }}>The decision already exists. Now you know.</span></div></Fade>
           </div>
         )}
 
         {show("close") && (
           <div style={{ textAlign: "center" }}>
-            <Fade show delay={200} duration={800}><div style={{ fontSize: 54, fontWeight: 700, color: "#f1f5f9", fontFamily: "'Space Grotesk'", marginBottom: 16, lineHeight: 1.3 }}>Calendars schedule meetings.<br/><span style={{ color: "#a855f7" }}>Qorpera cancels the ones you don&apos;t need.</span></div></Fade>
+            <Fade show delay={200} duration={800}><div style={{ fontSize: 54, fontWeight: 700, color: "#f1f5f9", fontFamily: "'Space Grotesk'", marginBottom: 16, lineHeight: 1.3 }}>Calendars schedule meetings.<br/><span style={{ color: "#a855f7" }}>Qorpera knows which ones you don&apos;t need.</span></div></Fade>
             <Fade show delay={1000} duration={700}><div style={{ fontSize: 26, color: "#94a3b8", maxWidth: 520, margin: "0 auto 28px", lineHeight: 1.7 }}>When the AI knows what was already discussed, decided, and documented — it can tell you which meetings to skip and which ones matter.</div></Fade>
             <Fade show delay={2400} duration={600}><div style={{ fontSize: 18, color: "#64748b", fontFamily: "'JetBrains Mono'" }}>qorpera.com</div></Fade>
           </div>
