@@ -1306,86 +1306,28 @@ export function LandingClient() {
       </section>
 
       {/* ═══════════════════════════════════════
-          REAL SCENARIOS — use case previews
+          USE CASES — redirect
           ═══════════════════════════════════════ */}
-      <section className="bg-[var(--surface-warm)] px-6 py-[120px] lg:px-10">
-        <div className="mx-auto max-w-[1100px]">
+      <section className="bg-[var(--surface-warm)] px-6 py-[100px] text-center lg:px-10">
+        <div className="mx-auto max-w-[700px]">
           <FadeUp>
             <div className="mb-4 font-sans text-[13px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
-              Real scenarios
+              Use cases
             </div>
             <h2 className="font-sans text-[clamp(28px,3.5vw,40px)] font-bold leading-[1.15] tracking-[-0.5px]">
-              Situations Qorpera catches
-              <br className="hidden sm:block" />
-              that humans miss.
+              See how it works across your business.
             </h2>
-            <p className="mt-5 max-w-[640px] text-lg leading-[1.6] text-[var(--ink-soft)]">
-              Each one requires context from multiple tools. Each one costs real
-              money when missed.
+            <p className="mt-5 text-lg leading-[1.6] text-[var(--ink-soft)]">
+              Animated walkthroughs across sales, finance, operations, HR, IT,
+              and more — showing how Qorpera detects real situations and how it
+              could respond.
             </p>
-          </FadeUp>
-
-          <div className="mt-12 grid gap-5 sm:grid-cols-2">
-            {[
-              {
-                cat: "Customer Success",
-                color: "#ef4444",
-                title: "Silent Churn",
-                desc: "A customer is walking away. CRM says everything\u2019s fine. But email sentiment is down, meetings are cancelled, support tickets are up, and logins have dropped.",
-              },
-              {
-                cat: "Sales",
-                color: "#3b82f6",
-                title: "The Lead That Went Cold",
-                desc: "Prospect asked for a quote, replied with a question, nobody answered for 9 days. A competitor won the \u20AC85K deal. The reply was sitting in someone\u2019s inbox.",
-              },
-              {
-                cat: "Finance",
-                color: "#f59e0b",
-                title: "Vendor Overcharge",
-                desc: "Cleaning contract auto-renewed at last year\u2019s rates. Market prices dropped 20%. Qorpera flagged \u20AC18K in annual savings nobody was looking for.",
-              },
-              {
-                cat: "People & Knowledge",
-                color: "#6366f1",
-                title: "Knowledge Silo",
-                desc: "One person holds all context on a critical system. They haven\u2019t documented anything. When they leave, the knowledge leaves with them. Bus factor: 1.",
-              },
-            ].map((c) => (
-              <FadeUp key={c.title}>
-                <a
-                  href="/use-cases"
-                  className="group flex flex-col rounded-[var(--radius)] border bg-white p-6 no-underline transition hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
-                  style={{
-                    borderColor: "var(--border)",
-                    borderLeftWidth: 3,
-                    borderLeftColor: c.color,
-                  }}
-                >
-                  <div className="mb-1 font-mono text-[11px] font-medium uppercase tracking-[1px] text-[var(--ink-muted)]">
-                    {c.cat}
-                  </div>
-                  <h3 className="font-sans text-[17px] font-bold text-[var(--ink)]">
-                    {c.title}
-                  </h3>
-                  <p className="mt-2 flex-1 text-[14px] leading-[1.55] text-[var(--ink-soft)]">
-                    {c.desc}
-                  </p>
-                  <div className="mt-3 font-sans text-[13px] font-semibold text-[var(--accent)] transition group-hover:translate-x-0.5">
-                    See the full scenario &rarr;
-                  </div>
-                </a>
-              </FadeUp>
-            ))}
-          </div>
-
-          <FadeUp>
-            <div className="mt-10">
+            <div className="mt-8">
               <a
                 href="/use-cases"
-                className="font-sans text-[15px] font-semibold text-[var(--accent)] no-underline transition hover:text-[var(--accent-dim)]"
+                className="inline-block rounded-[10px] border-[1.5px] border-[var(--border)] bg-white px-8 py-3.5 font-sans text-base font-semibold text-[var(--ink)] no-underline transition hover:border-[var(--ink-muted)] hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
               >
-                Explore more scenarios &rarr;
+                Discover use cases &rarr;
               </a>
             </div>
           </FadeUp>
