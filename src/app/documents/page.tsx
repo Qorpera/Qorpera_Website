@@ -7,6 +7,7 @@ import {
   Callout,
   DocLink,
 } from "./docs-primitives";
+import { QorperaLogo } from "@/components/qorpera-logo";
 
 export const metadata: Metadata = {
   title: "Documentation — Platform Overview",
@@ -28,28 +29,7 @@ export default function DocsOverviewPage() {
           </h1>
         </div>
         <div className="hidden shrink-0 sm:block">
-          <svg
-            width="120"
-            height="100"
-            viewBox="0 0 120 100"
-            fill="none"
-            className="text-[var(--accent)]"
-          >
-            <circle cx="60" cy="50" r="12" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeWidth="1.5" />
-            <circle cx="60" cy="50" r="4" fill="currentColor" />
-            <circle cx="20" cy="25" r="7" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeWidth="1" />
-            <circle cx="100" cy="25" r="7" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeWidth="1" />
-            <circle cx="20" cy="75" r="7" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeWidth="1" />
-            <circle cx="100" cy="75" r="7" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeWidth="1" />
-            <circle cx="60" cy="8" r="5" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeWidth="1" />
-            <circle cx="60" cy="92" r="5" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeWidth="1" />
-            <line x1="27" y1="28" x2="48" y2="44" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" />
-            <line x1="93" y1="28" x2="72" y2="44" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" />
-            <line x1="27" y1="72" x2="48" y2="56" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" />
-            <line x1="93" y1="72" x2="72" y2="56" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" />
-            <line x1="60" y1="13" x2="60" y2="38" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" />
-            <line x1="60" y1="87" x2="60" y2="62" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" />
-          </svg>
+          <QorperaLogo width={100} height={100} className="text-[var(--ink)]" />
         </div>
       </div>
 
