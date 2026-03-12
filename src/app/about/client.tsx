@@ -38,13 +38,6 @@ const PRINCIPLES = [
 export function AboutClient() {
   return (
     <>
-      {/* ── Logo mark ────────────────────────────────────────── */}
-      <FadeIn>
-        <div className="mb-8 flex justify-center">
-          <QorperaLogo width={120} height={120} className="text-[var(--ink)]" />
-        </div>
-      </FadeIn>
-
       {/* ── Why we started ───────────────────────────────────── */}
       <Section label="Our mission" title="Close the gap between what AI can do and what it actually does.">
         <FadeIn>
@@ -195,6 +188,13 @@ export function AboutClient() {
           </div>
         </FadeIn>
       </Section>
+
+      {/* ── Logo mark ────────────────────────────────────────── */}
+      <FadeIn>
+        <div className="flex justify-center py-20">
+          <QorperaLogo width={120} height={120} className="text-[var(--ink)]" />
+        </div>
+      </FadeIn>
 
     </>
   );

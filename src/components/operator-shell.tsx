@@ -1,11 +1,13 @@
 import Link from "next/link";
+import { QorperaLogo } from "./qorpera-logo";
 
 export function MarketingShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--border)] bg-[rgba(250,250,250,0.85)] backdrop-blur-[20px]">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-10">
-          <Link href="/" className="font-sans text-[20px] font-bold tracking-[-0.5px] text-[var(--ink)] no-underline">
+          <Link href="/" className="flex items-center gap-2 font-sans text-[20px] font-bold tracking-[-0.5px] text-[var(--ink)] no-underline">
+            <QorperaLogo width={34} height={34} color="var(--ink)" />
             Qorpera
           </Link>
           <nav className="flex items-center gap-8">
