@@ -436,7 +436,7 @@ export const DOC_PAGES: Record<string, DocPageData> = {
           The number of active agents is capped by your plan tier — Solo
           allows up to 4, Small Business up to 8, and Mid-size up to 20.
           Deactivating an agent frees the slot for another. See{" "}
-          <DocLink href="/pricing">pricing</DocLink> for plan details.
+          <DocLink href="/contact">pricing</DocLink> for plan details.
         </P>
       </>
     ),

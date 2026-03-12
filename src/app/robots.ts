@@ -12,8 +12,7 @@ export default function robots(): MetadataRoute.Robots {
           "/platform",
           "/how-it-works",
           "/use-cases",
-          "/vision",
-          "/contact",
+"/contact",
           "/documents",
         ],
         disallow: [

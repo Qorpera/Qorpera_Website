@@ -181,7 +181,7 @@ export default function DocsOverviewPage() {
       <p className="mt-14 border-t border-[var(--border)] pt-6 text-[13px] leading-relaxed text-[var(--ink-muted)]">
         Note: Qorpera feature availability is subject to change and may differ
         between{" "}
-        <DocLink href="/pricing">plan tiers</DocLink>.
+        <DocLink href="/contact">plan tiers</DocLink>.
       </p>
     </>
   );

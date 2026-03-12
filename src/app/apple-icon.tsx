@@ -40,7 +40,7 @@ export default function AppleIcon() {
           <polygon
             points="52,38 95,28 95,30 52,42"
             fill="white"
-            fillOpacity="0.4"
+            fillOpacity="0.7"
           />
         </svg>
       </div>
