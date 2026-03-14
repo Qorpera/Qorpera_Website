@@ -7,50 +7,21 @@ interface QorperaLogoProps {
 
 export function QorperaLogo({
   width = 80,
-  height = 80,
+  height,
   className,
-  color = "currentColor",
 }: QorperaLogoProps) {
+  // Original image is 400x300 (4:3) — maintain aspect ratio
+  const h = height ?? Math.round(width * (300 / 400));
+
   return (
-    <svg
-      viewBox="0 0 220 220"
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/logo-mark-black.png"
+      alt="Qorpera"
       width={width}
-      height={height}
+      height={h}
+      style={{ filter: "brightness(0)" }}
       className={className}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Core: outer stroke ring + inner filled square */}
-      <rect x="93" y="93" width="34" height="34" rx="3" stroke={color} strokeWidth="2.5" fill="none" />
-      <rect x="101" y="101" width="18" height="18" rx="2" fill={color} />
-
-      {/* Top T-fork */}
-      <path d="M110 93 L110 55 L85 41" stroke={color} strokeWidth="2.5" opacity="0.9" strokeLinecap="round" fill="none" />
-      <path d="M110 93 L110 55 L135 41" stroke={color} strokeWidth="2.2" opacity="0.85" strokeLinecap="round" fill="none" />
-      <rect x="65" y="27" width="20" height="16" rx="5" fill="none" stroke={color} strokeWidth="2.2" opacity="0.9" />
-      <rect x="135" y="27" width="20" height="16" rx="5" fill="none" stroke={color} strokeWidth="2.2" opacity="0.85" />
-      <circle cx="110" cy="55" r="2.5" fill={color} opacity="0.85" />
-
-      {/* Right T-fork */}
-      <path d="M127 110 L165 110 L180 88" stroke={color} strokeWidth="2.5" opacity="0.9" strokeLinecap="round" fill="none" />
-      <path d="M127 110 L165 110 L180 132" stroke={color} strokeWidth="2.2" opacity="0.85" strokeLinecap="round" fill="none" />
-      <rect x="177" y="72" width="16" height="16" rx="5" fill="none" stroke={color} strokeWidth="2.2" opacity="0.9" />
-      <rect x="177" y="132" width="16" height="16" rx="5" fill="none" stroke={color} strokeWidth="2.2" opacity="0.85" />
-      <circle cx="165" cy="110" r="2.5" fill={color} opacity="0.85" />
-
-      {/* Bottom T-fork */}
-      <path d="M110 127 L110 165 L85 179" stroke={color} strokeWidth="2.5" opacity="0.9" strokeLinecap="round" fill="none" />
-      <path d="M110 127 L110 165 L135 179" stroke={color} strokeWidth="2.2" opacity="0.85" strokeLinecap="round" fill="none" />
-      <rect x="65" y="177" width="20" height="16" rx="5" fill="none" stroke={color} strokeWidth="2.2" opacity="0.9" />
-      <rect x="135" y="177" width="20" height="16" rx="5" fill="none" stroke={color} strokeWidth="2.2" opacity="0.85" />
-      <circle cx="110" cy="165" r="2.5" fill={color} opacity="0.85" />
-
-      {/* Left T-fork */}
-      <path d="M93 110 L55 110 L40 88" stroke={color} strokeWidth="2.5" opacity="0.9" strokeLinecap="round" fill="none" />
-      <path d="M93 110 L55 110 L40 132" stroke={color} strokeWidth="2.2" opacity="0.85" strokeLinecap="round" fill="none" />
-      <rect x="27" y="72" width="16" height="16" rx="5" fill="none" stroke={color} strokeWidth="2.2" opacity="0.9" />
-      <rect x="27" y="132" width="16" height="16" rx="5" fill="none" stroke={color} strokeWidth="2.2" opacity="0.85" />
-      <circle cx="55" cy="110" r="2.5" fill={color} opacity="0.85" />
-    </svg>
+    />
   );
 }
