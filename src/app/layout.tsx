@@ -26,6 +26,12 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://qorpera.com"),
+  icons: {
+    icon: [
+      { url: "/icon-dark.png", media: "(prefers-color-scheme: light)" },
+      { url: "/icon-light.png", media: "(prefers-color-scheme: dark)" },
+    ],
+  },
   title: {
     default: "Qorpera — AI that actually works inside your business",
     template: "%s | Qorpera",
