@@ -23,29 +23,28 @@ const DOCS_NAV: NavGroup[] = [
       { slug: "", label: "Overview" },
       { slug: "platform-architecture", label: "Platform architecture" },
       { slug: "getting-started", label: "Getting started" },
-      { slug: "knowledge-graph", label: "Knowledge Graph Engine" },
+      { slug: "business-graph", label: "Business graph" },
       { slug: "situation-detection", label: "Situation detection" },
       { slug: "trust-gradient", label: "Trust gradient" },
     ],
   },
   {
-    heading: "AI Agents",
+    heading: "Your AI",
     items: [
-      { slug: "agent-catalog", label: "Agent catalog" },
-      { slug: "skills-and-tools", label: "Skills & tools" },
+      { slug: "how-ai-learns", label: "How the AI learns" },
+      { slug: "copilot", label: "Copilot" },
       { slug: "approval-workflow", label: "Approval workflow" },
-      { slug: "agent-policies", label: "Agent policies" },
     ],
   },
   {
     heading: "Integrations",
     items: [
       { slug: "connecting-tools", label: "Connecting tools" },
-      { slug: "hubspot", label: "HubSpot" },
+      { slug: "google-workspace", label: "Gmail & Google Workspace" },
       { slug: "slack", label: "Slack" },
-      { slug: "google-workspace", label: "Google Workspace" },
-      { slug: "linear", label: "Linear" },
-      { slug: "custom-sources", label: "Custom data sources" },
+      { slug: "microsoft-365", label: "Microsoft 365" },
+      { slug: "hubspot", label: "HubSpot" },
+      { slug: "stripe", label: "Stripe" },
     ],
   },
   {
@@ -54,14 +53,6 @@ const DOCS_NAV: NavGroup[] = [
       { slug: "policy-engine", label: "Policy engine" },
       { slug: "audit-trail", label: "Audit trail" },
       { slug: "security-privacy", label: "Security & privacy" },
-    ],
-  },
-  {
-    heading: "Data & API",
-    items: [
-      { slug: "data-apps", label: "Data apps" },
-      { slug: "scheduled-tasks", label: "Scheduled tasks" },
-      { slug: "rest-api", label: "REST API reference" },
     ],
   },
 ];
@@ -78,7 +69,7 @@ const TABS = [
   { label: "Capabilities", href: "/documents" },
   { label: "Getting started", href: "/documents/getting-started" },
   { label: "Architecture", href: "/documents/platform-architecture" },
-  { label: "Platform updates", href: "#" },
+  { label: "What's new", href: "#" },
 ];
 
 /* ── Auto TOC ─────────────────────────────────────────────────── */

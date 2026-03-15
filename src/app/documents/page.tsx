@@ -12,7 +12,7 @@ import { QorperaLogo } from "@/components/qorpera-logo";
 export const metadata: Metadata = {
   title: "Documentation — Platform Overview",
   description:
-    "Learn how Qorpera connects to your business tools, builds a knowledge graph, detects operational situations, and deploys governed AI agents.",
+    "Learn how Qorpera connects to your business tools, builds a unified business graph, detects operational situations, and earns AI autonomy through the trust gradient.",
 };
 
 export default function DocsOverviewPage() {
@@ -35,119 +35,93 @@ export default function DocsOverviewPage() {
 
       <P>
         Qorpera is an AI operations platform that connects to your existing
-        business tools, builds a unified knowledge graph of your organization,
-        and deploys governed AI agents that detect situations, recommend
-        actions, and learn from your team&apos;s decisions. Qorpera integrates
-        with your CRM, communication, project management, and finance tools to
-        form an operating layer for AI-driven operations.
+        business tools, builds a unified business graph of your organisation,
+        and deploys a personal AI for every employee that detects situations,
+        recommends actions, and learns from your team&apos;s decisions.
       </P>
       <P>
-        The platform provides a comprehensive suite of capabilities — from
-        cross-system entity resolution and multi-signal situation detection, to
-        a governed AI workforce with configurable autonomy levels. It is
-        designed to be used by everyone in an organization, from operators
-        reviewing AI proposals to executives monitoring operational health.
+        The platform integrates with Gmail, Google Workspace, Slack, Microsoft
+        365, HubSpot, and Stripe — resolving entities across systems into a
+        single connected view of your business.
       </P>
 
       <Callout>
         Get started with the{" "}
         <DocLink href="/documents/getting-started">
-          &ldquo;Quick-start walkthrough&rdquo;
+          &ldquo;Getting started&rdquo;
         </DocLink>{" "}
-        — connect your first tool and see your first situation detected in
-        under 25 minutes.
+        guide — connect your first tool and see your first situation detected
+        within hours.
       </Callout>
 
       <Note>
         The remainder of this page provides a brief overview of Qorpera&apos;s
-        core capabilities. For more details about specific features, see the
-        dedicated pages in the sidebar navigation.
+        core capabilities. For details, see the dedicated pages in the sidebar.
       </Note>
 
       <H2 id="seamless-integration">Seamless integration</H2>
       <P>
-        Qorpera connects to your existing tools via OAuth — HubSpot, Slack,
-        Google Workspace, Linear, Stripe, and custom data sources. Rather than
-        requiring data exports or manual syncs, the platform ingests events in
-        real time through a unified event stream. Every contact, deal, project,
-        invoice, message, and calendar event flows into a shared data layer
-        that all AI agents can reason over.
-      </P>
-      <P>
-        You can also build and interact with Qorpera&apos;s AI-powered agents
-        and workflows that manage data from custom sources — including CSV
-        imports, REST API endpoints, and webhook ingestion — enabling
-        integration with virtually any business system.
+        Qorpera connects to your tools via OAuth. Personal connectors (Gmail,
+        Drive, Calendar, Sheets, Outlook, OneDrive, Teams, Excel) are authorised
+        per user. Company connectors (HubSpot, Stripe, Slack) are set up once at
+        the operator level. Every contact, deal, message, invoice, and calendar
+        event flows into a shared data layer through a normalised sync pipeline.
       </P>
 
-      <H2 id="knowledge-graph">Knowledge Graph Engine</H2>
+      <H2 id="business-graph">Business graph</H2>
       <P>
         At the core of the platform is the{" "}
-        <DocLink href="/documents/knowledge-graph">
-          Knowledge Graph Engine
-        </DocLink>{" "}
-        (KGE) — a configurable entity-property-relationship model that
-        represents your business as a connected graph. Entity types are fully
-        configurable: companies, contacts, deals, projects, invoices, or any
-        domain-specific concept your organization needs.
-      </P>
-      <P>
-        Identity resolution uses a four-step cascade — external reference
-        matching, email, domain, and name — to automatically deduplicate and
-        connect records across systems. The graph supports multi-hop traversal
-        queries, set algebra operations, and composable query pipelines for
-        complex analytical questions.
+        <DocLink href="/documents/business-graph">business graph</DocLink> — a
+        connected entity model that represents your organisation across five
+        categories: departments, people, documents, connector-sourced records,
+        and external entities. Identity resolution uses weighted scoring across
+        email, phone, domain, and embedding similarity to automatically
+        deduplicate and connect records across systems.
       </P>
 
       <H2 id="situation-awareness">Situation awareness</H2>
       <P>
         The{" "}
         <DocLink href="/documents/situation-detection">
-          Situation Engine
+          situation engine
         </DocLink>{" "}
-        continuously monitors the knowledge graph for patterns that require
-        attention. Unlike simple threshold alerts, situations represent
-        multi-signal, cross-system patterns — a deal going cold while the
-        assigned rep has an overloaded calendar and the client&apos;s support
-        tickets are escalating. Situations are scored for urgency and impact,
-        classified by domain, and routed to the appropriate agent or human
-        operator.
+        detects patterns through two paths: property-based detection evaluates
+        structured data via cron, while content-based detection analyses
+        communication content for action items. Situations represent
+        multi-signal, cross-system patterns — scored for urgency and routed to
+        departments.
       </P>
 
-      <H2 id="governed-agents">Governed AI agents</H2>
+      <H2 id="personal-ai">Personal AI</H2>
       <P>
-        Qorpera deploys specialized{" "}
-        <DocLink href="/documents/agent-catalog">AI agents</DocLink> — each
-        with defined roles, skills, and tool access. All agent actions are
-        governed by a{" "}
+        Every employee gets a personal AI entity that learns from their
+        decisions. The{" "}
+        <DocLink href="/documents/how-ai-learns">learning system</DocLink>{" "}
+        tracks approval patterns per situation type, and the{" "}
+        <DocLink href="/documents/copilot">copilot</DocLink> provides a
+        conversational interface to the business graph and situation engine.
+        All AI actions are governed by a{" "}
         <DocLink href="/documents/policy-engine">policy engine</DocLink> that
-        enforces ALLOW, DENY, or REQUIRE_APPROVAL rules per action type. Every
-        decision is logged in a complete{" "}
-        <DocLink href="/documents/audit-trail">audit trail</DocLink> with full
-        data lineage.
+        enforces ALLOW, DENY, or REQUIRE_APPROVAL rules.
       </P>
-      <Note>
-        To learn more about agent configuration and the tool registry, see{" "}
-        <DocLink href="/documents/agent-catalog">Agent catalog</DocLink> and{" "}
-        <DocLink href="/documents/skills-and-tools">Skills &amp; tools</DocLink>.
-      </Note>
 
       <H2 id="trust-and-autonomy">Trust and autonomy</H2>
       <P>
         Autonomy is earned, not assumed. The{" "}
         <DocLink href="/documents/trust-gradient">trust gradient</DocLink> is
         a three-phase model — Observe, Propose, Act — that governs how much
-        independence each agent has. Operators can adjust autonomy levels per
-        agent and per action type at any time.
+        independence the AI has. Personal autonomy tracks each AI&apos;s
+        competence per situation type, with graduation requiring admin approval.
       </P>
 
       <H2 id="security-governance">Security and governance</H2>
       <P>
-        All data is encrypted at rest using AES-256 and in transit using
-        TLS 1.3. OAuth tokens, API keys, and skill credentials use per-record
-        AES-256-GCM encryption. Data residency is configurable by region, with
-        EU-only hosting available. Role-based access control, SSO support, and
-        complete audit logging ensure every interaction is traceable.
+        OAuth tokens are encrypted with AES-256-GCM. The platform runs on Neon
+        PostgreSQL in Frankfurt with EU data residency. Three roles — superadmin,
+        admin, member — provide scoped access control. Every AI decision is
+        logged in a complete{" "}
+        <DocLink href="/documents/audit-trail">audit trail</DocLink> with full
+        reasoning traces.
       </P>
       <Note>
         To learn more, see{" "}
@@ -159,9 +133,8 @@ export default function DocsOverviewPage() {
       </Note>
 
       <p className="mt-14 border-t border-[var(--border)] pt-6 text-[13px] leading-relaxed text-[var(--ink-muted)]">
-        Note: Qorpera feature availability is subject to change and may differ
-        between{" "}
-        <DocLink href="/contact">plan tiers</DocLink>.
+        Qorpera is in active development. Feature availability may change as
+        the platform evolves.
       </p>
     </>
   );

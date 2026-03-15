@@ -50,940 +50,476 @@ function FadeUp({
 }
 
 /* ────────────────────────────────────────────
-   Scene animation fade (show/hide driven)
+   Tool logo SVGs
    ──────────────────────────────────────────── */
 
-function Fade({
-  show,
-  delay = 0,
-  duration = 500,
-  direction = "up",
-  distance = 16,
-  children,
-  className = "",
-  style,
-}: {
-  show: boolean;
-  delay?: number;
-  duration?: number;
-  direction?: "up" | "down" | "left" | "right" | "none";
-  distance?: number;
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  const t: Record<string, string> = {
-    up: `translateY(${distance}px)`,
-    down: `translateY(-${distance}px)`,
-    left: `translateX(${distance}px)`,
-    right: `translateX(-${distance}px)`,
-    none: "none",
-  };
+function GmailIcon() {
   return (
-    <div
-      className={className}
-      style={{
-        ...style,
-        opacity: show ? 1 : 0,
-        transform: show ? "none" : t[direction],
-        transition: `opacity ${duration}ms cubic-bezier(.22,1,.36,1) ${delay}ms, transform ${duration}ms cubic-bezier(.22,1,.36,1) ${delay}ms`,
-      }}
-    >
-      {children}
-    </div>
+    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]">
+      <path d="M2 6l10 6.5L22 6v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" fill="none" stroke="#ea4335" strokeWidth="1.5" />
+      <path d="M22 6l-10 6.5L2 6a2 2 0 012-2h16a2 2 0 012 2z" fill="none" stroke="#ea4335" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function SlackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]">
+      <path d="M14.5 2a1.5 1.5 0 100 3H16v1.5a1.5 1.5 0 103 0v-3A1.5 1.5 0 0017.5 2h-3zM2 9.5a1.5 1.5 0 013 0V11h1.5a1.5 1.5 0 110 3h-3A1.5 1.5 0 012 12.5v-3zM9.5 22a1.5 1.5 0 100-3H8v-1.5a1.5 1.5 0 10-3 0v3A1.5 1.5 0 006.5 22h3zM22 14.5a1.5 1.5 0 01-3 0V13h-1.5a1.5 1.5 0 110-3h3a1.5 1.5 0 011.5 1.5v3z" fill="none" stroke="#611f69" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
+function HubSpotIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]">
+      <circle cx="12" cy="12" r="3" fill="none" stroke="#ff7a59" strokeWidth="1.5" />
+      <circle cx="12" cy="5" r="1.5" fill="#ff7a59" />
+      <circle cx="12" cy="19" r="1.5" fill="#ff7a59" />
+      <circle cx="5.5" cy="8.5" r="1.5" fill="#ff7a59" />
+      <circle cx="18.5" cy="8.5" r="1.5" fill="#ff7a59" />
+      <circle cx="5.5" cy="15.5" r="1.5" fill="#ff7a59" />
+      <circle cx="18.5" cy="15.5" r="1.5" fill="#ff7a59" />
+      <line x1="12" y1="6.5" x2="12" y2="9" stroke="#ff7a59" strokeWidth="1" />
+      <line x1="12" y1="15" x2="12" y2="17.5" stroke="#ff7a59" strokeWidth="1" />
+      <line x1="6.8" y1="9.3" x2="9.2" y2="10.7" stroke="#ff7a59" strokeWidth="1" />
+      <line x1="14.8" y1="13.3" x2="17.2" y2="14.7" stroke="#ff7a59" strokeWidth="1" />
+      <line x1="6.8" y1="14.7" x2="9.2" y2="13.3" stroke="#ff7a59" strokeWidth="1" />
+      <line x1="14.8" y1="10.7" x2="17.2" y2="9.3" stroke="#ff7a59" strokeWidth="1" />
+    </svg>
+  );
+}
+
+function StripeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]">
+      <rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="#635bff" strokeWidth="1.5" />
+      <path d="M12.5 8.5c-2 0-3 .8-3 2.1 0 2.5 4 1.8 4 3.3 0 .7-.8 1.1-2 1.1-1.5 0-2.5-.6-2.5-.6M12 8.5v7" fill="none" stroke="#635bff" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]">
+      <rect x="3" y="5" width="18" height="16" rx="2.5" fill="none" stroke="#4285f4" strokeWidth="1.5" />
+      <line x1="3" y1="10" x2="21" y2="10" stroke="#4285f4" strokeWidth="1.5" />
+      <line x1="8" y1="3" x2="8" y2="7" stroke="#4285f4" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="16" y1="3" x2="16" y2="7" stroke="#4285f4" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="8" cy="14.5" r="1" fill="#4285f4" />
+      <circle cx="12" cy="14.5" r="1" fill="#4285f4" />
+      <circle cx="16" cy="14.5" r="1" fill="#4285f4" />
+    </svg>
+  );
+}
+
+function Ms365Icon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]">
+      <rect x="3" y="3" width="8" height="8" rx="1.5" fill="none" stroke="#0078d4" strokeWidth="1.3" />
+      <rect x="13" y="3" width="8" height="8" rx="1.5" fill="none" stroke="#0078d4" strokeWidth="1.3" />
+      <rect x="3" y="13" width="8" height="8" rx="1.5" fill="none" stroke="#0078d4" strokeWidth="1.3" />
+      <rect x="13" y="13" width="8" height="8" rx="1.5" fill="none" stroke="#0078d4" strokeWidth="1.3" />
+    </svg>
   );
 }
 
 /* ────────────────────────────────────────────
-   Interactive scenario demo
+   Tool data
    ──────────────────────────────────────────── */
 
-const DEMO_SCENES = [
-  { id: "streams", label: "Your tools connect", ms: 5500, title: "Layer 1 \u2014 Event stream" },
-  { id: "graph", label: "Context connects", ms: 6500, title: "Layer 2 \u2014 Knowledge graph" },
-  { id: "situations", label: "Situations surface", ms: 8500, title: "Layer 3 \u2014 Situation engine" },
-  { id: "governance", label: "You stay in control", ms: 8000, title: "Layer 4 \u2014 Reasoning & governance" },
-  { id: "learning", label: "It gets smarter", ms: 7500, title: "Layer 5 \u2014 Learning loop" },
-];
-const DEMO_TOTAL = DEMO_SCENES.reduce((s, sc) => s + sc.ms, 0);
-const DEMO_PAUSE = 3000;
-
-const STREAMS = [
-  { color: "#3b82f6", label: "Gmail" },
-  { color: "#a855f7", label: "Slack" },
-  { color: "#f59e0b", label: "HubSpot" },
-  { color: "#22c55e", label: "Stripe" },
-  { color: "#ef4444", label: "Calendar" },
-  { color: "#6366f1", label: "Support" },
+const TOOLS: { icon: React.FC; name: string; color: string; events: string }[] = [
+  { icon: GmailIcon, name: "Gmail", color: "#ea4335", events: "2,847 emails" },
+  { icon: SlackIcon, name: "Slack", color: "#611f69", events: "12,409 messages" },
+  { icon: HubSpotIcon, name: "HubSpot", color: "#ff7a59", events: "847 records" },
+  { icon: StripeIcon, name: "Stripe", color: "#635bff", events: "1,203 payments" },
+  { icon: CalendarIcon, name: "Google Calendar", color: "#4285f4", events: "634 events" },
+  { icon: Ms365Icon, name: "Microsoft 365", color: "#0078d4", events: "3,102 items" },
 ];
 
-const GN = [
-  { x: 250, y: 135, r: 28, l: "Your Company" },
-  { x: 250, y: 42, r: 16, l: "Sales" }, { x: 348, y: 82, r: 14, l: "Marketing" }, { x: 348, y: 188, r: 16, l: "Finance" },
-  { x: 250, y: 232, r: 14, l: "Operations" }, { x: 152, y: 188, r: 14, l: "HR" }, { x: 152, y: 82, r: 14, l: "Support" },
-  { x: 432, y: 48, r: 8, l: "Customers" }, { x: 442, y: 168, r: 9, l: "Vendors" }, { x: 68, y: 48, r: 8, l: "Products" }, { x: 58, y: 188, r: 9, l: "Contracts" },
-];
-const GE: [number, number][] = [
-  [0,1],[0,2],[0,3],[0,4],[0,5],[0,6],
-  [1,2],[2,3],[3,4],[4,5],[5,6],[6,1],
-  [2,7],[3,8],[6,9],[5,10],
-];
-
-/* scene 2 — situation signals */
-const SIGS = [
-  { x: 55, y: 48, label: "Logins: 0 sessions", sub: "Last 14 days" },
-  { x: 195, y: 28, label: "Sentiment: −42%", sub: "Email thread" },
-  { x: 125, y: 118, label: "3 open tickets", sub: "Unresolved 9+ days" },
-  { x: 275, y: 108, label: "Invoice #4071", sub: "14 days overdue" },
-  { x: 70, y: 188, label: "NPS dropped to 4", sub: "Was 8 last quarter" },
-];
-const SLINKS: [number, number][] = [[0,1],[0,2],[1,3],[2,3],[2,4],[0,4],[1,2]];
-
-/* scene 3 — reasoning trace steps */
-const RSTEPS = [
-  { icon: "⚡", label: "Situation received", detail: "Churn risk — Acme Corp" },
-  { icon: "📊", label: "Account value", detail: "€45K ARR → High priority" },
-  { icon: "📋", label: "Policy lookup", detail: "\"Auto-escalate if ARR > €20K\"" },
-  { icon: "🔍", label: "Context check", detail: "Last contact: 21 days ago" },
-  { icon: "✦", label: "Action generated", detail: "Personal check-in call" },
-];
-
-/* scene 4 — learning chart + side table */
-const CP = [[40,218],[95,215],[150,208],[205,195],[260,172],[315,135],[370,95],[425,68],[470,52]] as const;
-const CPATH = CP.map((p, i) => `${i ? "L" : "M"}${p[0]},${p[1]}`).join(" ");
-// Precompute segment cumulative lengths for accurate dot placement
-const CSEG: number[] = [0];
-for (let i = 1; i < CP.length; i++) {
-  const dx = CP[i][0] - CP[i - 1][0], dy = CP[i][1] - CP[i - 1][1];
-  CSEG.push(CSEG[i - 1] + Math.sqrt(dx * dx + dy * dy));
-}
-const CTOTAL = CSEG[CSEG.length - 1]; // actual path length ~486
-function cpAt(t: number): [number, number] {
-  const d = t * CTOTAL;
-  for (let i = 1; i < CP.length; i++) {
-    if (d <= CSEG[i]) {
-      const st = (d - CSEG[i - 1]) / (CSEG[i] - CSEG[i - 1]);
-      return [CP[i - 1][0] + (CP[i][0] - CP[i - 1][0]) * st, CP[i - 1][1] + (CP[i][1] - CP[i - 1][1]) * st];
-    }
-  }
-  return [CP[CP.length - 1][0], CP[CP.length - 1][1]];
-}
-const TBL = [
-  { metric: "Detection accuracy", w1: "62%", now: "94%" },
-  { metric: "False positives", w1: "34%", now: "3%" },
-  { metric: "Response time", w1: "4.2h", now: "6min" },
-  { metric: "Auto-resolved", w1: "0", now: "7" },
+const SITUATIONS = [
+  {
+    urgency: "#ef4444",
+    name: "Churn risk — Acme Corp",
+    context: "No contact in 21 days · Overdue invoice · NPS dropped",
+    dept: "Urgent",
+    deptBg: "rgba(239,68,68,0.08)",
+    deptColor: "#ef4444",
+    time: "2m ago",
+  },
+  {
+    urgency: "#f59e0b",
+    name: "Deal stalling — Nordic Health",
+    context: "Proposal sent 12 days ago · No reply · Champion on leave",
+    dept: "Sales",
+    deptBg: "rgba(245,158,11,0.08)",
+    deptColor: "#f59e0b",
+    time: "18m ago",
+  },
+  {
+    urgency: "#3b82f6",
+    name: "New hire starting — no equipment assigned",
+    context: "Start date in 3 days · Laptop not ordered · No onboarding scheduled",
+    dept: "HR",
+    deptBg: "rgba(59,130,246,0.08)",
+    deptColor: "#3b82f6",
+    time: "1h ago",
+  },
+  {
+    urgency: "#22c55e",
+    name: "Monthly report ready — awaiting review",
+    context: "All data synced · Finance approved · Needs CEO sign-off",
+    dept: "Ops",
+    deptBg: "rgba(34,197,94,0.08)",
+    deptColor: "#22c55e",
+    time: "2h ago",
+    faded: true,
+  },
 ];
 
-function ScenarioDemo() {
-  const [elapsed, setElapsed] = useState(0);
-  const startRef = useRef(0);
-  const rafRef = useRef(0);
+const TABS = [
+  { num: "01", label: "Connect" },
+  { num: "02", label: "Understand" },
+  { num: "03", label: "Detect" },
+  { num: "04", label: "Propose" },
+  { num: "05", label: "Learn" },
+];
 
-  useEffect(() => {
-    startRef.current = performance.now();
-    const tick = (now: number) => {
-      const raw = now - startRef.current;
-      if (raw >= DEMO_TOTAL + DEMO_PAUSE) {
-        startRef.current = now;
-        setElapsed(0);
-      } else if (raw >= DEMO_TOTAL) {
-        setElapsed(DEMO_TOTAL);
-      } else {
-        setElapsed(raw);
-      }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, []);
+/* ────────────────────────────────────────────
+   LayerDemo — interactive five-layer visual
+   ──────────────────────────────────────────── */
 
-  const sceneStarts: number[] = [];
-  let off = 0;
-  for (const sc of DEMO_SCENES) {
-    sceneStarts.push(off);
-    off += sc.ms;
-  }
-
-  let cur = 0;
-  for (let i = DEMO_SCENES.length - 1; i >= 0; i--) {
-    if (elapsed >= sceneStarts[i]) {
-      cur = i;
-      break;
-    }
-  }
-  const se = elapsed - sceneStarts[cur];
-  const show = (ms: number) => se >= ms;
-  const pct = (startMs: number, durMs: number) =>
-    Math.min(1, Math.max(0, (se - startMs) / durMs));
-  const isPause = elapsed >= DEMO_TOTAL;
-  const fadeOut = isPause
-    ? 0
-    : se < DEMO_SCENES[cur].ms - 300
-      ? 1
-      : Math.max(0, (DEMO_SCENES[cur].ms - se) / 300);
-
-  const goTo = (idx: number) => {
-    startRef.current = performance.now() - sceneStarts[idx];
-    setElapsed(sceneStarts[idx]);
-  };
+function LayerDemo() {
+  const [active, setActive] = useState(0);
 
   return (
-    <div
-      className="relative mt-12 overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a1a]"
-      style={{ height: 440 }}
-    >
-      <style>{`@keyframes stFlow{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}@keyframes sceneIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}@keyframes pipeDot{0%{cx:45}100%{cx:475}}`}</style>
-
-      {/* grid bg */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)",
-          backgroundSize: "40px 40px",
-        }}
-      />
-
-      {/* header nav */}
-      <div className="relative z-10 flex items-center border-b border-white/5 px-6 py-2.5 lg:px-8">
-        <div className="flex items-center gap-1">
-          {DEMO_SCENES.map((sc, i) => (
-            <button
-              key={sc.id}
-              onClick={() => goTo(i)}
-              className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-all ${
-                i === cur
-                  ? "bg-white/5"
-                  : "hover:bg-white/5"
-              }`}
-            >
+    <div className="relative mt-12 overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a1a]">
+      {/* ── Tab bar ── */}
+      <div className="flex border-b border-white/5">
+        {TABS.map((tab, i) => (
+          <button
+            key={tab.num}
+            onClick={() => setActive(i)}
+            className={`flex-1 py-3.5 text-center font-mono text-[11px] tracking-[0.5px] transition-all ${
+              i === active
+                ? "bg-white/[0.03] text-[var(--accent)]"
+                : "text-white/25 hover:bg-white/[0.02] hover:text-white/40"
+            }`}
+            style={{ position: "relative" }}
+          >
+            <span className={`mb-0.5 block text-[10px] ${i === active ? "text-[var(--accent)]/60" : "opacity-40"}`}>
+              {tab.num}
+            </span>
+            {tab.label}
+            {i === active && (
               <span
-                className={`block h-1.5 shrink-0 rounded-full transition-all ${
-                  i === cur
-                    ? "w-4 bg-[var(--accent)]"
-                    : "w-1.5 bg-white/20"
-                }`}
+                className="absolute bottom-0 left-[20%] right-[20%] h-[2px] rounded-t-sm bg-[var(--accent)]"
               />
-              <span
-                className="whitespace-nowrap font-mono text-[10px]"
-                style={{ color: i === cur ? "var(--accent)" : "rgba(255,255,255,0.3)" }}
-              >
-                Layer {i + 1}
-              </span>
-            </button>
-          ))}
-        </div>
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* scenes */}
-      <div className="relative h-[380px] p-6 lg:p-10">
-        {/* global layer title — fixed position across all scenes */}
-        {!isPause && (
-          <Fade show={show(0)} duration={250}>
-            <div className="font-mono text-[13px] font-bold uppercase tracking-[1.5px] text-[#3b82f6]">
-              {DEMO_SCENES[cur].title}
-            </div>
-          </Fade>
-        )}
-        <div
-          key={cur}
-          style={{
-            animation: "sceneIn 200ms cubic-bezier(.22,1,.36,1)",
-            opacity: fadeOut,
-          }}
-          className="flex h-[calc(100%-28px)] w-full items-center justify-center"
-        >
-          {/* 0 — streams */}
-          {cur === 0 && (
-            <div className="mx-auto w-full max-w-[540px]">
-              <div className="space-y-2.5">
-                {STREAMS.map((s, i) => (
-                  <Fade
-                    key={s.label}
-                    show={show(200 + i * 250)}
-                    duration={300}
-                    direction="left"
-                    distance={20}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ background: s.color }}
-                      />
-                      <div
-                        className="relative h-[3px] flex-1 overflow-hidden rounded-full"
-                        style={{ background: `${s.color}22` }}
-                      >
-                        <div
-                          className="absolute inset-0 rounded-full"
-                          style={{
-                            background: `linear-gradient(90deg,transparent,${s.color},transparent)`,
-                            animation: `stFlow 2s linear infinite ${i * 200}ms`,
-                          }}
-                        />
-                      </div>
-                      <span className="w-16 shrink-0 text-right font-mono text-xs text-white/50">
-                        {s.label}
-                      </span>
-                    </div>
-                  </Fade>
-                ))}
-              </div>
-              <Fade show={show(2000)} duration={400}>
-                <p className="mt-6 text-center text-[14px] text-white/30">
-                  Your tools are already talking. Qorpera is listening.
-                </p>
-              </Fade>
-            </div>
-          )}
+      {/* ── Scenes ── */}
+      <div className="min-h-[360px] p-7 lg:p-9">
 
-          {/* 1 — knowledge graph (zoom from core, data pulses) */}
-          {cur === 1 && (() => {
-            const zoom = Math.max(1, 2.4 - pct(200, 4500) * 1.4);
-            const cx = GN[0].x, cy = GN[0].y;
-            return (
-              <div className="mx-auto w-full max-w-[540px]">
-                <div className="overflow-hidden rounded-lg" style={{ height: 270 }}>
-                  <svg
-                    viewBox="0 0 500 270"
-                    className="mx-auto w-full"
-                    style={{
-                      transform: `scale(${zoom})`,
-                      transformOrigin: `${(cx / 500) * 100}% ${(cy / 270) * 100}%`,
-                      transition: "transform 80ms linear",
-                    }}
-                  >
-                    <defs>
-                      <filter id="glow">
-                        <feGaussianBlur stdDeviation="3" result="blur" />
-                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                      </filter>
-                    </defs>
-                    {/* edges */}
-                    {GE.map(([a, b], i) => {
-                      const na = GN[a], nb = GN[b];
-                      const edgeId = `ge${a}-${b}`;
-                      const isInner = a === 0 || (a <= 6 && b <= 6);
-                      return (
-                        <g key={`e${i}`} style={{ opacity: show(400 + i * 80) ? 1 : 0, transition: "opacity 300ms ease" }}>
-                          <line
-                            x1={na.x} y1={na.y} x2={nb.x} y2={nb.y}
-                            stroke={isInner ? "rgba(59,130,246,0.18)" : "rgba(59,130,246,0.08)"}
-                            strokeWidth={isInner ? "1" : "0.5"}
-                          />
-                          {/* data pulse traveling along edge */}
-                          {show(1800 + i * 200) && (
-                            <circle r="2" fill="rgba(59,130,246,0.6)">
-                              <animateMotion
-                                dur={`${2 + (i % 3)}s`}
-                                repeatCount="indefinite"
-                                path={`M${na.x},${na.y} L${nb.x},${nb.y}`}
-                              />
-                            </circle>
-                          )}
-                        </g>
-                      );
-                    })}
-                    {/* nodes */}
-                    {GN.map((n, i) => {
-                      const isCore = i === 0;
-                      const isDept = i >= 1 && i <= 6;
-                      const isOuter = i >= 7;
-                      return (
-                        <g key={`n${i}`}>
-                          {/* glow ring */}
-                          <circle
-                            cx={n.x} cy={n.y} r={n.r * (isCore ? 2.2 : 1.6)}
-                            fill={isCore ? "rgba(59,130,246,0.08)" : "rgba(59,130,246,0.04)"}
-                            style={{
-                              opacity: show(200 + i * 120) ? 1 : 0,
-                              transition: "opacity 400ms ease",
-                            }}
-                          />
-                          {/* outer ring */}
-                          <circle
-                            cx={n.x} cy={n.y} r={n.r}
-                            fill={isCore ? "rgba(59,130,246,0.15)" : isDept ? "rgba(59,130,246,0.1)" : "rgba(59,130,246,0.06)"}
-                            stroke={isCore ? "rgba(59,130,246,0.4)" : "rgba(59,130,246,0.15)"}
-                            strokeWidth={isCore ? "1.5" : "0.5"}
-                            style={{
-                              opacity: show(200 + i * 120) ? 1 : 0,
-                              transform: show(200 + i * 120) ? "scale(1)" : "scale(0)",
-                              transformOrigin: `${n.x}px ${n.y}px`,
-                              transition: "opacity 300ms ease, transform 300ms cubic-bezier(.22,1,.36,1)",
-                            }}
-                          />
-                          {/* core dot */}
-                          <circle
-                            cx={n.x} cy={n.y} r={n.r * (isCore ? 0.45 : 0.4)}
-                            fill={isCore ? "#3b82f6" : isDept ? "rgba(59,130,246,0.5)" : "rgba(59,130,246,0.35)"}
-                            style={{
-                              opacity: show(200 + i * 120) ? 1 : 0,
-                              transform: show(200 + i * 120) ? "scale(1)" : "scale(0)",
-                              transformOrigin: `${n.x}px ${n.y}px`,
-                              transition: "opacity 300ms ease, transform 300ms cubic-bezier(.22,1,.36,1)",
-                              ...(isCore ? { filter: "url(#glow)" } : {}),
-                            }}
-                          />
-                          {/* core pulse ring */}
-                          {isCore && show(300) && (
-                            <circle
-                              cx={n.x} cy={n.y} r={n.r * 1.1}
-                              fill="none"
-                              stroke="rgba(59,130,246,0.2)"
-                              strokeWidth="1"
-                              style={{ animation: "pulse 3s ease infinite" }}
-                            />
-                          )}
-                          {/* label */}
-                          <text
-                            x={n.x} y={n.y + n.r + (isOuter ? 12 : 14)}
-                            textAnchor="middle"
-                            fill={isCore ? "rgba(255,255,255,0.8)" : isDept ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.25)"}
-                            fontSize={isCore ? "11" : isDept ? "9" : "7"}
-                            fontFamily="ui-monospace,monospace"
-                            fontWeight={isCore ? "600" : "400"}
-                            style={{
-                              opacity: show(300 + i * 120) ? 1 : 0,
-                              transition: "opacity 300ms ease",
-                            }}
-                          >
-                            {n.l}
-                          </text>
-                        </g>
-                      );
-                    })}
-                  </svg>
-                </div>
-                <Fade show={show(4800)} duration={400}>
-                  <p className="mt-2 text-center text-[14px] text-white/30">
-                    Every entity linked across every tool. One graph.
-                  </p>
-                </Fade>
-              </div>
-            );
-          })()}
-
-          {/* 2 — situation engine (zoom in on signals, detect pattern) */}
-          {cur === 2 && (() => {
-            const zoom = Math.max(1, 1.9 - pct(200, 3800) * 0.9);
-            return (
-              <div className="w-full">
-                <div className="flex gap-5">
-                  {/* left: signal graph */}
-                  <div className="flex-1 overflow-hidden rounded-lg" style={{ height: 280 }}>
-                    <svg
-                      viewBox="0 0 380 240"
-                      className="h-full w-full"
-                      style={{
-                        transform: `scale(${zoom})`,
-                        transformOrigin: "40% 35%",
-                        transition: "transform 80ms linear",
-                      }}
-                    >
-                      {/* connection lines */}
-                      {SLINKS.map(([a, b], i) => {
-                        const sa = SIGS[a], sb = SIGS[b];
-                        return (
-                          <line
-                            key={`sl${i}`}
-                            x1={sa.x + 75} y1={sa.y + 18}
-                            x2={sb.x + 75} y2={sb.y + 18}
-                            stroke="rgba(59,130,246,0.2)"
-                            strokeWidth="1"
-                            strokeDasharray="3 3"
-                            style={{
-                              opacity: show(1200 + i * 200) ? 1 : 0,
-                              transition: "opacity 300ms ease",
-                            }}
-                          />
-                        );
-                      })}
-                      {/* signal nodes */}
-                      {SIGS.map((s, i) => (
-                        <g key={`sig${i}`}>
-                          <rect
-                            x={s.x} y={s.y} width={150} height={36} rx={7}
-                            fill="rgba(59,130,246,0.12)"
-                            stroke="rgba(59,130,246,0.3)"
-                            strokeWidth="0.5"
-                            style={{
-                              opacity: show(300 + i * 400) ? 1 : 0,
-                              transition: "opacity 250ms ease",
-                            }}
-                          />
-                          <text
-                            x={s.x + 10} y={s.y + 15}
-                            fill="rgba(255,255,255,0.9)"
-                            fontSize="10" fontFamily="ui-monospace,monospace"
-                            style={{
-                              opacity: show(300 + i * 400) ? 1 : 0,
-                              transition: "opacity 250ms ease",
-                            }}
-                          >
-                            {s.label}
-                          </text>
-                          <text
-                            x={s.x + 10} y={s.y + 28}
-                            fill="rgba(255,255,255,0.45)"
-                            fontSize="8" fontFamily="ui-monospace,monospace"
-                            style={{
-                              opacity: show(400 + i * 400) ? 1 : 0,
-                              transition: "opacity 250ms ease",
-                            }}
-                          >
-                            {s.sub}
-                          </text>
-                        </g>
-                      ))}
-                      {/* detection pulse around connected signals */}
-                      {show(3200) && (
-                        <rect
-                          x={25} y={10} width={330} height={228} rx={12}
-                          fill="none"
-                          stroke="rgba(239,68,68,0.2)"
-                          strokeWidth="1.5"
-                          strokeDasharray="6 4"
-                          style={{ animation: "pulse 2s ease infinite" }}
-                        />
-                      )}
-                    </svg>
-                  </div>
-                  {/* right: situation detected card */}
+        {/* 0 — Connect */}
+        {active === 0 && (
+          <div className="animate-[fadeIn_300ms_ease]">
+            <div className="mb-1.5 font-mono text-[11px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
+              Layer 1 — Your tools connect
+            </div>
+            <p className="mb-6 text-[14px] leading-relaxed text-white/50">
+              Sign in to your existing tools. Every email, deal, message, and payment flows into one stream.
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {TOOLS.map((tool, i) => {
+                const Icon = tool.icon;
+                return (
                   <div
-                    className="w-[220px] shrink-0"
-                    style={{
-                      opacity: show(3600) ? 1 : 0,
-                      transform: show(3600) ? "none" : "translateX(12px)",
-                      transition: "opacity 400ms ease, transform 400ms cubic-bezier(.22,1,.36,1)",
-                    }}
+                    key={tool.name}
+                    className="group relative flex items-center gap-3 overflow-hidden rounded-lg border border-white/[0.06] bg-white/[0.03] px-3.5 py-3"
                   >
-                    <div className="rounded-lg border border-red-500/30 bg-red-500/8 p-4">
-                      <div className="mb-2.5 flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-red-400" style={{ animation: "pulse 2s ease infinite" }} />
-                        <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-red-400">
-                          Situation detected
-                        </span>
-                      </div>
-                      <div className="font-sans text-[15px] font-semibold text-white">
-                        Churn risk — Acme Corp
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        {[
-                          "Zero logins + open tickets",
-                          "Negative sentiment trend",
-                          "Overdue invoice stacking",
-                          "NPS collapse (8 → 4)",
-                        ].map((r, i) => (
-                          <div key={i} className="flex items-start gap-2">
-                            <span className="mt-0.5 text-[9px] text-red-400">●</span>
-                            <span className="font-mono text-[11px] leading-[1.4] text-white/70">{r}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-3 border-t border-white/10 pt-2.5 font-mono text-[10px] text-white/40">
-                        5 signals from 4 tools
-                      </div>
+                    <Icon />
+                    <div className="min-w-0">
+                      <div className="text-[12px] font-medium text-white/80">{tool.name}</div>
+                      <div className="font-mono text-[10px] text-white/25">{tool.events}</div>
                     </div>
-                  </div>
-                </div>
-                <Fade show={show(4500)} duration={400}>
-                  <p className="mt-3 text-[14px] text-white/30">
-                    Patterns form across tools. Situations surface before they become problems.
-                  </p>
-                </Fade>
-              </div>
-            );
-          })()}
-
-          {/* 3 — reasoning & governance (animated SVG flow) */}
-          {cur === 3 && (() => {
-            // Reasoning flow: situation → evaluate → policy gate → action → approval
-            // Nodes along a horizontal pipeline
-            const RNODES = [
-              { x: 30, y: 130, label: "Situation", sub: "Churn risk", color: "#ef4444" },
-              { x: 160, y: 130, label: "Evaluate", sub: "€45K ARR", color: "#3b82f6" },
-              { x: 290, y: 130, label: "Policy gate", sub: "ARR > €20K", color: "#8b5cf6" },
-              { x: 420, y: 130, label: "Action", sub: "Check-in call", color: "#f59e0b" },
-              { x: 540, y: 130, label: "Approval", sub: "Owner review", color: "#22c55e" },
-            ];
-            // Data pulse position along the pipeline (0→4 = which segment)
-            const flowT = pct(300, 3200);
-            const flowPos = flowT * 4; // 0..4 maps to which edge we're traveling
-            const activeNode = Math.min(4, Math.floor(flowPos + 0.5));
-            // Pulse dot position
-            const fromIdx = Math.min(3, Math.floor(flowPos));
-            const segT = flowPos - fromIdx;
-            const pulseX = RNODES[fromIdx].x + (RNODES[Math.min(4, fromIdx + 1)].x - RNODES[fromIdx].x) * segT;
-
-            return (
-              <div className="mx-auto w-full" style={{ maxWidth: 640 }}>
-                  <svg viewBox="0 0 600 260" className="w-full">
-                    <defs>
-                      <filter id="nodeGlow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="6" result="blur" />
-                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                      </filter>
-                      <filter id="pulseGlow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="4" result="blur" />
-                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                      </filter>
-                    </defs>
-                    {/* connecting lines */}
-                    {RNODES.slice(0, -1).map((n, i) => {
-                      const next = RNODES[i + 1];
-                      const lit = flowPos >= i;
-                      return (
-                        <line
-                          key={`edge${i}`}
-                          x1={n.x + 40} y1={n.y}
-                          x2={next.x - 40} y2={next.y}
-                          stroke={lit ? "rgba(59,130,246,0.35)" : "rgba(255,255,255,0.06)"}
-                          strokeWidth={lit ? "2" : "1"}
-                          strokeDasharray={lit ? "none" : "4 4"}
-                          style={{ transition: "stroke 400ms ease, stroke-width 400ms ease" }}
-                        />
-                      );
-                    })}
-                    {/* traveling pulse dot — glows at final node */}
-                    {show(400) && (
-                      <circle
-                        cx={flowT >= 1 ? RNODES[4].x : pulseX} cy={130}
-                        r={flowT >= 1 ? 7 : 5}
-                        fill={flowT >= 1 ? "#22c55e" : "#3b82f6"}
-                        style={{ filter: flowT >= 1 ? "url(#nodeGlow)" : "url(#pulseGlow)" }}
-                      />
-                    )}
-                    {/* nodes */}
-                    {RNODES.map((n, i) => {
-                      const reached = i === 0 ? show(200) : flowPos >= i - 0.3;
-                      const active = i === activeNode || (flowT >= 1 && i === 4);
-                      return (
-                        <g
-                          key={`rn${i}`}
-                          style={{
-                            opacity: reached ? 1 : 0,
-                            transform: reached ? "none" : "translateY(8px)",
-                            transition: "opacity 350ms ease, transform 350ms cubic-bezier(.22,1,.36,1)",
-                          }}
-                        >
-                          {/* outer ring when active */}
-                          {active && (
-                            <circle
-                              cx={n.x} cy={n.y} r={36}
-                              fill="none"
-                              stroke={n.color}
-                              strokeWidth="1"
-                              opacity={0.25}
-                              style={{ animation: "pulse 2s ease infinite" }}
-                            />
-                          )}
-                          {/* node circle */}
-                          <circle
-                            cx={n.x} cy={n.y} r={28}
-                            fill={`${n.color}15`}
-                            stroke={active ? n.color : `${n.color}40`}
-                            strokeWidth={active ? "2" : "1"}
-                            style={{
-                              filter: active ? "url(#nodeGlow)" : "none",
-                              transition: "stroke 300ms ease, stroke-width 300ms ease",
-                            }}
-                          />
-                          {/* inner dot */}
-                          <circle
-                            cx={n.x} cy={n.y} r={8}
-                            fill={reached ? n.color : `${n.color}40`}
-                            style={{ transition: "fill 300ms ease" }}
-                          />
-                          {/* label */}
-                          <text
-                            x={n.x} y={n.y - 42}
-                            textAnchor="middle"
-                            fill="rgba(255,255,255,0.85)"
-                            fontSize="11" fontFamily="ui-monospace,monospace"
-                            fontWeight="600"
-                          >
-                            {n.label}
-                          </text>
-                          {/* sub label */}
-                          <text
-                            x={n.x} y={n.y + 50}
-                            textAnchor="middle"
-                            fill={reached ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.15)"}
-                            fontSize="9" fontFamily="ui-monospace,monospace"
-                            style={{ transition: "fill 300ms ease" }}
-                          >
-                            {n.sub}
-                          </text>
-                          {/* step number */}
-                          <text
-                            x={n.x} y={n.y + 4}
-                            textAnchor="middle"
-                            fill={reached ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.15)"}
-                            fontSize="10" fontFamily="ui-monospace,monospace"
-                            fontWeight="bold"
-                            style={{ transition: "fill 300ms ease" }}
-                          >
-                            {i + 1}
-                          </text>
-                        </g>
-                      );
-                    })}
-                    {/* final approval badge */}
-                    {flowT >= 1 && (
-                      <g style={{ animation: "sceneIn 400ms cubic-bezier(.22,1,.36,1)" }}>
-                        <rect
-                          x={470} y={195} width={130} height={36} rx={8}
-                          fill="rgba(245,158,11,0.1)"
-                          stroke="rgba(245,158,11,0.3)"
-                          strokeWidth="1"
-                        />
-                        <circle
-                          cx={486} cy={213} r={4}
-                          fill="#f59e0b"
-                          style={{ animation: "pulse 2s ease infinite" }}
-                        />
-                        <text
-                          x={498} y={217}
-                          fill="#f59e0b"
-                          fontSize="10" fontFamily="ui-monospace,monospace"
-                          fontWeight="600"
-                        >
-                          Awaiting approval
-                        </text>
-                      </g>
-                    )}
-                  </svg>
-                <Fade show={show(6200)} duration={400}>
-                  <p className="mt-2 text-center text-[14px] text-white/30">
-                    Every action traced. Every policy enforced. Full transparency.
-                  </p>
-                </Fade>
-              </div>
-            );
-          })()}
-
-          {/* 4 — learning loop (zooming chart + side table) */}
-          {cur === 4 && (() => {
-            const rawT = pct(400, 5000);
-            // Easing: slow start that fades into a steady faster pace (ease-in, not continuous acceleration)
-            // Uses cubic ease-in: progress = t^3. Starts very slow, settles into a brisk pace.
-            const draw = Math.min(1, rawT * rawT * rawT);
-            // Tip of drawn line — accurate to path length
-            const [tipX, tipY] = cpAt(draw);
-            // RGB interpolation: grey #6b7280 → green #22c55e
-            const gm = Math.min(1, draw * 1.3);
-            const cr = Math.round(107 + (34 - 107) * gm);
-            const cg = Math.round(114 + (197 - 114) * gm);
-            const cb = Math.round(128 + (94 - 128) * gm);
-            const lineRgb = `rgb(${cr},${cg},${cb})`;
-            // Animated viewBox: anchor at bottom-left, expand outward as line draws
-            // Start: tight crop around first point. End: full chart (0 0 500 240).
-            const startW = 100, startH = 55;
-            const endW = 500, endH = 240;
-            const vbW = startW + (endW - startW) * draw;
-            const vbH = startH + (endH - startH) * draw;
-            // Anchor bottom-left: x starts near first point, y keeps bottom edge at 240
-            const vbX = Math.max(0, 10 * (1 - draw));
-            const vbY = endH - vbH;
-            // Particles floating along the drawn portion of the line
-            const pts: { x: number; y: number; op: number; sz: number }[] = [];
-            for (let i = 0; i < 14; i++) {
-              const pathPos = ((i + 0.5) / 14) * draw;
-              if (pathPos < 0.005) continue;
-              const [px, py] = cpAt(pathPos);
-              const wobX = Math.sin(se / 500 + i * 2.3) * (5 + draw * 8);
-              const wobY = Math.cos(se / 420 + i * 1.9) * (4 + draw * 6);
-              const shimmer = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(se / 350 + i * 1.5));
-              pts.push({
-                x: px + wobX,
-                y: py + wobY,
-                op: (0.1 + draw * 0.4) * shimmer,
-                sz: 1 + draw * 1.5,
-              });
-            }
-            return (
-              <div className="w-full">
-              <div className="relative flex w-full items-center gap-4">
-                  {/* left: animated chart (main) */}
-                  <div className="flex-1 min-w-0">
-                    <svg
-                      viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
-                      className="w-full"
-                      preserveAspectRatio="xMidYMid meet"
-                    >
-                      <defs>
-                        <filter id="greenGlow" x="-50%" y="-50%" width="200%" height="200%">
-                          <feGaussianBlur stdDeviation="4" result="blur" />
-                          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                        </filter>
-                        <filter id="bigGlow" x="-50%" y="-50%" width="200%" height="200%">
-                          <feGaussianBlur stdDeviation="8" result="blur" />
-                          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                        </filter>
-                        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={lineRgb} stopOpacity="0.3" />
-                          <stop offset="100%" stopColor={lineRgb} stopOpacity="0.02" />
-                        </linearGradient>
-                      </defs>
-                      {/* grid */}
-                      {[50, 100, 150, 200].map((y) => (
-                        <line
-                          key={y}
-                          x1={35} y1={y} x2={475} y2={y}
-                          stroke="rgba(255,255,255,0.08)"
-                          strokeWidth="1"
-                        />
-                      ))}
-                      {/* y labels */}
-                      {[
-                        { y: 50, label: "100%" },
-                        { y: 100, label: "75%" },
-                        { y: 150, label: "50%" },
-                        { y: 200, label: "25%" },
-                      ].map((a) => (
-                        <text
-                          key={a.y}
-                          x={30} y={a.y + 4}
-                          textAnchor="end"
-                          fill="rgba(255,255,255,0.3)"
-                          fontSize="9" fontFamily="ui-monospace,monospace"
-                        >
-                          {a.label}
-                        </text>
-                      ))}
-                      {/* x axis line */}
-                      <line x1={35} y1={220} x2={475} y2={220} stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-                      {/* x labels + tick marks */}
-                      {[
-                        { x: 40, label: "Wk 1" },
-                        { x: 148, label: "Wk 2" },
-                        { x: 255, label: "Wk 3" },
-                        { x: 363, label: "Wk 4" },
-                        { x: 470, label: "Now" },
-                      ].map((a) => (
-                        <g key={a.x}>
-                          <line x1={a.x} y1={220} x2={a.x} y2={224} stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
-                          <text
-                            x={a.x} y={235}
-                            textAnchor="middle"
-                            fill={a.label === "Now" ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)"}
-                            fontSize="8" fontFamily="ui-monospace,monospace"
-                          >
-                            {a.label}
-                          </text>
-                        </g>
-                      ))}
-                      {/* area fill */}
-                      <path
-                        d={CPATH + " L470,220 L40,220 Z"}
-                        fill="url(#areaGrad)"
-                        style={{ opacity: draw > 0.02 ? Math.min(1, draw * 2.5) : 0 }}
-                      />
-                      {/* line — whole line shifts grey→green */}
-                      <path
-                        d={CPATH}
-                        fill="none"
-                        stroke={lineRgb}
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                    {/* animated data pulse */}
+                    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                      <div
+                        className="absolute top-1/2 h-[2px] w-10 -translate-y-1/2 rounded-sm"
                         style={{
-                          strokeDasharray: CTOTAL,
-                          strokeDashoffset: CTOTAL * (1 - draw),
+                          background: `linear-gradient(90deg, transparent, ${tool.color}, transparent)`,
+                          animation: `flowPulse ${2.2 + i * 0.3}s linear infinite ${i * 0.35}s`,
                         }}
                       />
-                      {/* particles hovering along the drawn line */}
-                      {pts.map((p, i) => (
-                        <circle
-                          key={`pt${i}`}
-                          cx={p.x} cy={p.y} r={p.sz}
-                          fill={lineRgb}
-                          opacity={p.op}
-                        />
-                      ))}
-                      {/* main dot at tip of drawn line */}
-                      {draw > 0.01 && (
-                        <circle
-                          cx={tipX} cy={tipY} r={6}
-                          fill={lineRgb}
-                          style={{ filter: draw > 0.5 ? "url(#bigGlow)" : "url(#greenGlow)" }}
-                        />
-                      )}
-                    </svg>
+                    </div>
                   </div>
-                  {/* right: side table */}
-                  <div className="w-[220px] shrink-0 self-center">
-                    <table className="w-full border-collapse font-mono text-[13px]">
-                      <thead>
-                        <tr>
-                          <th className="border-b border-white/15 pb-2.5 text-left text-[10px] font-medium uppercase tracking-wider text-white/60" />
-                          <th className="border-b border-white/15 pb-2.5 text-right text-[10px] font-medium uppercase tracking-wider text-white/50">
-                            Start
-                          </th>
-                          <th className="border-b border-white/15 pb-2.5 text-right text-[10px] font-medium uppercase tracking-wider text-[#22c55e]" style={{ textShadow: "0 0 10px rgba(34,197,94,0.5)" }}>
-                            Now
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {TBL.map((row) => (
-                          <tr key={row.metric}>
-                            <td className="border-b border-white/5 py-2.5 text-white/70">
-                              {row.metric}
-                            </td>
-                            <td className="border-b border-white/5 py-2.5 text-right text-white/40">
-                              {row.w1}
-                            </td>
-                            <td
-                              className="border-b border-white/5 py-2.5 text-right font-semibold"
-                              style={{ color: "#22c55e", textShadow: "0 0 10px rgba(34,197,94,0.4)" }}
-                            >
-                              {row.now}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                <Fade show={show(4200)} duration={400}>
-                  <p className="mt-3 text-center text-[14px] text-white/30">
-                    Every decision makes it smarter. Performance compounds.
-                  </p>
-                </Fade>
-              </div>
-            );
-          })()}
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-          {/* pause screen — brand name between loops */}
-          {isPause && (
-            <div
-              className="absolute inset-0 flex items-center justify-center"
-              style={{ animation: "sceneIn 400ms cubic-bezier(.22,1,.36,1)" }}
-            >
-              <span className="font-sans text-[32px] font-bold tracking-[-0.5px] text-white/60">
-                Qorpera
+        {/* 1 — Understand */}
+        {active === 1 && (
+          <div className="animate-[fadeIn_300ms_ease]">
+            <div className="mb-1.5 font-mono text-[11px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
+              Layer 2 — Your business becomes one picture
+            </div>
+            <p className="mb-6 text-[14px] leading-relaxed text-white/50">
+              The same customer, vendor, or project scattered across tools is automatically linked into a single view.
+            </p>
+
+            {/* Before: two separate records */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center gap-2.5 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-[12px] font-semibold text-blue-400">
+                  AC
+                </div>
+                <div>
+                  <div className="text-[13px] font-medium text-white/80">Acme Corp</div>
+                  <div className="font-mono text-[10px] text-white/25">HubSpot · Deal #2847</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-500/15 text-[12px] font-semibold text-purple-400">
+                  AC
+                </div>
+                <div>
+                  <div className="text-[13px] font-medium text-white/80">acme-corp</div>
+                  <div className="font-mono text-[10px] text-white/25">Slack · #acme-support</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Merge indicator */}
+            <div className="flex items-center justify-center py-2">
+              <span className="rounded-full border border-blue-500/15 bg-blue-500/[0.06] px-4 py-1 font-mono text-[11px] text-[var(--accent)]">
+                ↓ matched and merged ↓
               </span>
             </div>
-          )}
-        </div>
+
+            {/* After: unified entity */}
+            <div className="flex items-center gap-3 rounded-lg border border-blue-500/20 bg-blue-500/[0.03] px-4 py-3.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-[14px] font-semibold text-blue-400">
+                AC
+              </div>
+              <div className="flex-1">
+                <div className="text-[13px] font-medium text-white/80">Acme Corp</div>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {[
+                    { label: "HubSpot", bg: "rgba(59,130,246,0.1)" },
+                    { label: "Slack", bg: "rgba(168,85,247,0.1)" },
+                    { label: "Stripe", bg: "rgba(34,197,94,0.1)" },
+                    { label: "Gmail", bg: "rgba(239,68,68,0.1)" },
+                  ].map((s) => (
+                    <span key={s.label} className="rounded px-2 py-0.5 font-mono text-[10px] text-white/30" style={{ background: s.bg }}>
+                      {s.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <p className="mt-4 font-mono text-[11px] text-white/20">
+              One entity. Four tools. Complete picture.
+            </p>
+          </div>
+        )}
+
+        {/* 2 — Detect */}
+        {active === 2 && (
+          <div className="animate-[fadeIn_300ms_ease]">
+            <div className="mb-1.5 font-mono text-[11px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
+              Layer 3 — Situations surface
+            </div>
+            <p className="mb-6 text-[14px] leading-relaxed text-white/50">
+              The AI spots patterns across your tools that need attention — before they become problems.
+            </p>
+            <div className="flex flex-col gap-2">
+              {SITUATIONS.map((s) => (
+                <div
+                  key={s.name}
+                  className="flex items-center gap-3.5 rounded-[10px] border border-white/[0.06] bg-white/[0.03] px-4 py-3.5"
+                  style={{ opacity: s.faded ? 0.45 : 1 }}
+                >
+                  <div className="h-9 w-1 shrink-0 rounded-full" style={{ background: s.urgency }} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[14px] font-medium text-white/85">{s.name}</div>
+                    <div className="mt-0.5 font-mono text-[11px] text-white/25">{s.context}</div>
+                  </div>
+                  <span
+                    className="shrink-0 rounded px-2.5 py-1 font-mono text-[10px]"
+                    style={{ background: s.deptBg, color: s.deptColor }}
+                  >
+                    {s.dept}
+                  </span>
+                  <span className="shrink-0 font-mono text-[10px] text-white/20">{s.time}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 3 — Propose */}
+        {active === 3 && (
+          <div className="animate-[fadeIn_300ms_ease]">
+            <div className="mb-1.5 font-mono text-[11px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
+              Layer 4 — The AI proposes what to do
+            </div>
+            <p className="mb-6 text-[14px] leading-relaxed text-white/50">
+              For each situation, the AI recommends a specific action. You approve, edit, or reject.
+            </p>
+
+            {/* Primary proposal */}
+            <div className="rounded-[10px] border border-white/[0.06] bg-white/[0.03] px-5 py-5">
+              <div className="mb-2.5 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+                <span className="font-mono text-[10px] uppercase tracking-wider text-white/30">
+                  Churn risk — Acme Corp
+                </span>
+              </div>
+              <p className="text-[15px] leading-[1.6] text-white/80">
+                Schedule a personal check-in call with Acme Corp before sending
+                the automated overdue reminder. Their account is high-value and
+                the signals suggest frustration, not negligence.
+              </p>
+              <div className="mt-3 rounded-md border-l-2 border-amber-500/30 bg-white/[0.02] px-3.5 py-2.5 font-mono text-[11px] leading-relaxed text-white/25">
+                Based on 5 signals across Gmail, Stripe, HubSpot, and Support
+              </div>
+              <div className="mt-4 flex gap-2">
+                <span className="rounded-lg bg-green-500/10 px-5 py-2 font-mono text-[12px] font-medium text-green-400 ring-1 ring-green-500/25">
+                  Approve
+                </span>
+                <span className="rounded-lg bg-blue-500/[0.07] px-5 py-2 font-mono text-[12px] font-medium text-blue-400 ring-1 ring-blue-500/20">
+                  Edit
+                </span>
+                <span className="rounded-lg bg-red-500/[0.04] px-5 py-2 font-mono text-[12px] font-medium text-red-400/50 ring-1 ring-red-500/15">
+                  Reject
+                </span>
+              </div>
+            </div>
+
+            {/* Secondary (faded) */}
+            <div className="mt-2.5 rounded-[10px] border border-white/[0.04] bg-white/[0.02] px-5 py-4 opacity-50">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+                <span className="font-mono text-[10px] uppercase tracking-wider text-white/30">
+                  Deal stalling — Nordic Health
+                </span>
+              </div>
+              <p className="text-[14px] leading-[1.6] text-white/60">
+                Reach out to the secondary contact to keep momentum while the champion is away.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* 4 — Learn */}
+        {active === 4 && (
+          <div className="animate-[fadeIn_300ms_ease]">
+            <div className="mb-1.5 font-mono text-[11px] font-semibold uppercase tracking-[1.5px] text-[var(--accent)]">
+              Layer 5 — It gets smarter
+            </div>
+            <p className="mb-6 text-[14px] leading-relaxed text-white/50">
+              Every decision you make teaches the system. Over time, it earns the autonomy to handle routine tasks on its own.
+            </p>
+            <div className="flex gap-5">
+              {/* Chart */}
+              <div className="flex-1">
+                <div className="relative h-[200px] rounded-lg border border-white/[0.06] bg-white/[0.03] p-4">
+                  <svg
+                    width="100%"
+                    height="100%"
+                    viewBox="0 0 400 148"
+                    preserveAspectRatio="none"
+                    className="block"
+                  >
+                    <line x1="0" y1="37" x2="400" y2="37" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+                    <line x1="0" y1="74" x2="400" y2="74" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+                    <line x1="0" y1="111" x2="400" y2="111" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+                    <defs>
+                      <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#6b7280" />
+                        <stop offset="100%" stopColor="#22c55e" />
+                      </linearGradient>
+                      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#22c55e" stopOpacity="0.15" />
+                        <stop offset="100%" stopColor="#22c55e" stopOpacity="0.01" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M0,130 C50,128 80,120 130,105 S200,80 250,55 S320,25 370,18 L400,14 L400,148 L0,148 Z"
+                      fill="url(#areaGrad)"
+                    />
+                    <path
+                      d="M0,130 C50,128 80,120 130,105 S200,80 250,55 S320,25 370,18 L400,14"
+                      fill="none"
+                      stroke="url(#lineGrad)"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    />
+                    <circle cx="400" cy="14" r="4" fill="#22c55e" />
+                  </svg>
+                  <div className="absolute bottom-2 left-4 right-4 flex justify-between font-mono text-[9px] text-white/20">
+                    <span>Week 1</span>
+                    <span>Week 2</span>
+                    <span>Week 3</span>
+                    <span>Now</span>
+                  </div>
+                  <div className="absolute left-4 top-3 font-mono text-[9px] text-white/20">
+                    Proposal accuracy
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="flex w-[200px] shrink-0 flex-col gap-2">
+                <div className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.5px] text-white/25">
+                    Accuracy
+                  </div>
+                  <div className="mt-1 text-[22px] font-semibold text-green-400">94%</div>
+                  <div className="mt-0.5 font-mono text-[10px] text-green-400/70">↑ from 62%</div>
+                </div>
+                <div className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.5px] text-white/25">
+                    Decisions
+                  </div>
+                  <div className="mt-1 text-[22px] font-semibold text-white/90">47</div>
+                  <div className="mt-0.5 font-mono text-[10px] text-white/25">7 handled autonomously</div>
+                </div>
+                <div className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.5px] text-white/25">
+                    Response time
+                  </div>
+                  <div className="mt-1 text-[22px] font-semibold text-blue-400">6m</div>
+                  <div className="mt-0.5 font-mono text-[10px] text-green-400/70">↓ from 4.2 hours</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* progress */}
-      <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/5">
-        <div
-          className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500"
-          style={{
-            width: `${Math.min((elapsed / DEMO_TOTAL) * 100, 100)}%`,
-            transition: "none",
-          }}
-        />
-      </div>
+      {/* ── Animation keyframes ── */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: none; }
+        }
+        @keyframes flowPulse {
+          0% { left: -40px; opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { left: 100%; opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }
+
 
 /* ────────────────────────────────────────────
    Main landing page
@@ -1157,7 +693,7 @@ export function LandingClient() {
           </FadeUp>
 
           <FadeUp delay={200}>
-            <ScenarioDemo />
+            <LayerDemo />
           </FadeUp>
 
           <FadeUp delay={100}>
