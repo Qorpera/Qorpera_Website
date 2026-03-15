@@ -313,13 +313,13 @@ export function PlatformClient() {
         </div>
       </Section>
 
-      {/* ── Section 3: Copilot ─────────────────────────────── */}
-      <Section label="Copilot" title="Ask anything about your business.">
+      {/* ── Section 3: Advisor ─────────────────────────────── */}
+      <Section label="Advisor" title="Ask anything about your business.">
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start">
           <FadeIn className="max-w-md shrink-0">
             <div className="space-y-4 text-[var(--ink-soft)]">
               <p>
-                The copilot is a conversational interface to everything Qorpera
+                The advisor is a conversational interface to everything Qorpera
                 knows. Ask &ldquo;how are we tracking on the Q1 report?&rdquo;
                 and it pulls document status, team activity, deadlines, and
                 outstanding items into one answer.
@@ -330,7 +330,7 @@ export function PlatformClient() {
                 from your connected tools.
               </p>
               <p>
-                The copilot can also take action: send emails, reply to threads,
+                The advisor can also take action: send emails, reply to threads,
                 search documents — all using your personal credentials and
                 subject to policy approval.
               </p>

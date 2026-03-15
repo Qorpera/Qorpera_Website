@@ -98,7 +98,7 @@ export default function DocsOverviewPage() {
         decisions. The{" "}
         <DocLink href="/documents/how-ai-learns">learning system</DocLink>{" "}
         tracks approval patterns per situation type, and the{" "}
-        <DocLink href="/documents/copilot">copilot</DocLink> provides a
+        <DocLink href="/documents/advisor">advisor</DocLink> provides a
         conversational interface to the business graph and situation engine.
         All AI actions are governed by a{" "}
         <DocLink href="/documents/policy-engine">policy engine</DocLink> that

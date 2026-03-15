@@ -833,7 +833,7 @@ export function LandingClient() {
           <FadeUp>
             <p className="mt-12 max-w-[800px] text-[15px] leading-[1.6] text-[var(--ink-muted)]">
               Every other AI tool either has permission or it doesn&apos;t.
-              Automations just run. Copilots wait to be asked. Qorpera is the
+              Automations just run. Assistants wait to be asked. Qorpera is the
               only system where AI earns autonomy through demonstrated
               competence — one task type at a time.
             </p>

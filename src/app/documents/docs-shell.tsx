@@ -32,7 +32,7 @@ const DOCS_NAV: NavGroup[] = [
     heading: "Your AI",
     items: [
       { slug: "how-ai-learns", label: "How the AI learns" },
-      { slug: "copilot", label: "Copilot" },
+      { slug: "advisor", label: "Advisor" },
       { slug: "approval-workflow", label: "Approval workflow" },
     ],
   },

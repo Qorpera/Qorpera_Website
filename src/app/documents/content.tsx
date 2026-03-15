@@ -384,15 +384,15 @@ export const DOC_PAGES: Record<string, DocPageData> = {
     ),
   },
 
-  copilot: {
-    title: "Copilot",
+  advisor: {
+    title: "Advisor",
     description:
       "The conversational interface to the business graph and situation engine.",
     body: (
       <>
-        <PageHeader group="Your AI" title="Copilot" />
+        <PageHeader group="Your AI" title="Advisor" />
         <P>
-          The copilot is Qorpera&apos;s conversational interface — a chat-based
+          The advisor is Qorpera&apos;s conversational interface — a chat-based
           tool for querying the business graph, reviewing situations, and
           triggering actions.
         </P>
@@ -426,7 +426,7 @@ export const DOC_PAGES: Record<string, DocPageData> = {
 
         <H2 id="closed-world">Closed-world reasoning</H2>
         <P>
-          The copilot uses closed-world reasoning: it only acts on retrieved
+          The advisor uses closed-world reasoning: it only acts on retrieved
           evidence, never guesses. Context assembly pulls entity properties,
           relationships, activity timelines, communication excerpts, and
           cross-department signals (for external entities).
@@ -896,7 +896,7 @@ export const DOC_PAGES: Record<string, DocPageData> = {
         </UL>
         <P>
           Multi-tenant isolation ensures operators cannot see each other&apos;s
-          data. The copilot privacy model ensures email and message content is
+          data. The advisor privacy model ensures email and message content is
           only shown from the requesting user&apos;s own synced data.
         </P>
       </>
